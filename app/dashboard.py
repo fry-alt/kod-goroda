@@ -31,7 +31,7 @@ def analyze(data: bytes, name: str):
 
 
 with st.sidebar:
-    st.caption(f"Движок: **{'Claude · ' + settings.model if settings.use_claude() else 'офлайн-правила'}**")
+    st.caption(f"Движок: **{settings.engine_label()}**")
     up = st.file_uploader("Файл с отзывами", type=["csv", "xlsx", "xls", "json", "jsonl"])
     if up is None:
         st.info("Файл не выбран — показываем демо-данные.")

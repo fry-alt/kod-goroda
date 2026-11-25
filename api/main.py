@@ -28,7 +28,7 @@ class ReportOut(BaseModel):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "engine": "claude" if settings.use_claude() else "offline", "model": settings.model}
+    return {"status": "ok", "engine": settings.engine(), "label": settings.engine_label()}
 
 
 @app.post("/analyze", response_model=ItemAnalysis)

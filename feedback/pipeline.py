@@ -7,7 +7,7 @@ from dataclasses import dataclass
 import pandas as pd
 
 from . import aggregate
-from .analyzers import offline
+from .analyzers import llm, offline
 from .config import settings
 from .schemas import FeedbackItem, Insights
 from .taxonomy import title
@@ -20,7 +20,7 @@ class Result:
     df: pd.DataFrame
     stats: dict
     insights: Insights
-    engine: str  # "claude" | "offline"
+    engine: str  # "yandex" | "claude" | "offline"
 
     @property
     def alerts(self) -> pd.DataFrame:
@@ -52,21 +52,29 @@ def _offline_insights(s: dict) -> Insights:
     )
 
 
+def get_provider():
+    engine = settings.engine()
+    if engine == "yandex":
+        from .analyzers.yandex import YandexProvider
+        return YandexProvider()
+    if engine == "claude":
+        from .analyzers.claude import ClaudeProvider
+        return ClaudeProvider()
+    return None
+
+
 def run(items: list[FeedbackItem], with_insights: bool = True) -> Result:
-    if settings.use_claude():
-        from .analyzers import claude
-        engine = "claude"
-        analyses = claude.analyze(items)
-    else:
-        engine = "offline"
+    provider = get_provider()
+    if provider is None:
         analyses = offline.analyze(items)
+    else:
+        analyses = llm.analyze(provider, items)
 
     df = aggregate.to_frame(items, analyses)
     s = aggregate.stats(df)
-    ins = None
-    if with_insights and engine == "claude":
-        ins = claude.insights(s)
-    return Result(df=df, stats=s, insights=ins or _offline_insights(s), engine=engine)
+    ins = llm.insights(provider, s) if provider and with_insights else None
+    return Result(df=df, stats=s, insights=ins or _offline_insights(s),
+                  engine=provider.name if provider else "offline")
 
 
 __all__ = ["run", "Result", "title"]

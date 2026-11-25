@@ -53,3 +53,74 @@ def test_api():
     assert r.status_code == 200 and r.json()["churn_risk"] is True
     r = client.post("/report", files={"file": ("f.csv", io.BytesIO(SAMPLE.read_bytes()), "text/csv")})
     assert r.status_code == 200 and r.json()["stats"]["total"] == 32
+
+
+# ---------- LLM-слой без сети ----------
+
+from feedback.analyzers import llm  # noqa: E402
+from feedback.schemas import BatchAnalysis, Insights  # noqa: E402
+
+
+class FakeProvider:
+    """Отвечает разметкой офлайн-анализатора, но «теряет» отзыв с id=2."""
+    name, model = "fake", "fake-1"
+
+    def __init__(self):
+        self.calls = 0
+
+    def complete(self, system, user, schema, kind):
+        self.calls += 1
+        if schema is Insights:
+            return Insights(headline="H", key_findings=["f"], risks=["r"], recommendations=["x"])
+        from feedback.analyzers import offline
+        items = [i for i in ingest.load(SAMPLE) if f'id="{i.id}"' in user]
+        out = [offline.analyze_item(i) for i in items if i.id != "2"]  # «модель» потеряла id=2
+        return BatchAnalysis(items=out)
+
+
+def test_llm_layer_with_fake_provider(tmp_path, monkeypatch):
+    import dataclasses
+    monkeypatch.setattr(llm, "settings", dataclasses.replace(llm.settings, cache_dir=tmp_path))
+    items = ingest.load(SAMPLE)
+    p = FakeProvider()
+    res = llm.analyze(p, items)
+    assert [a.id for a in res] == [i.id for i in items]   # порядок и полнота сохранены
+    first_calls = p.calls
+    llm.analyze(p, items)                                   # второй прогон — почти всё из кеша
+    assert p.calls - first_calls == 1                       # перезапрашиваем только потерянный id=2
+    assert llm.insights(p, {"total": 1}).headline == "H"
+
+
+def test_inline_schema_has_no_refs():
+    import json
+    s = json.dumps(llm.inline_schema(BatchAnalysis))
+    assert "$ref" not in s and "$defs" not in s and '"enum"' in s
+
+
+def test_yandex_provider_builds_request(monkeypatch):
+    """Проверяем, что SDK Яндекса принимает нашу схему, и разбор ответа — без сети."""
+    monkeypatch.setenv("YC_API_KEY", "test")
+    monkeypatch.setenv("YC_FOLDER_ID", "b1gtest")
+    from types import SimpleNamespace
+    from feedback.analyzers import yandex
+    from yandex_ai_studio_sdk._types.schemas import http_schema_from_response_format
+
+    captured = {}
+
+    class FakeModel:
+        def configure(self, **kw):
+            captured.update(kw)
+            http_schema_from_response_format(kw["response_format"])  # бросит, если формат не тот
+            return self
+
+        def run(self, messages):
+            captured["messages"] = messages
+            return SimpleNamespace(status=SimpleNamespace(name="FINAL"),
+                                   text='{"headline":"h","key_findings":[],"risks":[],"recommendations":[]}')
+
+    p = yandex.YandexProvider()
+    p.sdk = SimpleNamespace(models=SimpleNamespace(completions=lambda name: FakeModel()))
+    out = p.complete("sys", "user", Insights, kind="report")
+    assert out.headline == "h"
+    assert captured["messages"][0] == {"role": "system", "text": "sys"}
+    assert captured["response_format"]["strict"] is True
