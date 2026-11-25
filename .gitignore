@@ -1,6 +1,7 @@
 .DS_Store
 .env
 .env.*
+!.env.example
 __pycache__/
 *.pyc
 .venv/
@@ -8,3 +9,5 @@ venv/
 node_modules/
 .idea/
 .vscode/
+.cache/
+out/
