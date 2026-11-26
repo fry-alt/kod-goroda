@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Помощник стажёра</title>
+  <link rel="stylesheet" href="style.css">
+  <script type="module" src="chat.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="program">Стажировка МГТС</p>
+      <h1>Помощник стажёра</h1>
+      <p>Спроси про стажировку и пульс-опрос или подготовь сообщение наставнику.</p>
+    </header>
+    <section aria-label="Чат">
+      <div id="messages" role="log" aria-label="Переписка" tabindex="0"></div>
+      <nav id="suggestions" aria-label="Варианты вопросов"></nav>
+      <form>
+        <label for="question">Твой вопрос</label>
+        <div class="composer">
+          <input id="question" name="question" required maxlength="500" placeholder="Например, что делать, если задач слишком много?" autocomplete="off">
+          <button class="send" type="submit">Отправить</button>
+        </div>
+      </form>
+      <p id="status" role="status"></p>
+    </section>
+  </main>
+</body>
+</html>
