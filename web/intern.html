@@ -326,6 +326,8 @@ textarea::placeholder,input::placeholder{color:var(--mgts-muted)}
 .msg .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .msg .acts .btn{background:#fff;min-height:44px}
 .msg .acts .btn.pri{background:var(--mgts-blue)}
+.msg .src{display:flex;align-items:center;gap:5px;margin-top:8px;font-size:12px;color:var(--mgts-muted)}
+.msg details{margin-top:6px;font-size:12.5px;color:var(--mgts-muted)}
 .typing{display:inline-flex;gap:4px;padding:14px}
 .typing i{width:6px;height:6px;border-radius:50%;background:var(--mgts-muted);animation:tp 1s infinite}
 .typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
@@ -972,38 +974,17 @@ function openFbReq(){
 }
 
 // ---------- чат с Кубом ----------
-const QUICK = [['Где получить пропуск?', 'pass'], ['Как получить задачи?', 'tasks'], ['Кому писать, если заболел?', 'absent'], ['Как попасть в штат?', 'offer'], ['Мне тревожно / не справляюсь', '_calm']];
-const KEYS = {
-  pass:['пропуск','ресепшн','бюро','охран','вход'], tasks:['задач','трекер','план','поручен','работ'], absent:['болел','болею','больнич','заболел','опазд','опозд','врач','температур'],
-  offer:['штат','оффер','офер','остать','трудоустр','промежуточ','финальн','взять'], address:['адрес','офис','метро','добрат','где наход','карт'],
-  access:['ноутбук','пароль','доступ','почт','компьютер','ит','vpn','впн','сломал'], people:['коллег','команд','контакт','познаком','найти'],
-  whom:['кому','писать','обратит','спросить','вопрос'], pulse:['опрос','пульс','анкет','оценк'], day1:['первый день','перв','начать','прийти','приходить']
-};
-const CALM = ['тревож','страш','не справ','выгор','устал','плохо','стресс','паник','боюсь','не тяну','не вывож','депресс','плачу','тяжело','волну','пережива'];
-function findMemo(q){
-  const s = q.toLowerCase().replace(/ё/g, 'е'), memo = memoList();
-  let best = null, score = 0;
-  memo.forEach(m => {
-    let sc = (KEYS[m.id] || []).reduce((a, k) => a + (s.includes(k) ? 3 : 0), 0);
-    const words = s.split(/[^a-zа-я0-9]+/).filter(w => w.length >= 4).map(w => w.slice(0, 5));
-    const hay = (m.title + ' ' + m.text).toLowerCase().replace(/ё/g, 'е');
-    sc += words.reduce((a, w) => a + (hay.includes(w) ? 1 : 0), 0);
-    if(sc > score){ score = sc; best = m; }
-  });
-  return score >= 2 ? best : null;
-}
+const QUICK = ['Где получить пропуск?', 'Кто мой наставник?', 'Что делать, если заболел?', 'Как попросить обратную связь?', 'Как попасть в штат?', 'Можно написать анонимно?', 'Мне тревожно'];
 function openChat(){
-  openSheet(`<div class="chathead"><span class="ava"><img src="brand/img/cube.png" alt=""></span><span><b id="shT">Куб</b><small>Отвечаю по памятке. Чего не знаю — передам HR</small></span></div>
+  openSheet(`<div class="chathead"><span class="ava"><img src="brand/img/cube.png" alt=""></span><span><b id="shT">Куб</b><small>Отвечаю по памятке и правилам программы. Твоих оценок не вижу</small></span></div>
     <div class="msgs" id="msgs"></div>
-    <div class="qq" id="qq">${QUICK.map(([t, k]) => `<button class="chip" data-q="${k}">${esc(t)}</button>`).join('')}</div>
+    <div class="qq" id="qq">${QUICK.map(t => `<button class="chip" data-q>${esc(t)}</button>`).join('')}</div>
     <form class="ask" id="askf"><label class="sr" for="askq">Вопрос Кубу</label><input id="askq" placeholder="Спроси что угодно" autocomplete="off" enterkeyhint="send">
       <button id="askgo" type="submit" aria-label="Отправить" disabled>${ic('send', 20, 2)}</button></form>`, 'chat');
   $('sheet').setAttribute('aria-labelledby', 'shT');
   if(!S.chatHist?.length){ S.chatHist = []; bot(`Привет! Я Куб, гид по стажировке. Выбери вопрос ниже или напиши свой.`); }
   else S.chatHist.forEach(h => addMsg(h.who, h.html, false));
-  $('qq').querySelectorAll('[data-q]').forEach(b => b.onclick = () => {
-    const k = b.dataset.q; ask(b.textContent, k === '_calm' ? '_calm' : memoList().find(m => m.id === k) || null);
-  });
+  $('qq').querySelectorAll('[data-q]').forEach(b => b.onclick = () => ask(b.textContent));
   const inp = $('askq'); inp.oninput = () => { $('askgo').disabled = !inp.value.trim(); };
   $('askf').onsubmit = e => { e.preventDefault(); const q = inp.value.trim(); if(!q) return; inp.value = ''; $('askgo').disabled = true; ask(q); };
 }
@@ -1024,6 +1005,7 @@ function bindMsg(el){
     }
   });
   el.querySelectorAll('[data-help]').forEach(b => b.onclick = () => openHelp(b.dataset.help));
+  el.querySelectorAll('[data-cube-act]').forEach(b => b.onclick = () => act(b.dataset.cubeAct));
   el.querySelectorAll('[data-relay]').forEach(b => b.onclick = async () => {
     b.disabled = true; const where = await postRequest({intern_id:ID || null, type:'question', text:b.dataset.relay, anonymous:false});
     bot(`Передал ✓ HR ответит лично.${where === 'local' ? ' (Демо: вопрос сохранён на этом устройстве.)' : ''}`);
@@ -1049,47 +1031,44 @@ function bot(html){
 function relayQuestion(q){
   return `<div class="acts"><button class="btn pri" data-relay="${esc(q)}">Передать HR</button></div>`;
 }
+// источник ответа Куба: «Из памятки: Пропуск»
+const SRC_KIND = {'Памятка':'Из памятки', 'Чек-лист':'Из чек-листа', 'Кабинет стажёра':'Из подсказок кабинета', 'Куб':'Из памятки',
+  'Условия кейса МГТС':'Из условий программы', 'Структура пульс-опроса':'Из правил пульс-опроса'};
+const CUBE_ACT = {hr:['help:hr', 'Написать HR'], anonymous:['help:anonymous', 'Анонимно'], mentor:['help:mentor', 'Обсудить с наставником'], fbreq:['fbreq', 'Попросить ОС']};
+const srcLine = (kind, title, extra = '') => `<small class="src">${ic('info', 13, 2)} ${esc(SRC_KIND[kind] || ('Источник: ' + kind))}: «${esc(title)}»${extra}</small>`;
 function memoAnswer(m){
-  return `<b>${esc(m.title)}</b>${esc(m.text)}${m.link ? `<br><a href="${esc(m.link)}" target="_blank" rel="noopener">${esc(m.link_label || 'Подробнее')}</a>` : ''}`;
+  return `<b>${esc(m.title)}</b>${esc(m.text)}${m.link ? `<br><a href="${esc(m.link)}" target="_blank" rel="noopener">${esc(m.link_label || 'Подробнее')}</a>` : ''}${srcLine('Памятка', m.title)}`;
 }
-function assistantAnswer(reply){
-  const source = reply.source ? `<details><summary>${esc(reply.source.title)}</summary>${esc(reply.source.excerpt).replaceAll('\n', '<br>')}</details>` : '';
-  const draft = reply.draft ? `<br>${esc(reply.draft)}<div class="acts"><button class="btn" data-draft="${esc(reply.draft)}">Скопировать черновик</button></div>` : '';
-  const actions = reply.suggestions?.length ? `<div class="acts">${reply.suggestions.map(text => `<button class="btn" data-assistant-question="${esc(text)}">${esc(text)}</button>`).join('')}</div>` : '';
-  return `${esc(reply.answer)}${source}${draft}${actions}`;
+function assistantAnswer(r){
+  const d = r.doc;
+  const link = d.link ? `<br><a href="${esc(d.link)}" target="_blank" rel="noopener">${esc(d.link_label || 'Подробнее')}</a>` : '';
+  const orig = r.engine ? `<details><summary>Фрагмент источника</summary>${esc(d.text)}</details>` : '';
+  const draft = r.draft ? `<br><i>${esc(r.draft)}</i><div class="acts"><button class="btn" data-draft="${esc(r.draft)}">Скопировать черновик</button></div>` : '';
+  const acts = (r.actions || []).map(a => CUBE_ACT[a]).filter(Boolean).map(([a, t], i) => `<button class="btn${i ? '' : ' pri'}" data-cube-act="${a}">${t}</button>`);
+  const sugg = (r.suggestions || []).map(t => `<button class="btn" data-assistant-question="${esc(t)}">${esc(t)}</button>`);
+  const all = [...acts, ...sugg];
+  return `${esc(r.answer)}${link}${draft}${all.length ? `<div class="acts">${all.join('')}</div>` : ''}` +
+    srcLine(d.source, d.title, r.engine ? ' · сформулировал ИИ' : '') + orig;
+}
+function unknownAnswer(r){
+  const what = r.unknown?.length ? ` (не нашёл: «${esc(r.unknown.join('», «'))}»)` : '';
+  return `Честно: в памятке и правилах программы ответа нет${what}, а гадать не буду. Лучше спросить HR — ответят лично.
+    <div class="acts"><button class="btn pri" data-relay="${esc(r.question)}">Передать вопрос HR</button><button class="btn" data-help="hr">Написать HR</button></div>`;
 }
 function ask(q, hit){
   addMsg('me', esc(q));
   S.assistantQueue = (S.assistantQueue || Promise.resolve()).then(() => replyToQuestion(q, hit));
 }
 async function replyToQuestion(q, hit){
-  const calm = () => bot(`Спасибо, что сказал. Если волнуешься, начни с одного вопроса: что сейчас беспокоит сильнее всего? Это можно обсудить с HR программы.
-    <div class="acts"><button class="btn pri" data-help="hr">Написать HR</button><button class="btn" data-help="anonymous">Анонимно</button></div>`);
-  if(hit === '_calm' || hit){
-    S.assistantTopic = null;
-    return hit === '_calm' ? calm() : bot(memoAnswer(hit));
-  }
+  if(hit){ S.assistantTopic = null; return bot(memoAnswer(hit)); }
+  // Кубу — только памятка, отдел и ID наставника. Оценки и сигналы HR не передаём.
+  const ctx = {onb:S.onb, department:S.data?.department, mentor_id:S.data?.mentor_id,
+               api:(S.mock || STATIC_HOST) ? null : (API || location.origin)};
   let result;
-  try { result = await InternAssistant.ask(q, S.assistantTopic); } catch {}
-  S.assistantTopic = result?.topic ?? null;
-  for(const reply of result?.replies ?? [{status:'unknown', question:q}]){
-    if(reply.status !== 'unknown'){
-      bot(assistantAnswer(reply));
-      continue;
-    }
-    if(CALM.some(key => reply.question.toLowerCase().includes(key))){
-      calm();
-      continue;
-    }
-    const m = findMemo(reply.question);
-    if(m && (!reply.answer || [
-      ['pass', /пропуск/i], ['access', /ноутбук|доступ|пароль/i], ['absent', /больнич|болею|заболел/i],
-    ].some(([id, pattern]) => id === m.id && pattern.test(reply.question)))){
-      bot(memoAnswer(m));
-      continue;
-    }
-    bot((reply.answer ? esc(reply.answer) : 'В памятке такого нет. Можешь передать вопрос HR.') + relayQuestion(reply.question));
-  }
+  try { result = await InternAssistant.ask(q, S.assistantTopic, ctx); } catch {}
+  if(!result){ bot(`Не смог открыть памятку. Напиши HR, ответят лично.<div class="acts"><button class="btn pri" data-help="hr">Написать HR</button></div>`); return; }
+  S.assistantTopic = result.topic;
+  for(const reply of result.replies) bot(reply.status === 'answered' ? assistantAnswer(reply) : unknownAnswer(reply));
 }
 
 $('shX').onclick = closeSheet;
