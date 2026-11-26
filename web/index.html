@@ -472,7 +472,7 @@ addEventListener('hashchange', () => { scrollTo({top:0}); renderView(); });
 // ---------- период ----------
 function renderPeriods(){
   // список месяцев копим: бэк со срезом «на Месяц N» отдаёт только 1…N
-  S.allP = [...new Set([...(S.allP || []), ...(S.ov.periods || []), S.ov.current_period].filter(Boolean))].sort((a, b) => a - b);
+  S.allP = [...new Set([...(S.allP || []), ...(S.ov.periods || []), S.ov.current_period, ...(S.mock ? MOCKS : [])].filter(Boolean))].sort((a, b) => a - b);
   if(S.allP.length < 6 && !S.mock && !S.allPLoaded){ S.allPLoaded = true; getJSON(API + '/api/overview').then(o => { S.allP = [...new Set([...S.allP, ...(o.periods || [])])].sort((a, b) => a - b); renderPeriods(); }).catch(() => {}); }
   const ps = S.allP;
   $('periods').innerHTML = '<span class="lab">Срез на</span>' + ps.map(p =>
