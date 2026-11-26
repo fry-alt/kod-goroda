@@ -117,3 +117,22 @@ def test_webhook_yandex_jsonrpc_and_form_encoded(client):
     params["Самостоятельность"] = "3"
     r = c.post("/api/webhook/mentor", data=params)  # x-www-form-urlencoded
     assert r.status_code == 200 and r.json()["changed"], r.text
+
+
+def test_signal_review_roundtrip(client):
+    from urllib.parse import quote
+    c, store = client
+    card = c.get("/api/interns/СТ-004", params={"period": 4}).json()
+    if not card["signals"]:
+        pytest.skip("анализ без сигналов (fallback)")
+    sig = card["signals"][0]
+    assert sig["id"].startswith("СТ-004|4|") and sig["review"] is None
+    v0 = c.get("/api/version").json()["version"]
+    r = c.post(f"/api/signals/{quote(sig['id'], safe='')}/review", json={"status": "confirmed", "note": "встреча 1:1"})
+    assert r.status_code == 200 and r.json()["version"] == v0 + 1
+    again = c.get("/api/interns/СТ-004", params={"period": 4}).json()
+    got = {s["id"]: s for s in again["signals"]}[sig["id"]]
+    assert got["review"]["status"] == "confirmed" and got["review"]["note"] == "встреча 1:1"
+    assert c.post(f"/api/signals/{quote(sig['id'], safe='')}/review", json={"status": "none"}).status_code == 200
+    assert {s["id"]: s for s in c.get("/api/interns/СТ-004", params={"period": 4}).json()["signals"]}[sig["id"]]["review"] is None
+    assert c.post("/api/signals/bad/review", json={"status": "confirmed"}).status_code == 422

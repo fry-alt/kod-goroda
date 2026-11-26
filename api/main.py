@@ -71,6 +71,21 @@ def api_intern(intern_id: str, period: Optional[int] = Query(None, ge=1)):
         raise HTTPException(404, f"нет стажёра {intern_id}")
 
 
+class ReviewIn(BaseModel):
+    status: str  # confirmed | in_work | false_alarm | none (снять отметку)
+    note: Optional[str] = None
+
+
+@app.post("/api/signals/{signal_id}/review")
+def api_review(signal_id: str, body: ReviewIn):
+    """Решение HR по сигналу. signal_id — поле id сигнала из /api/interns/{id} («СТ-004|4|код»)."""
+    try:
+        res = store.set_review(signal_id, body.status, body.note)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    return {**res, **store.get_version()}
+
+
 @app.get("/api/version")
 def api_version():
     return store.get_version()

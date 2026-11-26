@@ -101,8 +101,19 @@ def overview(period: Optional[int] = None) -> dict:
     return out
 
 
+def _attach_reviews(card: dict, period: Optional[int]) -> dict:
+    """Каждому сигналу — глобальный id «стажёр|период|код» и решение HR (signals[].review)."""
+    cur = period or max((p["period"] for p in card.get("periods", [])), default=0)
+    reviews = store.get_reviews(card.get("intern_id"))
+    for s in card.get("signals", []):
+        code = s.get("code") or s.get("id") or s.get("title")
+        s["code"] = code
+        s["id"] = store.review_id(card["intern_id"], cur, code)
+        s["review"] = reviews.get(s["id"])
+    return card
+
+
 def intern(intern_id: str, period: Optional[int] = None) -> dict:
     hist = store.load_history(period)
-    if _build_intern:
-        return _build_intern(hist, intern_id, period)
-    return _fallback_intern(hist, intern_id)
+    card = _build_intern(hist, intern_id, period) if _build_intern else _fallback_intern(hist, intern_id)
+    return _attach_reviews(card, period)

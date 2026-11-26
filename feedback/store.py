@@ -80,6 +80,8 @@ def init_db(con: sqlite3.Connection) -> None:
         con.execute(f"CREATE TABLE IF NOT EXISTS {form['table']} ({', '.join(cols)}, "
                     f"PRIMARY KEY ({_q(INTERN_ID)}, period))")
     con.execute("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)")
+    con.execute("CREATE TABLE IF NOT EXISTS signal_reviews (review_id TEXT PRIMARY KEY, intern_id TEXT, "
+                "period INTEGER, code TEXT, status TEXT, note TEXT, at TEXT)")
     con.commit()
 
 
@@ -215,6 +217,61 @@ def seed(con: Optional[sqlite3.Connection] = None, force: bool = False) -> dict:
         a = import_frame("intern", pd.read_excel(INTERN_XLSX), con=con)
         b = import_frame("mentor", pd.read_excel(MENTOR_XLSX), con=con)
         return {"skipped": False, "interns": a, "mentors": b}
+    finally:
+        if own:
+            con.close()
+
+
+# ---------- решения HR по сигналам ----------
+
+REVIEW_STATUSES = {"confirmed", "in_work", "false_alarm", "none"}
+
+
+def review_id(intern_id: str, period: int, code: str) -> str:
+    """Глобальный id сигнала: стажёр|период|код сигнала от анализа."""
+    return f"{intern_id}|{int(period)}|{code}"
+
+
+def set_review(rid: str, status: str, note: Optional[str] = None,
+               con: Optional[sqlite3.Connection] = None) -> dict:
+    if status not in REVIEW_STATUSES:
+        raise ValueError(f"status должен быть одним из {sorted(REVIEW_STATUSES)}")
+    try:
+        intern_id, period, code = rid.split("|", 2)
+        period = int(period)
+    except ValueError:
+        raise ValueError("id сигнала должен быть вида «СТ-004|4|код» (поле id в /api/interns/{id})")
+    own = con is None
+    con = con or connect()
+    try:
+        init_db(con)
+        now = dt.datetime.now()
+        with _lock:
+            if status == "none":
+                con.execute("DELETE FROM signal_reviews WHERE review_id=?", (rid,))
+            else:
+                con.execute("INSERT OR REPLACE INTO signal_reviews VALUES (?,?,?,?,?,?,?)",
+                            (rid, intern_id, period, code, status, note, now.isoformat(timespec="seconds")))
+            _meta_set(con, "version", _meta_get(con, "version", 0) + 1)
+            _meta_set(con, "last_event", {"intern_id": intern_id, "period": period, "source": "HR",
+                                          "via": "review", "review": status, "at": now.strftime("%H:%M:%S")})
+            con.commit()
+        return {"id": rid, "status": status, "note": note}
+    finally:
+        if own:
+            con.close()
+
+
+def get_reviews(intern_id: Optional[str] = None, con: Optional[sqlite3.Connection] = None) -> dict[str, dict]:
+    own = con is None
+    con = con or connect()
+    try:
+        init_db(con)
+        sql, params = "SELECT * FROM signal_reviews", ()
+        if intern_id:
+            sql, params = sql + " WHERE intern_id=?", (intern_id,)
+        return {r["review_id"]: {"status": r["status"], "note": r["note"], "at": r["at"]}
+                for r in con.execute(sql, params)}
     finally:
         if own:
             con.close()
