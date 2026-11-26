@@ -1,0 +1,175 @@
+{
+ "periods": [
+  1,
+  2,
+  3
+ ],
+ "current_period": 3,
+ "survey_status": [
+  {
+   "intern_id": "СТ-001",
+   "mentor_id": "Н-001",
+   "department": "Технический блок",
+   "periods": {
+    "1": {
+     "intern": true,
+     "mentor": true
+    },
+    "2": {
+     "intern": true,
+     "mentor": true
+    },
+    "3": {
+     "intern": true,
+     "mentor": true
+    }
+   }
+  },
+  {
+   "intern_id": "СТ-002",
+   "mentor_id": "Н-002",
+   "department": "Коммерческий блок",
+   "periods": {
+    "1": {
+     "intern": true,
+     "mentor": true
+    },
+    "2": {
+     "intern": true,
+     "mentor": true
+    },
+    "3": {
+     "intern": true,
+     "mentor": true
+    }
+   }
+  },
+  {
+   "intern_id": "СТ-003",
+   "mentor_id": "Н-003",
+   "department": "Административный блок",
+   "periods": {
+    "1": {
+     "intern": true,
+     "mentor": true
+    },
+    "2": {
+     "intern": true,
+     "mentor": true
+    },
+    "3": {
+     "intern": true,
+     "mentor": true
+    }
+   }
+  },
+  {
+   "intern_id": "СТ-004",
+   "mentor_id": "Н-004",
+   "department": "HR-блок",
+   "periods": {
+    "1": {
+     "intern": true,
+     "mentor": true
+    },
+    "2": {
+     "intern": true,
+     "mentor": true
+    },
+    "3": {
+     "intern": true,
+     "mentor": true
+    }
+   }
+  },
+  {
+   "intern_id": "СТ-005",
+   "mentor_id": "Н-005",
+   "department": "IT",
+   "periods": {
+    "1": {
+     "intern": true,
+     "mentor": true
+    },
+    "2": {
+     "intern": true,
+     "mentor": true
+    },
+    "3": {
+     "intern": true,
+     "mentor": true
+    }
+   }
+  }
+ ],
+ "interns": [
+  {
+   "intern_id": "СТ-001",
+   "mentor_id": "Н-001",
+   "department": "Технический блок",
+   "status": "yellow",
+   "intern_avg": 4.6,
+   "mentor_avg": 4.5,
+   "gap": 0.1,
+   "trend": 0.6,
+   "signals": 1,
+   "reason": "Тревожный комментарий"
+  },
+  {
+   "intern_id": "СТ-002",
+   "mentor_id": "Н-002",
+   "department": "Коммерческий блок",
+   "status": "green",
+   "intern_avg": 5.0,
+   "mentor_avg": 5.0,
+   "gap": 0.0,
+   "trend": 0.3,
+   "signals": 0,
+   "reason": "без сигналов"
+  },
+  {
+   "intern_id": "СТ-003",
+   "mentor_id": "Н-003",
+   "department": "Административный блок",
+   "status": "yellow",
+   "intern_avg": 2.7,
+   "mentor_avg": 3.0,
+   "gap": -0.3,
+   "trend": -0.6,
+   "signals": 2,
+   "reason": "Расхождение: Поддержка и обратная связь наставника ↔ Взаимодействие с наставником и командой"
+  },
+  {
+   "intern_id": "СТ-004",
+   "mentor_id": "Н-004",
+   "department": "HR-блок",
+   "status": "green",
+   "intern_avg": 4.9,
+   "mentor_avg": 5.0,
+   "gap": -0.1,
+   "trend": 0.2,
+   "signals": 0,
+   "reason": "без сигналов"
+  },
+  {
+   "intern_id": "СТ-005",
+   "mentor_id": "Н-005",
+   "department": "IT",
+   "status": "yellow",
+   "intern_avg": 3.4,
+   "mentor_avg": 3.7,
+   "gap": -0.2,
+   "trend": 0.0,
+   "signals": 2,
+   "reason": "Расхождение: Понятность задач ↔ Понимание задач и ожиданий"
+  }
+ ],
+ "kpi": {
+  "responded_interns": "5/5",
+  "responded_mentors": "5/5",
+  "red": 0,
+  "yellow": 3,
+  "green": 2
+ },
+ "version": 1
+}

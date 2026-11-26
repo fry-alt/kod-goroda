@@ -1,0 +1,196 @@
+{
+ "periods": [
+  1,
+  2,
+  3,
+  4
+ ],
+ "current_period": 4,
+ "survey_status": [
+  {
+   "intern_id": "СТ-001",
+   "mentor_id": "Н-001",
+   "department": "Технический блок",
+   "periods": {
+    "1": {
+     "intern": true,
+     "mentor": true
+    },
+    "2": {
+     "intern": true,
+     "mentor": true
+    },
+    "3": {
+     "intern": true,
+     "mentor": true
+    },
+    "4": {
+     "intern": true,
+     "mentor": true
+    }
+   }
+  },
+  {
+   "intern_id": "СТ-002",
+   "mentor_id": "Н-002",
+   "department": "Коммерческий блок",
+   "periods": {
+    "1": {
+     "intern": true,
+     "mentor": true
+    },
+    "2": {
+     "intern": true,
+     "mentor": true
+    },
+    "3": {
+     "intern": true,
+     "mentor": true
+    },
+    "4": {
+     "intern": true,
+     "mentor": true
+    }
+   }
+  },
+  {
+   "intern_id": "СТ-003",
+   "mentor_id": "Н-003",
+   "department": "Административный блок",
+   "periods": {
+    "1": {
+     "intern": true,
+     "mentor": true
+    },
+    "2": {
+     "intern": true,
+     "mentor": true
+    },
+    "3": {
+     "intern": true,
+     "mentor": true
+    },
+    "4": {
+     "intern": true,
+     "mentor": true
+    }
+   }
+  },
+  {
+   "intern_id": "СТ-004",
+   "mentor_id": "Н-004",
+   "department": "HR-блок",
+   "periods": {
+    "1": {
+     "intern": true,
+     "mentor": true
+    },
+    "2": {
+     "intern": true,
+     "mentor": true
+    },
+    "3": {
+     "intern": true,
+     "mentor": true
+    },
+    "4": {
+     "intern": true,
+     "mentor": true
+    }
+   }
+  },
+  {
+   "intern_id": "СТ-005",
+   "mentor_id": "Н-005",
+   "department": "IT",
+   "periods": {
+    "1": {
+     "intern": true,
+     "mentor": true
+    },
+    "2": {
+     "intern": true,
+     "mentor": true
+    },
+    "3": {
+     "intern": true,
+     "mentor": true
+    },
+    "4": {
+     "intern": true,
+     "mentor": true
+    }
+   }
+  }
+ ],
+ "interns": [
+  {
+   "intern_id": "СТ-001",
+   "mentor_id": "Н-001",
+   "department": "Технический блок",
+   "status": "green",
+   "intern_avg": 4.9,
+   "mentor_avg": 4.8,
+   "gap": 0.0,
+   "trend": 0.9,
+   "signals": 0,
+   "reason": "без сигналов"
+  },
+  {
+   "intern_id": "СТ-002",
+   "mentor_id": "Н-002",
+   "department": "Коммерческий блок",
+   "status": "green",
+   "intern_avg": 4.9,
+   "mentor_avg": 4.8,
+   "gap": 0.0,
+   "trend": 0.2,
+   "signals": 0,
+   "reason": "без сигналов"
+  },
+  {
+   "intern_id": "СТ-003",
+   "mentor_id": "Н-003",
+   "department": "Административный блок",
+   "status": "yellow",
+   "intern_avg": 4.0,
+   "mentor_avg": 4.0,
+   "gap": 0.0,
+   "trend": 0.7,
+   "signals": 1,
+   "reason": "Расхождение: Поддержка и обратная связь наставника ↔ Взаимодействие с наставником и командой"
+  },
+  {
+   "intern_id": "СТ-004",
+   "mentor_id": "Н-004",
+   "department": "HR-блок",
+   "status": "red",
+   "intern_avg": 4.4,
+   "mentor_avg": 4.8,
+   "gap": -0.4,
+   "trend": -0.3,
+   "signals": 2,
+   "reason": "Падение: Комфортность нагрузки"
+  },
+  {
+   "intern_id": "СТ-005",
+   "mentor_id": "Н-005",
+   "department": "IT",
+   "status": "green",
+   "intern_avg": 4.3,
+   "mentor_avg": 4.2,
+   "gap": 0.1,
+   "trend": 0.9,
+   "signals": 0,
+   "reason": "без сигналов"
+  }
+ ],
+ "kpi": {
+  "responded_interns": "5/5",
+  "responded_mentors": "5/5",
+  "red": 1,
+  "yellow": 1,
+  "green": 3
+ },
+ "version": 1
+}
