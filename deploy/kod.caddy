@@ -1,0 +1,8 @@
+# Наш сайт в Caddy от Yapp: деплой подставляет домен вместо __DOMAIN__ и кладёт файл
+# в /opt/yapp/sites/kod.caddy (Caddyfile Yapp делает `import /etc/caddy/sites/*.caddy`).
+#   https://DOMAIN/      → дашборд (web/ раздаёт сам FastAPI)
+#   https://DOMAIN/api/… → API, его же читает фронт на Vercel (?api=https://DOMAIN)
+__DOMAIN__ {
+	encode gzip
+	reverse_proxy kod-api:8000
+}

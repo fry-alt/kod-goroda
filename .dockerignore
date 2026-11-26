@@ -1,0 +1,12 @@
+.git
+.venv
+.env
+.env.*
+.cache
+.pytest_cache
+**/__pycache__
+out
+data/app.db
+data/*.db-journal
+data/webhook_log.jsonl
+docs/presentation

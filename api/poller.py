@@ -50,7 +50,8 @@ def is_stale(rec: dict, since: dt.datetime | None) -> bool:
 
 def poll_once(client: httpx.Client) -> int:
     changed = 0
-    since = store.get_meta("sheet_since")
+    # SHEET_SINCE — для облака: там база каждый раз новая, и без отсечки в неё попали бы ответы с репетиции
+    since = store.get_meta("sheet_since") or os.getenv("SHEET_SINCE") or None
     since = dt.datetime.fromisoformat(since) if since else None
     for form, url in sources().items():
         try:

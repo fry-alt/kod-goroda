@@ -1,0 +1,29 @@
+# Прод на сервере Yapp (Timeweb). Лежит там в ~/kod-goroda вместе с .env и state/;
+# всё это при каждом пуше в main заливает .github/workflows/deploy.yml.
+#
+# Порты 80/443 заняты Caddy от Yapp. Он подключает наш сайт из /opt/yapp/sites/kod.caddy
+# и ходит в контейнер по общей сети yapp_default (алиас kod-api).
+
+name: kod-goroda
+
+services:
+  api:
+    image: kod-goroda-api
+    pull_policy: never
+    env_file: .env
+    restart: unless-stopped
+    volumes:
+      - ./state:/app/state # SQLite: история + ответы из форм, переживает выкладки
+    mem_limit: 400m # на сервере живут Yapp и «Дети Марии» — не съедаем всю память
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+    networks:
+      default:
+      yapp:
+        aliases: [kod-api]
+
+networks:
+  yapp:
+    name: yapp_default
+    external: true
