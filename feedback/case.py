@@ -15,7 +15,10 @@ PAIRS = (
     ("Поддержка и обратная связь наставника", "Взаимодействие с наставником и командой"),
 )
 
-ANALYSIS_PENDING = "Сигналы пока не рассчитываются."
+LOW_SCORE = 2
+DROP_THRESHOLD = 1
+PAIR_GAP_THRESHOLD = 1.5
+ROLE_LABELS = {"intern": "стажёр", "mentor": "наставник"}
 
 
 def _snapshot(hist: store.History, period: int | None) -> tuple[store.History, list[int], int | None]:
@@ -71,6 +74,81 @@ def _period_detail(period: int | None, intern: dict, mentor: dict) -> dict:
     }
 
 
+def _evidence(role: str, period: int, field: str, value) -> dict:
+    return {"source": ROLE_LABELS[role], "period": period, "field": field, "value": value}
+
+
+def _signals(periods: list[int], intern: dict[int, dict], mentor: dict[int, dict]) -> list[dict]:
+    current = periods[-1]
+    signals = []
+
+    def add(signal_id, level, title, why, evidence):
+        signals.append({"id": signal_id, "level": level, "title": title, "why": why,
+                        "evidence": evidence})
+
+    for role, answers, fields in (
+        ("intern", intern, store.INTERN_SCORES),
+        ("mentor", mentor, store.MENTOR_SCORES),
+    ):
+        if current not in answers:
+            add(f"missing-{role}", "red", f"Пропуск опроса: {ROLE_LABELS[role]}",
+                f"За месяц {current} анкета не получена.",
+                [_evidence(role, current, "Анкета получена", False)])
+            continue
+
+        scores = _scores(answers[current], fields)
+        low = [_evidence(role, current, field, value) for field, value in scores.items()
+               if value <= LOW_SCORE]
+        if low:
+            add(f"low-{role}", "red", f"Низкая оценка: {', '.join(item['field'] for item in low)}",
+                f"В месяце {current} есть оценки {LOW_SCORE} или ниже.", low)
+        if scores:
+            average = mean(scores.values())
+            if average < 4:
+                evidence = [_evidence(role, current, field, value) for field, value in scores.items()]
+                add(f"average-{role}", "red" if average < 3 else "yellow",
+                    f"Низкий средний балл: {ROLE_LABELS[role]}",
+                    f"Среднее за месяц {current}: {average:.2f} из 5.", evidence)
+
+        drops = []
+        for field, value in scores.items():
+            past = [_evidence(role, p, field, answers[p][field]) for p in periods[:-1]
+                    if p in answers and pd.notna(answers[p].get(field))]
+            if past:
+                baseline = mean(item["value"] for item in past)
+                if baseline - value >= DROP_THRESHOLD:
+                    drops.append((field, baseline, value, past))
+        for field, baseline, value, past in drops:
+            level = "red" if len(drops) >= 2 or baseline - value >= 2 else "yellow"
+            add(f"drop-{role}-{field}", level, f"Снижение: {field}",
+                f"Оценка {value} за месяц {current}, личное среднее прошлых месяцев {baseline:.2f}.",
+                [_evidence(role, current, field, value), *past])
+
+    for intern_field, mentor_field in PAIRS:
+        evidence_by_period = {}
+        for p in range(max(1, current - 2), current + 1):
+            left = intern.get(p, {}).get(intern_field)
+            right = mentor.get(p, {}).get(mentor_field)
+            if pd.notna(left) and pd.notna(right) and abs(left - right) >= PAIR_GAP_THRESHOLD:
+                evidence_by_period[p] = [
+                    _evidence("intern", p, intern_field, int(left)),
+                    _evidence("mentor", p, mentor_field, int(right)),
+                ]
+        repeated = len(evidence_by_period) >= 2
+        if current in evidence_by_period or repeated:
+            if repeated:
+                months = ", ".join(map(str, evidence_by_period))
+                why = f"Расхождение в двух из трёх последних месяцев: {months}."
+            else:
+                left, right = evidence_by_period[current]
+                why = f"Месяц {current}: стажёр {left['value']}, наставник {right['value']}."
+            add(f"pair-{intern_field}", "red" if repeated else "yellow",
+                f"Расхождение: {intern_field}", why,
+                [item for pair in reversed(evidence_by_period.values()) for item in pair])
+
+    return sorted(signals, key=lambda signal: signal["level"] != "red")
+
+
 def build_intern(hist: store.History, intern_id: str, period: int | None = None) -> dict:
     """Return a single intern's survey history as of the selected period."""
     hist, periods, _ = _snapshot(hist, period)
@@ -82,9 +160,10 @@ def build_intern(hist: store.History, intern_id: str, period: int | None = None)
     mentor = _answers(hist.mentors, intern_id)
     details = [_period_detail(p, intern.get(p, {}), mentor.get(p, {})) for p in periods]
 
+    signals = _signals(periods, intern, mentor)
     return {
         **person,
-        "status": "green",
+        "status": signals[0]["level"] if signals else "green",
         "periods": details,
         "pairs": [
             {
@@ -97,8 +176,8 @@ def build_intern(hist: store.History, intern_id: str, period: int | None = None)
             }
             for intern_field, mentor_field in PAIRS
         ],
-        "signals": [],
-        "summary": ANALYSIS_PENDING,
+        "signals": signals,
+        "summary": signals[0]["why"] if signals else "За выбранный месяц сигналов по анкетам нет.",
         "actions": [],
     }
 
@@ -123,15 +202,16 @@ def build_overview(hist: store.History, period: int | None = None) -> dict:
             _difference(mean(current_scores.values()), mean(first_scores.values()))
             if first_scores and current_scores else None
         )
+        signals = _signals(periods, intern, mentor)
         interns.append({
             **person,
-            "status": "green",
+            "status": signals[0]["level"] if signals else "green",
             "intern_avg": detail["intern_avg"],
             "mentor_avg": detail["mentor_avg"],
             "gap": detail["gap"],
             "trend": trend,
-            "signals": 0,
-            "reason": ANALYSIS_PENDING,
+            "signals": len(signals),
+            "reason": signals[0]["title"] if signals else "Сигналов по анкетам нет",
         })
 
     totals = {
@@ -146,8 +226,7 @@ def build_overview(hist: store.History, period: int | None = None) -> dict:
         "kpi": {
             "responded_interns": f"{totals['intern']}/{len(interns)}",
             "responded_mentors": f"{totals['mentor']}/{len(interns)}",
-            "red": 0,
-            "yellow": 0,
-            "green": len(interns),
+            **{level: sum(person["status"] == level for person in interns)
+               for level in ("red", "yellow", "green")},
         },
     }
