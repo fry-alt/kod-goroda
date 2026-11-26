@@ -635,6 +635,7 @@ function viewIntern(v){
         <a class="btn" href="${reportUrl({tpl:'intern', id:c.intern_id})}">${ico('doc')}Отчёт 1:1</a>
         <button class="btn" id="aKudos">${ico('heart')}Дать ОС</button>
         <button class="btn" id="aMeet">${ico('cal')}Назначить 1:1</button>
+        <a class="btn" id="aCall" style="display:none" target="_blank" rel="noopener" href="call.html?room=${encodeURIComponent(c.intern_id)}&name=HR">${ico('phone')}Созвониться</a>
         <button class="btn pri" id="aHF">${ico('send')}${sent ? 'Huntflow ✓' : 'В Huntflow'}</button>
       </div>
     </div>
@@ -642,6 +643,7 @@ function viewIntern(v){
     <div id="tabBody"></div>
   </section>`;
   v.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { S.tab = b.dataset.t; viewIntern(v); });
+  callReady().then(ok => { if(ok && $('aCall')) $('aCall').style.display = ''; });
   $('aHF').onclick = () => huntflowDlg(c); $('aKudos').onclick = () => kudosDlg(c.intern_id); $('aMeet').onclick = () => meetDlg(c.intern_id);
   const body = $('tabBody');
   if(S.tab === 'dyn') return tabDyn(body, c);
@@ -765,6 +767,9 @@ function drawChart(c){
     scales:{y:{min:yMin, max:yMax, grid:{color:css('--mgts-line')}, ticks:{color:css('--mgts-muted'), font:{size:13}}},
             x:{grid:{display:false}, ticks:{color:css('--mgts-muted'), font:{size:13}}}}}});
 }
+
+// видеозвонок HR ↔ стажёр (web/call.html, бэк /ws/call): кнопка появляется, только если звонок есть на сервере
+function callReady(){ return S.callP ||= (STATIC_HOST ? Promise.resolve(false) : fetch('call.html', {method:'HEAD', cache:'no-store'}).then(r => r.ok).catch(() => false)); }
 
 // ---------- диалоги: Huntflow, ОС, 1:1 ----------
 function dlg(html, bind){ $('dlg').innerHTML = html; $('modal').classList.add('open'); $('modal').setAttribute('aria-hidden', 'false');
