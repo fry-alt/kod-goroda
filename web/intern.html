@@ -326,6 +326,10 @@ textarea::placeholder,input::placeholder{color:var(--mgts-muted)}
 .msg .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .msg .acts .btn{background:#fff;min-height:44px}
 .msg .acts .btn.pri{background:var(--mgts-blue)}
+.subs{display:flex;gap:6px;overflow-x:auto;padding:2px 2px 8px;margin:0 -2px;scrollbar-width:none;flex-shrink:0}
+.subs::-webkit-scrollbar{display:none}
+.subs .sub{display:inline-flex;align-items:center;gap:6px;flex-shrink:0;min-height:36px;padding:0 12px;border-radius:18px;border:1px solid var(--mgts-line,#dde3ee);background:#fff;color:var(--mgts-navy);font:500 13px/1 var(--font-text,inherit);cursor:pointer;white-space:nowrap}
+.subs .sub.on{background:var(--mgts-navy);border-color:var(--mgts-navy);color:#fff}
 .msg .src{display:flex;align-items:center;gap:5px;margin-top:8px;font-size:12px;color:var(--mgts-muted)}
 .msg details{margin-top:6px;font-size:12.5px;color:var(--mgts-muted)}
 .typing{display:inline-flex;gap:4px;padding:14px}
@@ -973,26 +977,65 @@ function openFbReq(){
   };
 }
 
-// ---------- чат с Кубом ----------
-const QUICK = ['Где получить пропуск?', 'Кто мой наставник?', 'Что делать, если заболел?', 'Как попросить обратную связь?', 'Как попасть в штат?', 'Можно написать анонимно?', 'Мне тревожно'];
-function openChat(){
-  openSheet(`<div class="chathead"><span class="ava"><img src="brand/img/cube.png" alt=""></span><span><b id="shT">Куб</b><small>Отвечаю по памятке и правилам программы. Твоих оценок не вижу</small></span></div>
+// ---------- чат с Кубом: главный чат + подчаты по темам ----------
+// История — отдельно по каждому подчату: localStorage, а при живом API ещё и /api/intern-chat/history.
+const kubeApi = () => (S.mock || STATIC_HOST) ? null : (API || location.origin);
+const histKey = sub => `radar.kube.${ID || 'anon'}.${sub}`;
+function hist(sub){
+  S.hists ||= {};
+  if(!S.hists[sub]){ try { S.hists[sub] = JSON.parse(localStorage.getItem(histKey(sub))) || []; } catch { S.hists[sub] = []; } }
+  return S.hists[sub];
+}
+function pushHist(sub, who, html){
+  const h = hist(sub); h.push({who, html}); if(h.length > 80) h.splice(0, h.length - 80);
+  try { localStorage.setItem(histKey(sub), JSON.stringify(h)); } catch {}
+  const api = kubeApi();
+  if(api && who !== 'sys'){  // на бэк — только текст, без разметки
+    const d = document.createElement('div'); d.innerHTML = html; d.querySelectorAll('.acts,details').forEach(x => x.remove());
+    fetch(api + '/api/intern-chat/history', {method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({intern_id:ID || null, topic:sub, who, text:d.textContent.replace(/\s+/g, ' ').trim().slice(0, 1500)})}).catch(() => {});
+  }
+}
+async function openChat(sub){
+  if(sub) S.sub = sub; S.sub ||= 'main';
+  try { S.groups ||= await InternAssistant.groups(); } catch { S.groups = [{id:'main', title:'Главный', questions:['Где получить пропуск?', 'Кто мой наставник?', 'Мне тревожно']}]; }
+  const g = S.groups.find(x => x.id === S.sub) || S.groups[0]; S.sub = g.id;
+  const main = g.id === 'main';
+  openSheet(`<div class="chathead"><span class="ava"><img src="brand/img/cube.png" alt=""></span><span><b id="shT">${main ? 'Куб' : esc(g.title)}</b><small>${main ? 'Отвечаю по памятке и правилам программы. Твоих оценок не вижу' : 'Куб · подчат по теме'}</small></span></div>
+    <nav class="subs" id="subs" aria-label="Темы чата">${S.groups.map(x => `<button class="sub${x.id === g.id ? ' on' : ''}" data-sub="${x.id}" aria-current="${x.id === g.id}">${ic(x.icon || 'chat', 15, 2)}<span>${esc(x.title)}</span></button>`).join('')}</nav>
     <div class="msgs" id="msgs"></div>
-    <div class="qq" id="qq">${QUICK.map(t => `<button class="chip" data-q>${esc(t)}</button>`).join('')}</div>
-    <form class="ask" id="askf"><label class="sr" for="askq">Вопрос Кубу</label><input id="askq" placeholder="Спроси что угодно" autocomplete="off" enterkeyhint="send">
+    <div class="qq" id="qq">${(g.questions || []).map(t => `<button class="chip" data-q>${esc(t)}</button>`).join('')}</div>
+    <form class="ask" id="askf"><label class="sr" for="askq">Вопрос Кубу</label><input id="askq" placeholder="${main ? 'Спроси что угодно' : 'Вопрос по теме «' + esc(g.title) + '»'}" autocomplete="off" enterkeyhint="send">
       <button id="askgo" type="submit" aria-label="Отправить" disabled>${ic('send', 20, 2)}</button></form>`, 'chat');
   $('sheet').setAttribute('aria-labelledby', 'shT');
-  if(!S.chatHist?.length){ S.chatHist = []; bot(`Привет! Я Куб, гид по стажировке. Выбери вопрос ниже или напиши свой.`); }
-  else S.chatHist.forEach(h => addMsg(h.who, h.html, false));
+  $('subs').querySelectorAll('[data-sub]').forEach(b => b.onclick = () => openChat(b.dataset.sub));
+  $('subs').querySelector('.on')?.scrollIntoView({inline:'center', block:'nearest'});
+  let h = hist(g.id);
+  const api = kubeApi();
+  if(!h.length && api){  // другое устройство: подтянуть историю подчата с бэка
+    try {
+      const r = await fetch(`${api}/api/intern-chat/history?intern_id=${encodeURIComponent(ID || '')}&topic=${encodeURIComponent(g.id)}`);
+      const rows = r.ok ? await r.json() : [];
+      if(Array.isArray(rows) && rows.length && S.sub === g.id && !hist(g.id).length){
+        S.hists[g.id] = rows.slice(-40).map(x => ({who:x.who === 'me' ? 'me' : 'bot', html:esc(x.text || '')})); h = S.hists[g.id];
+        try { localStorage.setItem(histKey(g.id), JSON.stringify(h)); } catch {}
+      }
+    } catch {}
+  }
+  if(!$('msgs')) return;
+  if(!h.length){
+    const tops = main ? `<div class="acts">${S.groups.filter(x => x.id !== 'main').map(x => `<button class="btn" data-go-sub="${x.id}">${esc(x.title)}</button>`).join('')}</div>` : '';
+    bot(main ? `Привет! Я Куб, гид по стажировке. Спроси что угодно или выбери тему:${tops}` : `${esc(g.hint || '')} Выбери вопрос ниже или напиши свой.`, g.id);
+  } else h.forEach(x => addMsg(x.who, x.html, false));
   $('qq').querySelectorAll('[data-q]').forEach(b => b.onclick = () => ask(b.textContent));
   const inp = $('askq'); inp.oninput = () => { $('askgo').disabled = !inp.value.trim(); };
   $('askf').onsubmit = e => { e.preventDefault(); const q = inp.value.trim(); if(!q) return; inp.value = ''; $('askgo').disabled = true; ask(q); };
 }
-function addMsg(who, html, save = true){
-  const box = $('msgs'); if(!box) return;
+function addMsg(who, html, save = true, sub = S.sub){
+  if(save) pushHist(sub, who, html);
+  const box = $('msgs'); if(!box || sub !== S.sub) return;
   const el = document.createElement('div'); el.className = 'msg ' + who; el.innerHTML = html; box.appendChild(el);
   bindMsg(el); box.scrollTop = box.scrollHeight;
-  if(save) S.chatHist.push({who, html});
 }
 function bindMsg(el){
   el.querySelectorAll('[data-assistant-question]').forEach(b => b.onclick = () => ask(b.dataset.assistantQuestion));
@@ -1006,26 +1049,21 @@ function bindMsg(el){
   });
   el.querySelectorAll('[data-help]').forEach(b => b.onclick = () => openHelp(b.dataset.help));
   el.querySelectorAll('[data-cube-act]').forEach(b => b.onclick = () => act(b.dataset.cubeAct));
+  el.querySelectorAll('[data-go-sub]').forEach(b => b.onclick = () => openChat(b.dataset.goSub));
   el.querySelectorAll('[data-relay]').forEach(b => b.onclick = async () => {
     b.disabled = true; const where = await postRequest({intern_id:ID || null, type:'question', text:b.dataset.relay, anonymous:false});
     bot(`Передал ✓ HR ответит лично.${where === 'local' ? ' (Демо: вопрос сохранён на этом устройстве.)' : ''}`);
   });
 }
-function bot(html){
-  const box = $('msgs');
-  if(!box || !$('sheet').classList.contains('open')) { S.chatHist.push({who:'bot', html}); return; }
-  if(RM || !S.chatHist.length){ addMsg('bot', html); return; }
+function bot(html, sub = S.sub){
+  const live = () => $('msgs') && $('sheet').classList.contains('open') && sub === S.sub;
+  if(!live()){ pushHist(sub, 'bot', html); return; }
+  if(RM || !hist(sub).length){ addMsg('bot', html, true, sub); return; }
   // ответы по очереди, даже если спросили два раза подряд
   S.botQ = (S.botQ || Promise.resolve()).then(() => new Promise(res => {
-    const bx = $('msgs');
-    if(!bx || !$('sheet').classList.contains('open')) { S.chatHist.push({who:'bot', html}); return res(); }
-    const ty = document.createElement('div'); ty.className = 'msg bot typing'; ty.innerHTML = '<i></i><i></i><i></i>'; bx.appendChild(ty); bx.scrollTop = bx.scrollHeight;
-    setTimeout(() => {
-      ty.remove();
-      if($('sheet').classList.contains('open') && $('msgs')) addMsg('bot', html);
-      else S.chatHist.push({who:'bot', html});
-      res();
-    }, 550);
+    if(!live()){ pushHist(sub, 'bot', html); return res(); }
+    const bx = $('msgs'), ty = document.createElement('div'); ty.className = 'msg bot typing'; ty.innerHTML = '<i></i><i></i><i></i>'; bx.appendChild(ty); bx.scrollTop = bx.scrollHeight;
+    setTimeout(() => { ty.remove(); if(live()) addMsg('bot', html, true, sub); else pushHist(sub, 'bot', html); res(); }, 550);
   }));
 }
 function relayQuestion(q){
@@ -1039,14 +1077,16 @@ const srcLine = (kind, title, extra = '') => `<small class="src">${ic('info', 13
 function memoAnswer(m){
   return `<b>${esc(m.title)}</b>${esc(m.text)}${m.link ? `<br><a href="${esc(m.link)}" target="_blank" rel="noopener">${esc(m.link_label || 'Подробнее')}</a>` : ''}${srcLine('Памятка', m.title)}`;
 }
-function assistantAnswer(r){
+function assistantAnswer(r, sub = 'main'){
   const d = r.doc;
-  const link = d.link ? `<br><a href="${esc(d.link)}" target="_blank" rel="noopener">${esc(d.link_label || 'Подробнее')}</a>` : '';
+  const link = d.link || d.url ? `<br><a href="${esc(d.link || d.url)}" target="_blank" rel="noopener">${esc(d.link_label || (d.url ? 'Открыть источник' : 'Подробнее'))}</a>` : '';
   const orig = r.engine ? `<details><summary>Фрагмент источника</summary>${esc(d.text)}</details>` : '';
   const draft = r.draft ? `<br><i>${esc(r.draft)}</i><div class="acts"><button class="btn" data-draft="${esc(r.draft)}">Скопировать черновик</button></div>` : '';
   const acts = (r.actions || []).map(a => CUBE_ACT[a]).filter(Boolean).map(([a, t], i) => `<button class="btn${i ? '' : ' pri'}" data-cube-act="${a}">${t}</button>`);
   const sugg = (r.suggestions || []).map(t => `<button class="btn" data-assistant-question="${esc(t)}">${esc(t)}</button>`);
-  const all = [...acts, ...sugg];
+  const g = sub === 'main' && d.group && S.groups?.find(x => x.id === d.group);
+  const go = g ? [`<button class="btn" data-go-sub="${g.id}">${ic(g.icon || 'chat', 15, 2)} Ещё по теме: ${esc(g.title)}</button>`] : [];
+  const all = [...acts, ...sugg, ...go];
   return `${esc(r.answer)}${link}${draft}${all.length ? `<div class="acts">${all.join('')}</div>` : ''}` +
     srcLine(d.source, d.title, r.engine ? ' · сформулировал ИИ' : '') + orig;
 }
@@ -1056,19 +1096,19 @@ function unknownAnswer(r){
     <div class="acts"><button class="btn pri" data-relay="${esc(r.question)}">Передать вопрос HR</button><button class="btn" data-help="hr">Написать HR</button></div>`;
 }
 function ask(q, hit){
-  addMsg('me', esc(q));
-  S.assistantQueue = (S.assistantQueue || Promise.resolve()).then(() => replyToQuestion(q, hit));
+  const sub = S.sub || 'main';
+  addMsg('me', esc(q), true, sub);
+  S.assistantQueue = (S.assistantQueue || Promise.resolve()).then(() => replyToQuestion(q, hit, sub));
 }
-async function replyToQuestion(q, hit){
-  if(hit){ S.assistantTopic = null; return bot(memoAnswer(hit)); }
+async function replyToQuestion(q, hit, sub = 'main'){
+  if(hit){ S.assistantTopic = null; return bot(memoAnswer(hit), sub); }
   // Кубу — только памятка, отдел и ID наставника. Оценки и сигналы HR не передаём.
-  const ctx = {onb:S.onb, department:S.data?.department, mentor_id:S.data?.mentor_id,
-               api:(S.mock || STATIC_HOST) ? null : (API || location.origin)};
+  const ctx = {onb:S.onb, department:S.data?.department, mentor_id:S.data?.mentor_id, topic:sub, api:kubeApi()};
   let result;
   try { result = await InternAssistant.ask(q, S.assistantTopic, ctx); } catch {}
-  if(!result){ bot(`Не смог открыть памятку. Напиши HR, ответят лично.<div class="acts"><button class="btn pri" data-help="hr">Написать HR</button></div>`); return; }
+  if(!result){ bot(`Не смог открыть памятку. Напиши HR, ответят лично.<div class="acts"><button class="btn pri" data-help="hr">Написать HR</button></div>`, sub); return; }
   S.assistantTopic = result.topic;
-  for(const reply of result.replies) bot(reply.status === 'answered' ? assistantAnswer(reply) : unknownAnswer(reply));
+  for(const reply of result.replies) bot(reply.status === 'answered' ? assistantAnswer(reply, sub) : unknownAnswer(reply), sub);
 }
 
 $('shX').onclick = closeSheet;

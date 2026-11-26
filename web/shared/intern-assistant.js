@@ -95,9 +95,14 @@
     if (hr) add({id: "hr", title: "Контакты HR", source: "Памятка",
       text: `${hr.role || "HR программы"}: ${hr.contact || "контакт в разделе «Команда»"}${hr.hours ? `, ${hr.hours}` : ""}. Можно и прямо отсюда — кнопка «Написать HR».`, actions: ["hr"]},
       "контакт hr эйчар почта hr телефон hr как связаться с hr часы работы hr координатор");
+    if (kb.facts) for (const f of kb.facts) add({id: "fact:" + f.id, title: f.title, text: f.text, source: f.source || "Открытые источники МГТС/МТС", url: f.url, actions: f.actions, phrases: f.phrases}, f.keys);
     if (onb.program?.months) add({id: "program", title: "О программе", source: "Памятка",
       text: `${onb.program.name || "Программа стажировки"} длится ${onb.program.months} месяцев. Раз в месяц короткий пульс-опрос, в 3-м месяце промежуточная встреча, в 6-м финальная.`},
       "сколько длится срок длительность месяцев полгода когда закончится этапы");
+    // подчат, к которому относится фрагмент (для «перейти в тему» и приоритета внутри подчата)
+    const group = new Map();
+    for (const g of kb.groups || []) for (const id of g.docs || []) if (!group.has(id)) group.set(id, g.id);
+    docs.forEach(d => { d.group = group.get(d.id) || (d.id.startsWith("fact:") ? "career" : null); });
     return docs;
   }
 
@@ -123,7 +128,7 @@
     return out;
   }
 
-  function search(question, index, k = 3) {
+  function search(question, index, k = 3, topic = null) {
     const q = [...new Set(tokens(question))], memo = new Map(), k1 = 1.2, b = 0.6;
     const line = " " + tokens(question, true).join(" ") + " ";
     const scored = index.docs.map(d => {
@@ -139,7 +144,7 @@
       }
       const phrase = d.phrases.some(p => p.trim() && line.includes(p));
       if (phrase) score += 4;
-      score *= d.boost;
+      score *= d.boost * (topic && topic !== "main" && d.group === topic ? 1.3 : 1);
       return {doc: d, score, hits, phrase, coverage: q.length ? hits / q.length : 0};
     }).filter(r => r.score > 0).sort((a, b2) => b2.score - a.score);
     // слова, которых в базе нет совсем (не опечатка, не форма): «парковка», «зарплата»
@@ -156,7 +161,7 @@
     const key = JSON.stringify([ctx.onb?.memo, ctx.onb?.checklist, ctx.department, ctx.mentor_id]);
     if (cache.key !== key) cache = {key, index: buildIndex(buildDocs(data, ctx))};
     const wantsDraft = DRAFT.test(question);
-    const {terms, unknown, results} = search(question, cache.index);
+    const {terms, unknown, results} = search(question, cache.index, 3, ctx.topic);
     // «как это написать?» после ответа с черновиком
     if (wantsDraft && prev?.draft && (!results.length || terms.length <= 2)) {
       return {status: "answered", question, doc: prev, answer: "Можно написать так:", draft: prev.draft, fragments: [prev]};
@@ -202,6 +207,7 @@
 
   globalThis.InternAssistant = {
     tokens, stem, resolve, load,
+    async groups() { return (await load()).kb.groups || []; },
     async ask(question, prev, ctx = {}) {
       const res = resolve(question, prev, await load(), ctx);
       if (ctx.api) {
