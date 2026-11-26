@@ -7,6 +7,7 @@ from statistics import mean
 import pandas as pd
 
 from . import store
+from .analyzers import case_comments
 
 PAIRS = (
     ("Понятность задач", "Понимание задач и ожиданий"),
@@ -149,6 +150,20 @@ def _signals(periods: list[int], intern: dict[int, dict], mentor: dict[int, dict
     return sorted(signals, key=lambda signal: signal["level"] != "red")
 
 
+def _combined_signals(periods: list[int], intern: dict[int, dict], mentor: dict[int, dict],
+                      labels: dict[int, list[dict]]) -> list[dict]:
+    text_signals = case_comments.signals(labels, periods[-1])
+    signals = text_signals + _signals(periods, intern, mentor)
+    return sorted(signals, key=lambda signal: signal["level"] != "red")
+
+
+def _summary(signals: list[dict], current: int) -> str:
+    if not signals:
+        return f"Месяц {current}. Значимых сигналов по ответам не выявлено."
+    leading = signals[0]
+    return f"{leading['title']}. {leading['why']}"
+
+
 def build_intern(hist: store.History, intern_id: str, period: int | None = None) -> dict:
     """Return a single intern's survey history as of the selected period."""
     hist, periods, _ = _snapshot(hist, period)
@@ -160,7 +175,11 @@ def build_intern(hist: store.History, intern_id: str, period: int | None = None)
     mentor = _answers(hist.mentors, intern_id)
     details = [_period_detail(p, intern.get(p, {}), mentor.get(p, {})) for p in periods]
 
-    signals = _signals(periods, intern, mentor)
+    labels = case_comments.classify(details)
+    for detail in details:
+        detail["comment_analysis"] = case_comments.period_label(labels.get(detail["period"], []))
+    signals = _combined_signals(periods, intern, mentor, labels)
+    report = case_comments.report_for(signals, periods[-1])
     return {
         **person,
         "status": signals[0]["level"] if signals else "green",
@@ -177,8 +196,8 @@ def build_intern(hist: store.History, intern_id: str, period: int | None = None)
             for intern_field, mentor_field in PAIRS
         ],
         "signals": signals,
-        "summary": signals[0]["why"] if signals else "За выбранный месяц сигналов по анкетам нет.",
-        "actions": [],
+        "summary": report.summary if report else _summary(signals, periods[-1]),
+        "actions": report.actions if report else case_comments.actions_for(signals),
     }
 
 
@@ -202,7 +221,9 @@ def build_overview(hist: store.History, period: int | None = None) -> dict:
             _difference(mean(current_scores.values()), mean(first_scores.values()))
             if first_scores and current_scores else None
         )
-        signals = _signals(periods, intern, mentor)
+        details = [_period_detail(p, intern.get(p, {}), mentor.get(p, {}))
+                   for p in periods[-2:] if p >= current - 1]
+        signals = _combined_signals(periods, intern, mentor, case_comments.classify(details))
         interns.append({
             **person,
             "status": signals[0]["level"] if signals else "green",

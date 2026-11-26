@@ -99,37 +99,38 @@ def format_items(items: list[FeedbackItem]) -> str:
     return "\n\n".join(parts)
 
 
-def _analyze_batch(provider: Provider, items: list[FeedbackItem]) -> list[ItemAnalysis]:
+def _analyze_batch(provider: Provider, items: list[FeedbackItem], fallback: bool) -> list[ItemAnalysis]:
     try:
         out = provider.complete(ITEM_SYSTEM, format_items(items), BatchAnalysis, kind="item")
     except Exception as e:  # noqa: BLE001 — любая ошибка API не должна ронять весь прогон
         log.warning("%s: ошибка на пачке из %d отзывов (%s) — офлайн-анализ", provider.name, len(items), _short(e))
-        return offline.analyze(items)
+        return offline.analyze(items) if fallback else []
     if out is None:
         log.warning("%s: пустой ответ на пачке из %d — офлайн-анализ", provider.name, len(items))
-        return offline.analyze(items)
+        return offline.analyze(items) if fallback else []
 
     by_id = {a.id: a for a in out.items}
     result = []
     for it in items:
         a = by_id.get(it.id)
         if a is None:  # модель пропустила id — подстрахуемся
-            result.append(offline.analyze_item(it))
+            if fallback:
+                result.append(offline.analyze_item(it))
             continue
         _cache_put(provider, it, a)
         result.append(a)
     return result
 
 
-def analyze(provider: Provider, items: list[FeedbackItem]) -> list[ItemAnalysis]:
+def analyze(provider: Provider, items: list[FeedbackItem], *, fallback: bool = True) -> list[ItemAnalysis]:
     cached = {it.id: _cache_get(provider, it) for it in items}
     todo = [it for it in items if cached[it.id] is None]
     batches = [todo[i:i + settings.batch_size] for i in range(0, len(todo), settings.batch_size)]
     fresh: dict[str, ItemAnalysis] = {}
     with ThreadPoolExecutor(max_workers=settings.workers) as pool:
-        for batch_result in pool.map(lambda b: _analyze_batch(provider, b), batches):
+        for batch_result in pool.map(lambda b: _analyze_batch(provider, b, fallback), batches):
             fresh.update({a.id: a for a in batch_result})
-    return [cached[it.id] or fresh[it.id] for it in items]
+    return [cached[it.id] or fresh[it.id] for it in items if cached[it.id] or it.id in fresh]
 
 
 def insights(provider: Provider, stats: dict) -> Optional[Insights]:
