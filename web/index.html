@@ -165,6 +165,7 @@ button:active{transform:scale(.97)}
 @keyframes float{50%{transform:translateY(10px) rotate(2deg)}}
 @media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
 @media (max-width:800px){.hero img{opacity:.25}}
+.more{border:1px dashed var(--mgts-line);background:#fff;border-radius:14px;padding:8px;width:100%;color:var(--mgts-blue);font-weight:500}
 @media (max-width:1100px){.grid2,.two{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
 </style></head>
 <body>
@@ -249,7 +250,7 @@ function renderPeriods(){
   $('periods').innerHTML = '<span class="lab">Срез на</span>' + ps.map(p =>
     `<button class="${p===cur?'on':''}" data-p="${p}">Месяц ${p}</button>`).join('');
   $('periods').querySelectorAll('button').forEach(b => b.onclick = () => {
-    const p = +b.dataset.p; S.period = (p === Math.max(...ps) && !S.mock) ? null : p; refresh();
+    const p = +b.dataset.p; S.period = (p === Math.max(...ps) && !S.mock) ? null : p; S.sel = null; S.focus = null; S.allSig = false; refresh();
   });
 }
 function renderKpis(){
@@ -293,7 +294,7 @@ function renderThemes(){
 }
 
 // ---------- карточка стажёра ----------
-async function openIntern(id){ S.sel = id; S.focus = null; renderWho(); S.card = await loadIntern(id); renderCard();
+async function openIntern(id){ S.sel = id; S.focus = null; S.allSig = false; renderWho(); S.card = await loadIntern(id); renderCard();
   if(innerWidth < 1100) $('card').scrollIntoView({behavior:'smooth'}); }
 function sigList(){ const s = S.card?.signals || []; return S.onlyConfirmed ? s.filter(x => reviewOf(x) === 'confirmed') : s; }
 function renderCard(){
@@ -321,7 +322,7 @@ function renderCard(){
       <div>
         <h3 style="font-size:17px;margin:0 0 10px;display:flex;align-items:center">Сигналы
           <label class="note" style="margin-left:auto;font-weight:400"><input type="checkbox" id="onlyc" ${S.onlyConfirmed?'checked':''}> подтверждённые</label></h3>
-        ${sigs.length ? sigs.map(s => sigHtml(s)).join('') : `<div class="mut" style="padding:14px 0">${S.onlyConfirmed ? 'Нет подтверждённых' : 'Сигналов нет'}</div>`}
+        ${sigs.length ? (S.allSig ? sigs : [...sigs].sort((x,y) => (x.level==='red'?0:1)-(y.level==='red'?0:1)).slice(0,3)).map(s => sigHtml(s)).join('') + (sigs.length > 3 ? `<button class="more" id="moreSig">${S.allSig ? 'Свернуть' : 'Ещё ' + (sigs.length-3)}</button>` : '') : `<div class="mut" style="padding:14px 0">${S.onlyConfirmed ? 'Нет подтверждённых' : 'Сигналов нет'}</div>`}
       </div>
     </div>
     ${(c.pairs||[]).length ? `<h3 style="font-size:17px;margin:22px 0 8px">Стажёр vs наставник</h3>
@@ -333,6 +334,7 @@ function renderCard(){
     ${[...(c.periods||[])].reverse().map(p => commentRow(p, focusPeriods.has(p.period))).join('')}`;
   $('modes').querySelectorAll('button').forEach(b => b.onclick = () => { S.mode = b.dataset.m; renderCard(); });
   $('onlyc').onchange = e => { S.onlyConfirmed = e.target.checked; renderCard(); };
+  if($('moreSig')) $('moreSig').onclick = () => { S.allSig = !S.allSig; renderCard(); };
   $('card').querySelectorAll('.sig').forEach(el => el.onclick = e => {
     if(e.target.closest('.rev')) return;
     const s = (c.signals||[]).find(x => x.id === el.dataset.id); S.focus = S.focus?.id === s.id ? null : s; renderCard();
@@ -405,7 +407,7 @@ async function refresh(flashId){
   const prev = Object.fromEntries((S.ov?.interns || []).map(i => [i.intern_id, i.status]));
   S.ov = await loadOverview();
   renderPeriods(); renderHero(); renderKpis(); renderWho(flashId); renderMatrix(); renderThemes(); banner();
-  if(!S.sel){ const first = [...S.ov.interns].sort((a,b) => (ORDER[a.status]??9)-(ORDER[b.status]??9))[0]; if(first) S.sel = first.intern_id; }
+  if(!S.sel){ const first = [...S.ov.interns].sort((a,b) => (ORDER[a.status]??9)-(ORDER[b.status]??9) || (b.signals||0)-(a.signals||0))[0]; if(first) S.sel = first.intern_id; }
   if(S.sel){ S.card = await loadIntern(S.sel).catch(() => null); renderWho(flashId); renderCard(); }
   return prev;
 }
@@ -504,7 +506,7 @@ function countUp(el){ const n = +el.dataset.n || 0, t0 = performance.now(), d = 
   const f = t => { const k = Math.min(1, (t - t0) / d), e = 1 - Math.pow(1 - k, 3); el.textContent = Math.round(n * e); if(k < 1) requestAnimationFrame(f); }; requestAnimationFrame(f); }
 function hour(){ const h = new Date().getHours(); return h < 12 ? 'Доброе утро' : h < 18 ? 'Добрый день' : 'Добрый вечер'; }
 function renderHero(){
-  const L = S.ov.interns || [], red = L.filter(i => i.status === 'red'), yel = L.filter(i => i.status === 'yellow');
+  const bySig = (a,b) => (b.signals||0) - (a.signals||0), L = S.ov.interns || [], red = L.filter(i => i.status === 'red').sort(bySig), yel = L.filter(i => i.status === 'yellow').sort(bySig);
   const cur = S.period || S.ov.current_period, k = S.ov.kpi || {};
   const head = red.length ? `${red.length === 1 ? 'Одному стажёру' : red.length + ' стажёрам'} нужна помощь` : yel.length ? `${yel.length} в зоне внимания, критичных нет` : 'Все стажёры в норме';
   const who = [...red, ...yel][0];
