@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><title>Радар стажировки — защита</title>
+<style>
+@font-face{font-family:MTSText;src:url('../../web/brand/fonts/MTSText-Regular.otf');font-weight:400}
+@font-face{font-family:MTSText;src:url('../../web/brand/fonts/MTSText-Medium.otf');font-weight:500}
+@font-face{font-family:MTSText;src:url('../../web/brand/fonts/MTSText-Bold.otf');font-weight:700}
+@font-face{font-family:MTSExtended;src:url('../../web/brand/fonts/MTSExtended-Medium.otf');font-weight:500}
+@font-face{font-family:MTSExtended;src:url('../../web/brand/fonts/MTSExtended-Bold.otf');font-weight:700}
+@font-face{font-family:MTSExtended;src:url('../../web/brand/fonts/MTSExtended-Black.otf');font-weight:900}
+@font-face{font-family:MTSUltra;src:url('../../web/brand/fonts/MTSUltraExtended-Light.otf');font-weight:300}
+:root{--w:#fff;--b:#008AE0;--n:#134074;--n2:#102C51;--o:#FF7654;--soft:#F2F7FC;--line:#D9E5F1;--mut:#5E7A99;
+      --g:#2BAE66;--y:#F5A623;--r:#E5484D}
+@page{size:1920px 1080px;margin:0}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#888}
+body{font-family:MTSText,sans-serif;color:var(--n);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.s{width:1920px;height:1080px;position:relative;overflow:hidden;background:#fff;page-break-after:always;padding:110px 120px 90px}
+.s.only{display:none}
+.bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+.s>h1,.s>h2,.s>p,.s>div:not(.pg),.s>table{position:relative;z-index:1}
+.obj{position:absolute;z-index:0;pointer-events:none}
+h1{font-family:MTSExtended;font-weight:900;font-size:76px;line-height:1.05;color:var(--b);letter-spacing:-.5px}
+h1 .l{font-family:MTSUltra;font-weight:300;display:block;color:var(--n)}
+h2{font-family:MTSExtended;font-weight:900;font-size:56px;line-height:1.08;color:var(--b);margin-bottom:46px;max-width:1500px}
+h2 .l{font-family:MTSUltra;font-weight:300;color:var(--n)}
+h3{font-family:MTSExtended;font-weight:700;font-size:28px;color:var(--n);margin-bottom:12px}
+p,li{font-size:26px;line-height:1.38}
+.mut{color:var(--mut)}
+.or{color:var(--o)}
+.num{font-family:MTSExtended;font-weight:500;font-size:92px;line-height:1;color:var(--b)}
+.pg{position:absolute;right:120px;bottom:48px;font-size:20px;color:var(--mut);z-index:2}
+.logo{position:absolute;left:120px;bottom:36px;height:64px;z-index:2}
+.grid{display:grid;gap:36px}
+.card{background:var(--soft);border-radius:28px;padding:36px 38px}
+.pill{display:inline-block;border-radius:40px;padding:6px 20px;font-size:21px;font-weight:500}
+.dot{display:inline-block;width:22px;height:22px;border-radius:50%;vertical-align:-2px;margin-right:12px}
+/* cover / end */
+.dark{color:#fff}.dark h1{color:#fff}.dark h1 .l{color:#fff}.dark p{color:#EAF4FD}
+/* flow */
+.flow{display:flex;align-items:stretch;gap:0;margin-top:10px}
+.step{flex:1;background:var(--soft);border-radius:28px;padding:30px 26px;position:relative}
+.step b{display:block;font-family:MTSExtended;font-weight:900;font-size:44px;color:var(--b);margin-bottom:14px}
+.step h3{font-size:25px}.step p{font-size:21px;line-height:1.35}
+.arr{width:48px;display:flex;align-items:center;justify-content:center;color:var(--b);font-size:40px;font-weight:700}
+.step.hot{background:var(--b);color:#fff}.step.hot b,.step.hot h3,.step.hot p{color:#fff}
+table{border-collapse:collapse;width:100%;font-size:24px}
+td,th{padding:16px 18px;border-bottom:2px solid var(--line);text-align:left;vertical-align:top}
+th{font-weight:500;color:var(--mut);font-size:21px}
+td:last-child,th:last-child{white-space:nowrap}
+.video{width:1280px;height:720px;border-radius:24px;background:var(--n2);overflow:hidden;display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px}
+.video video,.video img{width:100%;height:100%;object-fit:cover}
+.link{font-family:MTSExtended;font-weight:500;font-size:30px;color:var(--b);word-break:break-all}
+.todo{outline:4px dashed var(--o);outline-offset:6px}
+</style></head><body>
+
+<!-- 1. Обложка -->
+<section class="s dark" style="padding:150px 120px">
+  <img class="bg" src="img/cover.png" alt="">
+  <h1 style="font-size:96px;max-width:1100px">Радар<span class="l">стажировки</span></h1>
+  <p style="font-size:34px;max-width:900px;margin-top:40px">ИИ-ассистент HR: анкеты стажёров и наставников приходят сами,
+    система показывает, кому нужна помощь, почему и что сделать</p>
+  <p style="position:absolute;left:120px;bottom:90px;font-size:24px">«Код города» · МГТС · трек «ИИ в бизнес-процессах» · 26.11.2026<br>
+    Андрей — техлид · Савелий — аналитика · Артём — продукт и интерфейс</p>
+</section>
+
+<!-- 2. Как мы поняли задачу -->
+<section class="s">
+  <img class="obj" src="img/cube.png" style="right:-300px;top:330px;width:1000px;opacity:.95" alt="">
+  <h2>Как мы поняли задачу<br><span class="l">HR узнаёт о проблеме, когда стажёр уже ушёл</span></h2>
+  <div class="grid" style="grid-template-columns:repeat(3,420px)">
+    <div class="card"><h3>Мало данных</h3><p>5 пар «стажёр — наставник», 6 опросов. Обучать модель не на чем: нужны прозрачные правила.</p></div>
+    <div class="card"><h3>Разные взгляды</h3><p>Стажёр оценивает свой опыт, наставник — его работу. Ценность в <b>расхождении</b> этих оценок.</p></div>
+    <div class="card"><h3>Главное в тексте</h3><p>«Нагрузка слишком высокая» звучит в комментарии раньше, чем падает средний балл.</p></div>
+  </div>
+  <p style="margin-top:56px;max-width:1300px"><b>Наша цель:</b> каждый новый ответ из формы за секунды попадает в историю стажёра.
+    HR получает сигнал <span class="or"><b>с основаниями</b></span> (какие оценки, какая цитата) и готовое действие.</p>
+  <img class="logo" src="../../web/brand/logos/logo1.svg" alt="МГТС"><div class="pg">2</div>
+</section>
+
+<!-- 3. Решение: цепочка -->
+<section class="s">
+  <h2>Решение: от ответа в форме<br><span class="l">до обновлённого дашборда без ручных шагов</span></h2>
+  <div class="flow">
+    <div class="step"><b>1</b><h3>Анкета</h3><p>Две Google Forms по структуре кейса: стажёр и наставник</p></div><div class="arr">→</div>
+    <div class="step"><b>2</b><h3>Передача</h3><p>API таблицы ответов каждые 5 с + вебхук Apps Script</p></div><div class="arr">→</div>
+    <div class="step"><b>3</b><h3>Привязка</h3><p>ID стажёра + контрольный период; повтор заменяет старый ответ</p></div><div class="arr">→</div>
+    <div class="step"><b>4</b><h3>История</h3><p>6 месяцев из xlsx кейса + все новые ответы</p></div><div class="arr">→</div>
+    <div class="step hot"><b>5</b><h3>Анализ</h3><p>Правила по оценкам + ИИ по комментариям</p></div><div class="arr">→</div>
+    <div class="step"><b>6</b><h3>Дашборд</h3><p>Обновляется сам: светофор, карточка, действия</p></div>
+  </div>
+  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:56px">
+    <div><h3>Оценки → правила</h3><p>Сравниваем человека с его же нормой (у каждого своя «валюта» баллов), ищем падение,
+      расхождение стажёр ↔ наставник и пропуск опроса.</p></div>
+    <div><h3>Комментарии → ИИ</h3><p>YandexGPT размечает тему, тон, риск и находит цитату-основание.
+      Без сети работает офлайн-словарь, поэтому демо не зависит от интернета.</p></div>
+  </div>
+  <img class="logo" src="../../web/brand/logos/logo1.svg" alt="МГТС"><div class="pg">3</div>
+</section>
+
+<!-- 4. Демо (скринкаст) -->
+<section class="s" style="padding-top:90px">
+  <h2 style="margin-bottom:34px">Демо: <span class="l">новый ответ → дашборд обновился сам</span></h2>
+  <div style="display:flex;gap:48px;align-items:flex-start">
+    <div class="video todo" id="demo"><video src="demo.mp4" poster="shots/demo_poster.png" muted autoplay loop playsinline
+      onerror="this.parentNode.textContent='скринкаст 30–40 с: docs/presentation/demo.mp4'"></video></div>
+    <div style="width:420px">
+      <p class="mut" style="font-size:22px;margin-bottom:18px">Что происходит на видео</p>
+      <p style="font-size:24px;margin-bottom:18px"><b>1.</b> Стажёр СТ-002 заполняет форму за «Месяц 7»: нагрузка 2, тревожный комментарий</p>
+      <p style="font-size:24px;margin-bottom:18px"><b>2.</b> Через ~5 с ответ в системе: привязан к СТ-002 и периоду</p>
+      <p style="font-size:24px;margin-bottom:18px"><b>3.</b> Анализ пересчитан, светофор стал <span class="or"><b>красным</b></span></p>
+      <p style="font-size:24px"><b>4.</b> Карточка: сигнал, на чём основан, что делать HR</p>
+    </div>
+  </div>
+  <img class="logo" src="../../web/brand/logos/logo1.svg" alt="МГТС"><div class="pg">4</div>
+</section>
+
+<!-- 5. Что видит HR -->
+<section class="s">
+  <h2>Что видит HR<br><span class="l">кто требует внимания и почему — за 10 секунд</span></h2>
+  <div class="grid" style="grid-template-columns:1fr 1fr">
+    <div class="card todo" style="height:560px;padding:0;overflow:hidden"><img src="shots/overview.png" alt="Обзор" style="width:100%;height:100%;object-fit:cover;object-position:top left" onerror="this.replaceWith('скриншот обзора: shots/overview.png')"></div>
+    <div class="card todo" style="height:560px;padding:0;overflow:hidden"><img src="shots/card.png" alt="Карточка" style="width:100%;height:100%;object-fit:cover;object-position:top left" onerror="this.replaceWith('скриншот карточки: shots/card.png')"></div>
+  </div>
+  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:28px">
+    <p style="font-size:23px"><b>Обзор:</b> светофор по стажёрам, кто заполнил анкеты (стажёры и наставники), переключатель «на Месяц N»</p>
+    <p style="font-size:23px"><b>Карточка:</b> динамика стажёр vs наставник, расхождения, анализ комментариев, сигналы с основаниями, резюме и действия</p>
+  </div>
+  <img class="logo" src="../../web/brand/logos/logo1.svg" alt="МГТС"><div class="pg">5</div>
+</section>
+
+<!-- 6. Проверка на данных кейса -->
+<section class="s">
+  <h2>Проверили на истории кейса<br><span class="l">система поймала бы каждый эпизод в тот же месяц</span></h2>
+  <table style="width:1680px">
+    <tr><th>Стажёр</th><th>Что было</th><th>Основание</th><th>Сигнал</th></tr>
+    <tr><td><b>СТ-004</b><br><span class="mut">HR-блок</span></td><td>перегрузка, мес. 4</td><td>«Комфортность нагрузки» 2 при норме 4,7; «нагрузка слишком высокая»; наставник ставит «сроки» 4</td><td><span class="dot" style="background:var(--r)"></span>мес. 4</td></tr>
+    <tr><td><b>СТ-005</b><br><span class="mut">IT</span></td><td>непонимание задач, мес. 1–3</td><td>«Понятность задач» 2, наставник: «понимание задач» 4 — разрыв 2 балла</td><td><span class="dot" style="background:var(--r)"></span>мес. 2</td></tr>
+    <tr><td><b>СТ-003</b><br><span class="mut">Административный</span></td><td>нет поддержки, мес. 2–3</td><td>«Поддержка наставника» 2, «понятность» 2, общая удовлетворённость 2</td><td><span class="dot" style="background:var(--y)"></span>мес. 2</td></tr>
+    <tr><td><b>СТ-001, СТ-002</b></td><td>стабильно хорошо</td><td>без ложных тревог во всех 6 периодах</td><td><span class="dot" style="background:var(--g)"></span>—</td></tr>
+  </table>
+  <p class="mut todo" style="margin-top:30px;font-size:22px">Цифры подтверждает автотест <code>tests/test_case.py</code> — сверить перед сдачей</p>
+  <img class="logo" src="../../web/brand/logos/logo1.svg" alt="МГТС"><div class="pg">6</div>
+</section>
+
+<!-- 7. Архитектура и ИИ -->
+<section class="s">
+  <h2>Архитектура и ИИ-технологии<br><span class="l">работает и в закрытом контуре</span></h2>
+  <div class="grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="card"><h3>Интеграция</h3><p>Google Forms → Google Sheets → API (опрос раз в 5 с) и вебхук Apps Script → FastAPI.
+      Можно заменить на Яндекс Формы: меняется только адаптер.</p></div>
+    <div class="card"><h3>Анализ</h3><p>Python, pandas: личная норма, динамика, разрывы пар, пропуски. Каждый вывод хранит свои основания.</p></div>
+    <div class="card"><h3>ИИ</h3><p><b>YandexGPT 5.1</b> (Yandex AI Studio): тема, тон, риск, цитата, резюме, действия для HR.
+      Запасной вариант — офлайн-правила без внешней модели.</p></div>
+  </div>
+  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:40px">
+    <div><h3>Данные о людях</h3><p>Только ID (СТ-00X, Н-00X), без ФИО. В модель уходит текст комментария без персональных данных.
+      Решение о человеке принимает HR: система лишь подсвечивает.</p></div>
+    <div><h3>Инструменты разработки</h3><p>Claude Code — ассистент при написании кода и документации. Весь код в репозитории, тесты — pytest.</p></div>
+  </div>
+  <img class="logo" src="../../web/brand/logos/logo1.svg" alt="МГТС"><div class="pg">7</div>
+</section>
+
+<!-- 8. Эффект и шаги -->
+<section class="s">
+  <img class="obj" src="img/cube2.png" style="right:-120px;top:160px;width:760px;opacity:.95" alt="">
+  <h2>Что это даёт МГТС<br><span class="l">и что дальше</span></h2>
+  <div class="grid" style="grid-template-columns:repeat(3,380px);margin-bottom:56px">
+    <div><div class="num">~5 с</div><p>от отправки анкеты до обновления дашборда</p></div>
+    <div><div class="num">0</div><p>ручных выгрузок: HR не сводит Excel каждый месяц</p></div>
+    <div><div class="num or" style="color:var(--o)">3 из 3</div><p>эпизода истории пойманы в тот же месяц</p></div>
+  </div>
+  <div style="max-width:1150px">
+    <h3>Следующие шаги</h3>
+    <p>• Уведомление HR и наставнику в корпоративный мессенджер при красном сигнале<br>
+       • Отметка «HR подтвердил / ложная тревога» — на ней калибруем пороги<br>
+       • Масштаб на все потоки стажёров и на адаптацию новых сотрудников</p>
+  </div>
+  <img class="logo" src="../../web/brand/logos/logo1.svg" alt="МГТС"><div class="pg">8</div>
+</section>
+
+<!-- 9. Дополнительные материалы -->
+<section class="s dark" style="background:var(--b)">
+  <img class="bg" src="img/blue2.png" alt="" style="opacity:.55">
+  <h2 style="color:#fff">Дополнительные материалы</h2>
+  <div class="grid" style="grid-template-columns:1fr;gap:34px;max-width:1300px">
+    <div><p style="font-size:24px;opacity:.85">Репозиторий с кодом</p><p class="link" style="color:#fff">github.com/fry-alt/kod-goroda</p></div>
+    <div class="todo"><p style="font-size:24px;opacity:.85">Прототип (дашборд)</p><p class="link" style="color:#fff">ССЫЛКА_НА_ПРОТОТИП</p></div>
+    <div class="todo"><p style="font-size:24px;opacity:.85">Формы для тестового ответа</p><p class="link" style="color:#fff">ССЫЛКА_НА_ФОРМУ_СТАЖЁРА<br>ССЫЛКА_НА_ФОРМУ_НАСТАВНИКА</p></div>
+    <div><p style="font-size:24px;opacity:.85">Документация: архитектура, запуск, API</p><p class="link" style="color:#fff">github.com/fry-alt/kod-goroda/blob/main/README.md</p></div>
+  </div>
+  <img class="logo" src="../../web/brand/logos/logo3.svg" alt="МГТС" style="height:48px">
+</section>
+
+<script>
+// ?s=N — показать только слайд N (для рендера PNG); ?final — убрать пунктир «доделать»
+const q=new URLSearchParams(location.search), n=+q.get('s');
+if(n){document.querySelectorAll('.s').forEach((e,i)=>{if(i+1!==n)e.classList.add('only')});document.body.style.background='#fff'}
+if(q.has('rect')){const r=document.getElementById('demo').getBoundingClientRect();document.body.setAttribute('data-rect',JSON.stringify([r.x,r.y,r.width,r.height]))}
+if(q.has('final'))document.querySelectorAll('.todo').forEach(e=>e.classList.remove('todo'));
+</script>
+</body></html>
