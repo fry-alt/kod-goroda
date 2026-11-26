@@ -181,3 +181,64 @@ def parse_form_answer(form: str, answers: dict) -> dict:
 
 def guess_form(answers: dict) -> str:
     return "mentor" if any(match_column(str(t), [_store.MENTOR_ID]) for t in answers) else "intern"
+
+
+# ---------- произвольный JSON вебхука (Google Apps Script, Яндекс Формы, …) → {заголовок: ответ} ----------
+
+def _label(q) -> Optional[str]:
+    """Текст вопроса из объекта вопроса Яндекс Форм: label может быть строкой или {"ru": "..."}."""
+    if isinstance(q, str):
+        return q
+    if isinstance(q, dict):
+        for key in ("label", "title", "name", "text"):
+            v = q.get(key)
+            if isinstance(v, dict):
+                v = v.get("ru") or next((x for x in v.values() if isinstance(x, str)), None)
+            if isinstance(v, str) and v.strip():
+                return v
+        return q.get("slug") or q.get("id") and str(q["id"])
+    return None
+
+
+def _scalar(v):
+    """Ответ → строка/число: выбор из списка у Яндекса приходит как [{"key": .., "text": ".."}]."""
+    if isinstance(v, list):
+        v = [_scalar(x) for x in v if _scalar(x) is not None]
+        return v[0] if len(v) == 1 else (", ".join(map(str, v)) if v else None)
+    if isinstance(v, dict):
+        for key in ("text", "label", "value", "key"):
+            if key in v:
+                return _scalar(v[key])
+        return None
+    return v
+
+
+def flatten_answers(payload) -> dict:
+    """Достаёт пары «вопрос → ответ» из JSON любого из известных форматов.
+
+    - {"answers": {вопрос: ответ}} или просто {вопрос: ответ} — наш формат и Apps Script;
+    - JSON-RPC {"params": {...}} — интеграция «JSON-RPC POST» Яндекс Форм;
+    - {"answer": {"data": {slug: {"value": .., "question": {"label": {"ru": ..}}}}}} — «все ответы» Яндекс Форм;
+    - [{"question": .., "value": ..}, ...] — список ответов.
+    Неизвестные поля не мешают: parse_form_answer берёт только столбцы кейса.
+    """
+    out: dict = {}
+
+    def walk(node, key=None):
+        if isinstance(node, dict):
+            if "value" in node and ("question" in node or "label" in node):
+                title = _label(node.get("question")) or _label(node) or key
+                if title:
+                    out[str(title)] = _scalar(node["value"])
+                return
+            for k, v in node.items():
+                if isinstance(v, (dict, list)) and not (isinstance(v, list) and v and not isinstance(v[0], dict)):
+                    walk(v, k)
+                else:
+                    out.setdefault(str(k), _scalar(v))
+        elif isinstance(node, list):
+            for x in node:
+                walk(x, key)
+
+    walk(payload)
+    return out

@@ -83,4 +83,37 @@ def test_csv_poller_reads_google_sheet(client, monkeypatch):
         assert poller.poll_once(cl) == 0  # те же строки — без изменений
     h = store.load_history()
     row = h.mentors[(h.mentors["ID стажера"] == "СТ-002") & (h.mentors["period"] == 7)].iloc[0]
-    assert row["Соблюдение сроков и организация работы"] == 3 and row["source"] == "form"
+    assert row["Соблюдение сроков и организация работы"] == 3 and row["source"] == "google"
+
+
+def _ya(label, value):
+    return {"value": value, "question": {"label": {"ru": label}}}
+
+
+def test_webhook_yandex_forms_payload(client):
+    c, store = client
+    body = {"id": 1, "survey": {"id": "s1", "name": "Пульс-опрос стажера"}, "answer": {"data": {
+        "a1": _ya("ID стажера", [{"key": "5", "text": "СТ-005"}]),
+        "a2": _ya("Контрольный период", [{"key": "7", "text": "Месяц 7"}]),
+        **{f"s{i}": _ya(f"{col} — утверждение", 2 if col == "Комфортность нагрузки" else 4)
+           for i, col in enumerate(store.INTERN_SCORES)},
+        "t1": _ya("Сложности за период — С какими сложностями вы столкнулись?", "Много задач"),
+    }}}
+    r = c.post("/api/webhook/intern", params={"source": "yandex"}, json=body)
+    assert r.status_code == 200, r.text
+    assert r.json()["last_event"]["via"] == "yandex"
+    h = store.load_history()
+    row = h.interns[(h.interns["ID стажера"] == "СТ-005") & (h.interns["period"] == 7)].iloc[0]
+    assert row["Комфортность нагрузки"] == 2 and row["Сложности за период"] == "Много задач"
+    assert row["Подразделение / направление стажировки"] == "IT"
+
+
+def test_webhook_yandex_jsonrpc_and_form_encoded(client):
+    c, store = client
+    params = {"ID наставника": "Н-001", "ID стажера": "СТ-001", "Контрольный период": "Месяц 7",
+              **{col: "5" for col in store.MENTOR_SCORES}}
+    r = c.post("/api/webhook/mentor", json={"jsonrpc": "2.0", "method": "answer", "params": params, "id": 1})
+    assert r.status_code == 200, r.text
+    params["Самостоятельность"] = "3"
+    r = c.post("/api/webhook/mentor", data=params)  # x-www-form-urlencoded
+    assert r.status_code == 200 and r.json()["changed"], r.text

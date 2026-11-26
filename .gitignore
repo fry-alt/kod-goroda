@@ -13,3 +13,4 @@ node_modules/
 out/
 data/app.db
 data/*.db-journal
+data/webhook_log.jsonl

@@ -36,7 +36,7 @@ def poll_once(client: httpx.Client) -> int:
             continue
         for rec in df.to_dict("records"):  # строки по порядку: более поздний ответ за тот же месяц побеждает
             try:
-                changed += service.ingest_answer(form, rec, via="form")["changed"]
+                changed += service.ingest_answer(form, rec, via="google")["changed"]
             except ValueError as e:
                 log.warning("CSV %s: строка пропущена: %s", form, e)
     return changed

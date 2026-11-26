@@ -38,7 +38,7 @@ def build(form: str, intern_id: str, period: int, scores: list[int], texts: list
 
 
 def send(form: str, answers: dict) -> dict:
-    url = os.getenv("API_URL", "http://localhost:8000").rstrip("/") + f"/api/webhook/{form}"
+    url = os.getenv("API_URL", "http://localhost:8000").rstrip("/") + f"/api/webhook/{form}?source=test"
     headers = {"X-Webhook-Secret": os.getenv("WEBHOOK_SECRET", "")}
     r = httpx.post(url, json={"answers": answers}, headers=headers, timeout=15)
     r.raise_for_status()

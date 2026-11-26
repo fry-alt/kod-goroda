@@ -9,11 +9,14 @@
 """
 from __future__ import annotations
 
+import json
 import logging
 import os
 import threading
 from contextlib import asynccontextmanager
+from datetime import datetime
 from typing import Optional
+from urllib.parse import parse_qsl
 
 import pandas as pd
 from fastapi import FastAPI, File, Header, HTTPException, Query, Request, UploadFile
@@ -74,21 +77,37 @@ def api_version():
 
 # ---------- приём ответов ----------
 
+WEBHOOK_LOG = ROOT / "data" / "webhook_log.jsonl"
+
+
 @app.post("/api/webhook/{form}")
 async def api_webhook(form: str, request: Request, x_webhook_secret: Optional[str] = Header(None),
-                      secret: Optional[str] = Query(None)):
+                      secret: Optional[str] = Query(None),
+                      source: str = Query("webhook", description="google | yandex | test — подпись в last_event")):
+    """Ответ из формы. Принимает JSON нашего формата, Apps Script, Яндекс Форм (HTTP-запрос / JSON-RPC)
+    и application/x-www-form-urlencoded. Сырое тело пишется в data/webhook_log.jsonl для отладки."""
     if WEBHOOK_SECRET and WEBHOOK_SECRET not in (x_webhook_secret, secret):
         raise HTTPException(401, "неверный секрет вебхука")
     if form not in ("intern", "mentor", "auto"):
         raise HTTPException(404, "форма должна быть intern или mentor")
-    body = await request.json()
-    answers = body.get("answers", body) if isinstance(body, dict) else None
-    if not isinstance(answers, dict):
-        raise HTTPException(400, "ожидаю JSON-объект {вопрос: ответ} или {answers: {...}}")
+    raw = await request.body()
     try:
-        res = service.ingest_answer(None if form == "auto" else form, answers, via="webhook")
+        body = json.loads(raw.decode("utf-8")) if raw.strip() else {}
+    except ValueError:
+        body = dict(parse_qsl(raw.decode("utf-8", "replace")))
+    try:
+        WEBHOOK_LOG.parent.mkdir(parents=True, exist_ok=True)
+        with WEBHOOK_LOG.open("a", encoding="utf-8") as f:
+            f.write(json.dumps({"at": datetime.now().isoformat(timespec="seconds"), "form": form, "source": source,
+                                "body": body}, ensure_ascii=False) + "\n")
+    except OSError:
+        pass
+    answers = ingest.flatten_answers(body)
+    try:
+        res = service.ingest_answer(None if form == "auto" else form, answers, via=source)
     except ValueError as e:
-        raise HTTPException(422, str(e))
+        log.warning("вебхук %s/%s: %s; поля: %s", source, form, e, list(answers)[:20])
+        raise HTTPException(422, f"{e}. Распознанные поля: {list(answers)[:20]}")
     return {**res, **store.get_version()}
 
 
