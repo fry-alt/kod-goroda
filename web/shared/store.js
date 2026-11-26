@@ -29,8 +29,8 @@
   async function list(key, path, filter){
     const remote = await api(path); const local = ls.get(key, []);
     const all = [...(Array.isArray(remote) ? remote : []), ...local];
-    const seen = new Set(), key = x => x.id || (x.at + '|' + (x.text || ''));
-    const out = all.filter(x => x && !seen.has(key(x)) && seen.add(key(x)));
+    const seen = new Set(), kf = x => x.id || (x.at + '|' + (x.text || ''));
+    const out = all.filter(x => x && !seen.has(kf(x)) && seen.add(kf(x)));
     out.sort((a, b) => String(b.at || b.start || '').localeCompare(String(a.at || a.start || '')));
     return filter ? out.filter(filter) : out;
   }
