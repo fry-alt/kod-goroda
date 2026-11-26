@@ -11,3 +11,5 @@ node_modules/
 .vscode/
 .cache/
 out/
+data/app.db
+data/*.db-journal
