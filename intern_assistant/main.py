@@ -9,6 +9,8 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
+from .intent import normalize, score
+
 HERE = Path(__file__).parent
 DOCS = HERE.parent / "docs"
 SOURCES = {
@@ -31,14 +33,39 @@ class Reply(BaseModel):
     source: dict[str, str] | None = None
     draft: str | None = None
     suggestions: list[str] = Field(default_factory=list)
+    parts: list["Reply"] = Field(default_factory=list)
 
 
-def normalize(value: str) -> str:
-    return " ".join(re.findall(r"[а-яa-z0-9]+", value.lower().replace("ё", "е")))
-
-
-def has(text: str, pattern: str) -> bool:
-    return f" {normalize(pattern)}" in f" {text}"
+GAPS = {
+    "ссылк*|линк*|url|открыть|заполнять где|куда|дай|скинь|кинь|пришли|найти": "ссылку на актуальную форму",
+    "опрос*|анкет*|форм* где|куда взять|отправ*|надо|заполн*|найти|искать": "ссылку на актуальную форму",
+    "ссылк*|линк*|url опрос*|анкет*|форм*": "ссылку на актуальную форму",
+    "дедлайн*|крайн* срок*|опрос*|анкет*": "крайний срок заполнения",
+    "дедлайн*|дедлайна": "крайний срок",
+    "до каког*|когда сда*|заполн*|числ*|врем*": "крайний срок заполнения",
+    "опрос*|анкет* когда ближайш*|следующ*|сегодня|завтра": "дату ближайшего опроса",
+    "опрос*|анкет* удалить|измен*|исправ*|перезаполн*|отмен*": "порядок изменения уже отправленного ответа",
+    "каког* числ*": "точную дату",
+    "зарплат*|оплат*|оклад*|платят|стипенди*": "условия оплаты",
+    "денег|денежн*|рубл* стажиров*|сколько": "условия оплаты",
+    "опрос*|анкет* не успева*|успел*|опозда*": "порядок действий при пропуске опроса",
+    "отпуск*|больничн*|пропуст*": "порядок действий в этой ситуации",
+    "аноним*|конфиденц*|деанон*": "условия конфиденциальности опроса",
+    "кто видит|увидит|читает|прочтет|доступ*": "круг людей с доступом",
+    "начина*|старт* когда|дата|числа": "дату начала программы",
+    "как|где получить|выдают|запросить доступ*|пропуск*": "порядок получения доступа",
+    "кто|контакт*|телефон*|почт* мой|наставник*|координатор*|hr": "контакт ответственного",
+    "мне постав*|влепил*|поставлен*": "основания персональной оценки",
+}
+DRAFT_REQUESTS = (
+    "как написать|сформулиров*|выраз*|сказать",
+    "дай|покажи|наброса*|хочу пример*|черновик*|шаблон*",
+    "напиши|набросай сообщен*|текст*",
+)
+QUESTION_SPLIT = re.compile(
+    r"[?;\n]+|(?:,?\s+)(?:и|а)\s+(?=(?:как|сколько|где|куда|когда|кто|что|почему|до какого)\b)",
+    re.IGNORECASE,
+)
 
 
 @app.get("/api/topics")
@@ -51,63 +78,65 @@ def source(key: Literal["case", "survey"]):
     return FileResponse(DOCS / SOURCES[key][1], media_type="text/plain; charset=utf-8")
 
 
-@app.post("/api/ask", response_model=Reply)
-def ask(body: Question):
-    text = normalize(body.question)
-    previous = next((topic for topic in TOPICS if topic["id"] == body.topic), None)
-    if previous and previous.get("draft") and text in {
-        "как это написать", "как написать", "дай пример", "покажи пример", "как сформулировать",
-    }:
-        return Reply(status="answered", topic=previous["id"], answer="Можно написать так.",
-                     draft=previous["draft"])
+def unknown(detail: str | None = None) -> Reply:
+    if detail:
+        return Reply(status="unknown", answer=f"В доступных материалах не удалось подтвердить {detail}. Уточни у HR или координатора программы.")
+    return Reply(status="unknown", answer="В доступных материалах нет ответа на этот вопрос. По условиям программы можно обратиться к HR, по рабочей задаче к наставнику.",
+                 suggestions=[topic["question"] for topic in TOPICS[:3]])
 
-    # Missing operational or personal information takes precedence over related terms.
-    gaps = {
-        "ссылк": "ссылку на актуальную форму",
-        "дедлайн": "срок сдачи",
-        "до какого": "крайний срок",
-        "точн": "точные детали",
-        "зарплат": "условия оплаты",
-        "оплат": "условия оплаты",
-        "отпуск": "условия отпуска",
-        "аноним": "условия анонимности",
-        "кто видит": "круг людей с доступом",
-        "кто мой наставник": "контакт твоего наставника",
-        "контакт наставник": "контакт твоего наставника",
-        "где заполн": "адрес актуальной формы",
-        "какого числа": "точную дату",
-        "пропуст": "порядок действий при пропуске",
-        "почему мне постав": "основания персональной оценки",
-        "сколько получ": "условия оплаты",
-    }
-    missing = next((label for prefix, label in gaps.items() if has(text, prefix)), None)
-    if missing:
-        return Reply(status="unknown", answer=f"В доступных материалах не удалось подтвердить {missing}. Уточни у HR или координатора программы.")
 
-    matches = []
-    for topic in TOPICS:
-        score = max((len(normalize(pattern)) for pattern in topic["patterns"] if has(text, pattern)), default=0)
-        if text == normalize(topic["question"]):
-            score = 100
-        if score:
-            matches.append((score, topic))
-    matches.sort(key=lambda match: match[0], reverse=True)
+def answer_one(text: str, previous: dict | None) -> Reply:
+    words = normalize(text)
+    gaps = [(score(words, expression), label) for expression, label in GAPS.items()]
+    gap_score, missing = max(gaps, key=lambda match: match[0])
+    if gap_score:
+        return unknown(missing)
+
+    matches = [
+        (100 if words == normalize(topic["question"]) else
+         max(score(words, pattern) for pattern in topic["patterns"]), topic)
+        for topic in TOPICS
+    ]
+    matches = sorted((match for match in matches if match[0]), key=lambda match: match[0], reverse=True)
+    wants_draft = any(score(words, pattern) for pattern in DRAFT_REQUESTS)
     if not matches:
-        return Reply(status="unknown", answer="В доступных материалах нет ответа на этот вопрос. По условиям программы можно обратиться к HR, по рабочей задаче к наставнику.",
-                     suggestions=[topic["question"] for topic in TOPICS[:3]])
+        if previous and previous.get("draft") and wants_draft and len(words) <= 7:
+            return Reply(status="answered", topic=previous["id"], answer="Можно написать так.",
+                         draft=previous["draft"])
+        if previous and previous["id"] == "survey" and words in {
+            ("а", "где"), ("и", "где"), ("а", "куда"), ("где",), ("куда",),
+        }:
+            return unknown("ссылку на актуальную форму")
+        if any(score(words, clue) for clue in ("опрос*|анкет*|пульс*", "оценк*|балл*", "наставник*|ментор*")):
+            return Reply(status="clarify", answer="Что именно хочешь уточнить?",
+                         suggestions=[TOPICS[index]["question"] for index in (0, 2, 5)])
+        return unknown()
 
-    score, topic = matches[0]
-    if len(matches) > 1 and score - matches[1][0] < 3:
-        return Reply(status="clarify", answer="Что именно хочешь уточнить?",
+    best, topic = matches[0]
+    if len(matches) > 1 and best - matches[1][0] < 3:
+        return Reply(status="clarify", answer="Вижу несколько тем. С какой начнём?",
                      suggestions=[item["question"] for _, item in matches[:3]])
-    if topic["id"] == "survey" and text in {"опрос", "анкета", "обратная связь"}:
-        return Reply(status="clarify", answer="Что именно тебя интересует?",
-                     suggestions=[TOPICS[0]["question"], TOPICS[2]["question"], TOPICS[-1]["question"]])
 
     title, _, section = SOURCES[topic["source"]]
     return Reply(status="answered", answer=topic["answer"], topic=topic["id"],
                  source={"title": title, "section": section, "url": f"sources/{topic['source']}"},
-                 suggestions=["Как это написать?"] if topic.get("draft") else [])
+                 draft=topic.get("draft") if wants_draft else None,
+                 suggestions=["Как это написать?"] if topic.get("draft") and not wants_draft else [])
+
+
+@app.post("/api/ask", response_model=Reply)
+def ask(body: Question):
+    previous = next((topic for topic in TOPICS if topic["id"] == body.topic), None)
+    questions = [part.strip() for part in QUESTION_SPLIT.split(body.question) if part.strip()]
+    if len(questions) < 2:
+        return answer_one(body.question, previous)
+    replies = []
+    for question in questions:
+        reply = answer_one(question, previous)
+        replies.append(reply)
+        previous = next((topic for topic in TOPICS if topic["id"] == reply.topic), None)
+    combined = next((reply for reply in reversed(replies) if reply.status == "answered"), replies[0])
+    return combined.model_copy(update={"parts": replies})
 
 
 app.mount("/", StaticFiles(directory=HERE / "static", html=True), name="assistant")

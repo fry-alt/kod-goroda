@@ -75,8 +75,10 @@ async function ask(value) {
     if (!response.ok) throw new Error("Request failed");
     const reply = await response.json();
     topic = reply.topic;
-    addMessage(reply.answer, "reply", reply);
-    showSuggestions(reply.suggestions.length ? reply.suggestions : defaults);
+    const parts = reply.parts.length ? reply.parts : [reply];
+    for (const part of parts) addMessage(part.answer, "reply", part);
+    const nextSteps = [...new Set(parts.flatMap((part) => part.suggestions))];
+    showSuggestions(nextSteps.length ? nextSteps : defaults);
     status.textContent = "";
   } catch {
     status.textContent = "Связь прервалась. Вопрос можно отправить ещё раз.";
