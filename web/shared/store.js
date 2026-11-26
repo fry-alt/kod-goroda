@@ -35,7 +35,7 @@
   };
   async function api(path, opt){
     if(STATIC) return null;
-    try { const r = await fetch(API + path, {cache:'no-store', ...opt}); return r.ok ? await r.json() : null; } catch { return null; }
+    try { const r = await fetch(API + path, {cache:'no-store', signal: AbortSignal.timeout?.(10000), ...opt}); return r.ok ? await r.json() : null; } catch { return null; }
   }
   const post = (path, body, method = 'POST') => api(path, {method, headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);

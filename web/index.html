@@ -68,6 +68,7 @@ svg.i{width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-widt
 .panel h2 a,.h2 a{margin-left:auto;font-family:var(--font-text);font-weight:500;font-size:15px;text-decoration:none}
 .grid2{display:grid;grid-template-columns:1.35fr 1fr;gap:20px;align-items:start}
 .grid2 > div > .panel:last-child{margin-bottom:0}
+@media (min-width:1181px){.grid2 > .stick{position:sticky;top:96px}} /* сводка карточки: вывод и график едут рядом с длинным списком причин */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border-radius:14px;border:1px solid var(--mgts-line);
   background:#fff;color:var(--mgts-navy);font-weight:500;text-decoration:none;transition:transform .15s var(--ease),box-shadow .2s,border-color .2s;white-space:nowrap}
 .btn:hover{border-color:var(--mgts-blue);box-shadow:var(--sh)}
@@ -91,6 +92,7 @@ table{border-collapse:collapse;width:100%}
 .hero .cta .btn{border:0}
 .hero .cta .ghost{background:rgba(255,255,255,.16);color:#fff}
 .hero img{position:absolute;right:10px;top:-30px;height:230px;pointer-events:none;animation:float 6s ease-in-out infinite}
+@media (min-width:901px){.hero h2,.hero p{max-width:min(640px,calc(100% - 220px))}} /* текст не заезжает на куб */
 @keyframes float{50%{transform:translateY(10px) rotate(2deg)}}
 
 /* KPI */
@@ -144,6 +146,7 @@ button.hc:hover{transform:scale(1.06)}
 .hc.st-red{background:var(--st-red)}.hc.st-yellow{background:var(--st-yellow);color:#4a3600}.hc.st-green{background:var(--st-green)}.hc.st-grey{background:var(--mgts-bg-soft);color:var(--mgts-muted);cursor:default}
 .heat td.cur .hc{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--mgts-blue)}
 .theme{border-radius:14px;background:#FFF4F0;padding:12px 14px;margin-bottom:10px}
+q{quotes:none} /* «» ставим в разметке сами, иначе браузер добавит свои кавычки */
 .theme q{display:block;color:var(--mgts-muted);font-size:14px;margin-top:4px}
 
 /* матрица анкет */
@@ -406,7 +409,8 @@ const reportUrl = (o = {}) => { const p = keep(); p.set('period', cur()); for(co
 const internUrl = id => { const p = keep(); p.set('id', id); if(S.period) p.set('period', S.period); return 'intern.html?' + p; };
 
 // ---------- данные: API, при недоступности — моки ----------
-async function getJSON(url){ const r = await fetch(url, {cache:'no-store'}); if(!r.ok) throw new Error(r.status); return r.json(); }
+// таймаут: если сервер завис на соединении, через 8 с показываем сохранённые данные, а не пустую страницу
+async function getJSON(url){ const r = await fetch(url, {cache:'no-store', signal: AbortSignal.timeout?.(8000)}); if(!r.ok) throw new Error(r.status); return r.json(); }
 function mockDir(p){ const want = p || 6; return 'mock/p' + (MOCKS.filter(m => m <= want).pop() || MOCKS[0]); }
 async function loadOverview(){
   if(S.mock) return getJSON(`${mockDir(S.period)}/overview.json`);
@@ -755,7 +759,7 @@ function tabSum(el, c){
   const groups = S.groups = groupsOf(c), shown = S.allSig ? groups : groups.slice(0, 3);
   const nSig = (c.signals || []).length;
   el.innerHTML = `<div class="grid2">
-    <div>
+    <div class="stick">
       <div class="sum" title="${esc(c.summary || '')}">${esc(summaryOf(c, groups))}</div>
       <h3 class="h2" style="font-size:18px">Что сделать</h3>
       <div class="todo">${acts.length ? acts.map((a, i) => `<label class="${dn[a.t] ? 'done' : ''}"><input type="checkbox" data-a="${esc(a.t)}" ${dn[a.t] ? 'checked' : ''}><span>${esc(a.t)}${a.why ? `<small>${esc(a.why)}</small>` : ''}</span></label>`).join('')
@@ -1006,6 +1010,13 @@ async function refresh(flashId){
   return prev;
 }
 async function poll(){
+  if(S.polling) return; S.polling = true; // при медленном сервере не копим параллельные запросы
+  try { await pollOnce(); } finally { S.polling = false; }
+}
+async function pollOnce(){
+  if(S.mock === 'auto'){ // сервер не ответил при загрузке — пробуем снова и возвращаемся к живым данным
+    try { await getJSON(API + '/api/version'); S.mock = null; S.ver = null; await refresh(); } catch { setLive(false, 'нет связи с сервером'); return; }
+  }
   if(S.mock){ setLive(false, 'демо-режим'); return; }
   try {
     const v = await getJSON(API + '/api/version');

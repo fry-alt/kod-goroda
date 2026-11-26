@@ -443,14 +443,20 @@
       // красный статус важнее клетки: сначала разобраться с проблемой, потом говорить об оффере
       const label = i.status === 'red' ? `${cell.n}, но сейчас «Критично»` : i.status === 'yellow' && x + y >= 3 ? `${cell.n}, есть сигнал` : cell.n;
       return {i, x, y, cell, rec, label}; });
-    // разводим совпадающие точки
-    const seen = {}; L.forEach(r => { const k = (+r.i.mentor_avg).toFixed(1) + '|' + (+r.i.intern_avg).toFixed(1); r.dup = seen[k] = (seen[k] ?? -1) + 1; });
+    // одна точка в клетке — ставим по оценкам; несколько — раскладываем рядами по 2, иначе метки ложатся друг на друга
+    const groups = {}; L.forEach(r => (groups[r.x + '|' + r.y] ||= []).push(r));
+    Object.values(groups).forEach(g => g.forEach((r, k) => {
+      if(g.length === 1){ r.style = `left:${(pos(r.i.mentor_avg, .2, .8) * 100).toFixed(1)}%;bottom:${(pos(r.i.intern_avg, .12, .55) * 100).toFixed(1)}%`; return; }
+      const cols = Math.min(2, g.length), col = k % 2, rows = Math.ceil(g.length / 2), row = rows - 1 - Math.floor(k / 2), lastRow = Math.floor(k / 2) === rows - 1 && g.length % 2; // первые — сверху слева
+      const dx = lastRow ? 0 : (col - (cols - 1) / 2) * 50;
+      r.style = `left:calc(${((r.x + .5) / 3 * 100).toFixed(2)}% + ${dx}px);bottom:calc(${(r.y / 3 * 100).toFixed(2)}% + ${22 + row * 34}px)`;
+    }));
     const offer = L.filter(r => r.rec === 'Готовить оффер').length, keep = L.filter(r => /Удержание/.test(r.rec)).length;
     el.innerHTML = `<div class="ht"><div class="ht-two ht-two-eq">
       <div class="ht-panel"><h3 class="ht-h">Матрица 9-box</h3><p class="ht-sub">По горизонтали — как наставник оценивает результат, по вертикали — как стажёр оценивает свою стажировку. Месяц ${c.period}. Цвет точки — статус светофора. Нажмите на стажёра.</p>
         <div class="ht-nine"><div class="ht-ylab">Вовлечённость (стажёр) →</div>
           <div class="ht-box">${[2, 1, 0].map(y => [0, 1, 2].map(x => `<div class="ht-cell ${CELLS[y][x].cls}">${CELLS[y][x].n}<small>${CELLS[y][x].s}</small></div>`).join('')).join('')}
-            ${L.map(r => `<button class="ht-pt ${c.esc(r.i.status)}" data-open="${c.esc(r.i.intern_id)}" style="left:${(pos(r.i.mentor_avg, .2, .8) * 100).toFixed(1)}%;bottom:${(pos(r.i.intern_avg, .12, .55) * 100).toFixed(1)}%;margin-left:${r.dup * -18}px;margin-bottom:${r.dup * -18}px"
+            ${L.map(r => `<button class="ht-pt ${c.esc(r.i.status)}" data-open="${c.esc(r.i.intern_id)}" style="${r.style}"
               title="${c.esc(r.i.intern_id)}: оценка наставника ${r.i.mentor_avg}, оценка стажёра ${r.i.intern_avg}${r.i.status === 'red' ? ' — сейчас Критично' : ''}">${c.esc(r.i.intern_id.replace(/^СТ-0*/, 'СТ-'))}</button>`).join('')}</div>
           <div></div><div class="ht-xlab">Результат (наставник) →</div></div>
         <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mgts-muted);margin:4px 0 0 34px"><span>1</span><span>${B1}</span><span>${B2}</span><span>5</span></div></div>

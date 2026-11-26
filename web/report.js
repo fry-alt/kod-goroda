@@ -39,7 +39,7 @@ const dateISO = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDat
 const dateRu = d => `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()}, ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
 // ---------- загрузка ----------
-async function getJSON(url){ const r = await fetch(url, {cache:'no-store'}); if(!r.ok) throw new Error(r.status + ' ' + url); return r.json(); }
+async function getJSON(url){ const r = await fetch(url, {cache:'no-store', signal: AbortSignal.timeout?.(8000)}); if(!r.ok) throw new Error(r.status + ' ' + url); return r.json(); }
 function mockDir(p){ const want = p || 6; return 'mock/p' + (MOCKS.filter(m => m <= want).pop() || MOCKS[0]); }
 async function loadOverview(p){
   if(R.mock) return getJSON(`${mockDir(p)}/overview.json`);
