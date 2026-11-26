@@ -163,6 +163,11 @@ button.hc:hover{transform:scale(1.06)}
 .chead .id{font-family:var(--font-title);font-weight:900;font-size:34px;color:var(--mgts-blue);line-height:1}
 .chead .meta{color:var(--mgts-muted);font-size:15px}
 .acts{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.contact{background:var(--mgts-bg-soft);border-radius:16px;padding:16px 18px;margin-bottom:16px}
+.contact h3{margin:0;font-size:18px}
+.contact p{margin:6px 0 12px;font-size:14px}
+.contact .acts{margin-left:0}
+.contact .btn[aria-disabled="true"]{opacity:.65;cursor:default}
 .tabs{display:flex;gap:4px;border-bottom:1px solid var(--mgts-line);margin:0 0 20px;overflow-x:auto;scrollbar-width:none}
 .tabs::-webkit-scrollbar{display:none}
 .tabs button{border:0;background:none;min-height:46px;padding:0 16px;color:var(--mgts-muted);font-weight:500;border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap}
@@ -549,6 +554,7 @@ async function viewHome(v){
         <div class="mini">${miss.length ? miss.map(m => `<div><span class="grow"><b>${esc(m.name)}</b><small>${m.who}${m.who === 'Наставник' ? ' · стажёр ' + esc(m.id) : ''}</small></span>
           <button class="btn sm" data-remind="${esc(m.name)}">${ico('bell')}Напомнить</button></div>`).join('') : `<div><span class="grow">Все анкеты на месте ${ico('check')}</span></div>`}</div></section>
       <section class="panel"><h2>Быстрые действия</h2><div class="qa">
+        <a href="#/interns">${ico('phone')}Связаться со стажёром</a>
         <a href="${reportUrl({tpl:'program'})}">${ico('chart')}Отчёт по программе</a>
         <a href="#/onboarding">${ico('users')}Позвать на знакомство</a>
         <a href="#/inbox">${ico('heart')}Дать обратную связь</a>
@@ -710,16 +716,23 @@ function viewIntern(v){
       <div class="acts">
         <a class="btn" href="${reportUrl({tpl:'intern', id:c.intern_id})}">${ico('doc')}Скачать отчёт</a>
         <button class="btn" id="aKudos">${ico('heart')}Дать ОС</button>
-        <button class="btn" id="aMeet">${ico('cal')}Назначить 1:1</button>
-        <a class="btn" id="aCall" style="display:none" target="_blank" rel="noopener" href="${API}/call.html?room=${encodeURIComponent(c.intern_id)}&name=HR">${ico('phone')}Созвониться</a>
-        <button class="btn pri" id="aHF">${ico('send')}${sent ? 'Huntflow ✓' : 'В Huntflow'}</button>
+        <button class="btn" id="aHF">${ico('send')}${sent ? 'Huntflow ✓' : 'В Huntflow'}</button>
       </div>
     </div>
+    <section class="contact" aria-labelledby="contactTitle">
+      <h3 id="contactTitle">Связаться со стажёром</h3>
+      <p class="mut" id="callHelp" role="status">Проверяем доступность видеозвонка…</p>
+      <div class="acts">
+        <a class="btn pri" id="aCall" aria-disabled="true" aria-describedby="callHelp" target="_blank" rel="noopener">${ico('phone')}Начать видеозвонок</a>
+        <button class="btn" type="button" id="aInvite" disabled>Скопировать ссылку для стажёра</button>
+        <button class="btn" type="button" id="aMeet">${ico('cal')}Назначить 1:1</button>
+      </div>
+    </section>
     <div class="tabs" role="tablist">${T.map(([k, t]) => `<button role="tab" aria-selected="${S.tab===k}" class="${S.tab===k?'on':''}" data-t="${k}">${t}</button>`).join('')}</div>
     <div id="tabBody"></div>
   </section>`;
   v.querySelectorAll('[data-t]').forEach(b => b.onclick = () => { S.tab = b.dataset.t; viewIntern(v); });
-  callReady().then(ok => { if(ok && $('aCall')) $('aCall').style.display = ''; });
+  bindContact(v, c.intern_id);
   $('aHF').onclick = () => huntflowDlg(c); $('aKudos').onclick = () => kudosDlg(c.intern_id); $('aMeet').onclick = () => meetDlg(c.intern_id);
   const body = $('tabBody');
   if(S.tab === 'dyn') return tabDyn(body, c);
@@ -876,8 +889,34 @@ function drawChart(c){
             x:{grid:{display:false}, ticks:{color:css('--mgts-muted'), font:{size:13}}}}}});
 }
 
-// видеозвонок HR ↔ стажёр (web/call.html, бэк /ws/call): кнопка появляется, только если звонок есть на сервере
-function callReady(){ return S.callP ||= (STATIC_HOST ? Promise.resolve(false) : fetch(API + '/api/call/ice', {cache:'no-store'}).then(r => r.ok ? r.json() : null).then(config => Array.isArray(config?.iceServers)).catch(() => false)); }
+function bindContact(view, id){
+  const call = view.querySelector('#aCall');
+  const invite = view.querySelector('#aInvite');
+  const help = view.querySelector('#callHelp');
+  const room = (name) => new URL(API + '/call.html?room=' + encodeURIComponent(id) + '&name=' + encodeURIComponent(name), location.href).href;
+  const ready = STATIC_HOST ? Promise.resolve(false) : fetch(API + '/api/call/ice', {cache:'no-store'})
+    .then(r => r.ok ? r.json() : null)
+    .then(config => Array.isArray(config?.iceServers))
+    .catch(() => false);
+  ready.then(ok => {
+    if (!ok){
+      help.textContent = 'Видеозвонок сейчас недоступен. Можно назначить встречу 1:1.';
+      return;
+    }
+    call.href = room('HR');
+    call.removeAttribute('aria-disabled');
+    invite.disabled = false;
+    help.textContent = 'Отправьте стажёру ссылку и войдите в звонок. Приглашение автоматически не отправляется.';
+    invite.onclick = async () => {
+      try {
+        await navigator.clipboard.writeText(room('Стажёр ' + id));
+        help.textContent = 'Ссылка скопирована. Отправьте её стажёру в мессенджере.';
+      } catch {
+        help.textContent = 'Не удалось скопировать ссылку. Стажёр может войти через «Команда» → «Позвонить HR» в своём кабинете.';
+      }
+    };
+  });
+}
 
 // ---------- диалоги: Huntflow, ОС, 1:1 ----------
 function dlg(html, bind){ $('dlg').innerHTML = html; $('modal').classList.add('open'); $('modal').setAttribute('aria-hidden', 'false');
