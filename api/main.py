@@ -28,7 +28,7 @@ from feedback import ingest, pipeline, store
 from feedback.config import ROOT, settings
 from feedback.schemas import FeedbackItem, Insights, ItemAnalysis, Role
 
-from . import chat, poller, service
+from . import cabinet, chat, poller, service
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s: %(message)s", datefmt="%H:%M:%S")
 logging.getLogger("httpx").setLevel(logging.WARNING)  # опрос таблиц раз в 5 с не должен засорять лог
@@ -185,6 +185,9 @@ async def report(file: UploadFile = File(...)):
     out = res.df.copy()
     out["date"] = out["date"].astype(str)
     return ReportOut(engine=res.engine, stats=res.stats, insights=res.insights, items=out.to_dict("records"))
+
+
+app.include_router(cabinet.router)  # кабинет стажёра и инструменты HR (web/shared/store.js)
 
 
 # ---------- фронт Артёма (web/) по корню; монтируем последним ----------

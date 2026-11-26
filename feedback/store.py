@@ -82,6 +82,8 @@ def init_db(con: sqlite3.Connection) -> None:
     con.execute("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)")
     con.execute("CREATE TABLE IF NOT EXISTS signal_reviews (review_id TEXT PRIMARY KEY, intern_id TEXT, "
                 "period INTEGER, code TEXT, status TEXT, note TEXT, at TEXT)")
+    con.execute("CREATE TABLE IF NOT EXISTS records (kind TEXT NOT NULL, id TEXT NOT NULL, intern_id TEXT, "
+                "at TEXT, data TEXT NOT NULL, PRIMARY KEY (kind, id))")
     con.commit()
 
 
@@ -245,6 +247,65 @@ def seed(con: Optional[sqlite3.Connection] = None, force: bool = False) -> dict:
         a = import_frame("intern", pd.read_excel(INTERN_XLSX), con=con)
         b = import_frame("mentor", pd.read_excel(MENTOR_XLSX), con=con)
         return {"skipped": False, "interns": a, "mentors": b}
+    finally:
+        if own:
+            con.close()
+
+
+# ---------- кабинет стажёра и инструменты HR (web/shared/store.js) ----------
+# Записи-JSON по видам: kudos, feedback-requests, meetings, intern-requests, huntflow, remind;
+# одиночные значения (памятка, чек-лист стажёра) — тот же стол с фиксированным id.
+
+RECORD_KEEP = 300  # как localStorage фронта: старше — не отдаём
+
+
+def put_record(kind: str, rec: dict, label: str, con: Optional[sqlite3.Connection] = None) -> dict:
+    """Сохранить запись (повтор с тем же id заменяет её) и поднять версию: дашборд и кабинет перечитают списки."""
+    rec = dict(rec)
+    now = dt.datetime.now()
+    rec.setdefault("id", now.strftime("%H%M%S%f"))
+    rec.setdefault("at", now.isoformat(timespec="seconds"))
+    own = con is None
+    con = con or connect()
+    try:
+        init_db(con)
+        with _lock:
+            con.execute("INSERT OR REPLACE INTO records VALUES (?,?,?,?,?)",
+                        (kind, str(rec["id"]), rec.get("intern_id"), str(rec["at"]),
+                         json.dumps(rec, ensure_ascii=False)))
+            _meta_set(con, "version", _meta_get(con, "version", 0) + 1)
+            # intern_id не пишем: иначе дашборд показал бы тост «Новый ответ: СТ-00X» про анкету
+            _meta_set(con, "last_event", {"intern_id": None, "period": None, "source": label, "via": kind,
+                                          "at": now.strftime("%H:%M:%S")})
+            con.commit()
+        return rec
+    finally:
+        if own:
+            con.close()
+
+
+def list_records(kind: str, intern_id: Optional[str] = None, con: Optional[sqlite3.Connection] = None) -> list[dict]:
+    own = con is None
+    con = con or connect()
+    try:
+        init_db(con)
+        sql, args = "SELECT data FROM records WHERE kind=?", [kind]
+        if intern_id:
+            sql, args = sql + " AND intern_id=?", args + [intern_id]
+        rows = con.execute(sql + " ORDER BY at DESC LIMIT ?", (*args, RECORD_KEEP)).fetchall()
+        return [json.loads(r["data"]) for r in rows]
+    finally:
+        if own:
+            con.close()
+
+
+def get_record(kind: str, rid: str, con: Optional[sqlite3.Connection] = None) -> Optional[dict]:
+    own = con is None
+    con = con or connect()
+    try:
+        init_db(con)
+        row = con.execute("SELECT data FROM records WHERE kind=? AND id=?", (kind, rid)).fetchone()
+        return json.loads(row["data"]) if row else None
     finally:
         if own:
             con.close()

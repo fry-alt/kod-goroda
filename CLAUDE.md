@@ -96,6 +96,9 @@
   — фронт опрашивает раз в 3 с и перерисовывает, если версия выросла (так видно «дашборд обновился сам»).
 - `POST /api/webhook/{form}` (`form` = `intern` | `mentor`) — приём ответа из сервиса анкет.
 - `POST /api/import` — загрузка исторических xlsx (multipart, можно оба файла сразу).
+- Кабинет стажёра и инструменты HR (`api/cabinet.py`, ждёт `web/shared/store.js`): `GET/PUT /api/onboarding`,
+  `GET/POST /api/checklist/{id}`, `GET/POST /api/{kudos|feedback-requests|meetings|intern-requests}`,
+  `POST /api/huntflow/sync`, `POST /api/remind`. Каждая запись поднимает `version` (`last_event.intern_id = null`).
 
 ## Логика «светофора» и сигналов (стартовая, Савелий уточняет)
 - Пары показателей стажёр ↔ наставник для расхождений: «Понятность задач» ↔ «Понимание задач и ожиданий»;
