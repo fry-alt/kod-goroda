@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#008AE0">
+<title>Моя стажировка · МГТС</title>
+<link rel="icon" href="brand/logos/logo1.png">
+<link rel="stylesheet" href="brand/brand.css">
+<script src="vendor/chart.umd.min.js"></script>
+<script src="config.js"></script>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--ease:cubic-bezier(.2,0,0,1);--r:22px;--shadow:0 1px 2px rgba(19,64,116,.06),0 8px 24px -12px rgba(19,64,116,.18)}
+html,body{margin:0}
+body{background:var(--mgts-bg-soft);font-size:16px;line-height:1.45;min-height:100vh;overflow-x:hidden}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+a{color:inherit}
+.wrap{max-width:480px;margin:0 auto;padding-bottom:calc(28px + env(safe-area-inset-bottom))}
+@media (min-width:520px){.wrap{box-shadow:0 0 0 1px var(--mgts-line);background:var(--mgts-bg-soft);min-height:100vh}}
+
+/* появление по очереди */
+.rise{opacity:0;transform:translateY(14px);animation:rise .6s var(--ease) forwards;animation-delay:calc(var(--i,0) * 70ms + 60ms)}
+@keyframes rise{to{opacity:1;transform:none}}
+.quiet .rise,.settled .rise{animation:none;opacity:1;transform:none}
+
+/* ---------- шапка ---------- */
+.hero{position:relative;background:var(--mgts-blue);color:#fff;padding:calc(14px + env(safe-area-inset-top)) 20px 64px;border-radius:0 0 32px 32px;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-70px;bottom:-90px;width:240px;height:240px;border-radius:50%;border:1px solid rgba(255,255,255,.18)}
+.bar{display:flex;align-items:center;gap:10px;position:relative;z-index:2}
+.bar img{width:30px;height:30px;border-radius:8px}
+.bar b{font-family:var(--font-title);font-weight:700;font-size:13px;letter-spacing:.02em}
+.who{margin-left:auto;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px 0 14px;border-radius:18px;background:rgba(255,255,255,.16);font-size:14px;font-weight:500;color:#fff;text-decoration:none;transition:background .2s var(--ease)}
+.who:active{background:rgba(255,255,255,.28)}
+.who svg{opacity:.8}
+.hello{position:relative;z-index:2;margin-top:30px;max-width:62%}
+.hello h1{color:#fff;margin:0;font-size:38px;line-height:1;letter-spacing:-.01em}
+.hello .m{font-family:var(--font-light);font-weight:300;font-size:20px;margin-top:10px;line-height:1.2}
+.hello .m b{font-family:var(--font-title);font-weight:500}
+.dept{font-size:14px;opacity:.78;margin-top:6px}
+.cube{position:absolute;right:-18px;top:calc(40px + env(safe-area-inset-top));width:168px;height:168px;z-index:1;pointer-events:none;animation:bob 7s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-8px) rotate(-2deg)}}
+.prog{position:relative;z-index:2;margin-top:26px}
+.segs{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+.segs i{height:8px;border-radius:4px;background:rgba(255,255,255,.24);position:relative;overflow:hidden}
+.segs i::after{content:"";position:absolute;inset:0;background:#fff;border-radius:inherit;transform:scaleX(0);transform-origin:left;transition:transform .5s var(--ease);transition-delay:calc(var(--k) * 90ms + 300ms)}
+.segs i.on::after{transform:scaleX(1)}
+.segs i.now::after{animation:glow 2.4s ease-in-out infinite 1.2s}
+@keyframes glow{50%{opacity:.7}}
+.prog small{display:flex;justify-content:space-between;margin-top:8px;font-size:13px;opacity:.85}
+
+/* ---------- главная кнопка ---------- */
+.cta{position:relative;z-index:3;margin:-40px 16px 0;background:#fff;border-radius:var(--r);padding:14px;box-shadow:var(--shadow)}
+.go{display:flex;align-items:center;gap:12px;min-height:60px;padding:0 10px 0 20px;border-radius:16px;background:var(--mgts-orange);color:#fff;text-decoration:none;font-weight:700;font-size:17px;transition:transform .18s var(--ease),filter .2s}
+.go:active{transform:scale(.97);filter:brightness(.95)}
+.go span{flex:1}
+.go small{font-weight:500;opacity:.9}
+.go .arr{width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.22);display:grid;place-items:center;transition:transform .3s var(--ease)}
+.go:hover .arr{transform:translateX(3px)}
+.state{display:flex;align-items:center;gap:8px;margin:12px 6px 2px;font-size:14px;color:var(--mgts-navy)}
+.state i{width:8px;height:8px;border-radius:50%;background:var(--st-green);flex:none}
+.state.wait i{background:var(--mgts-orange);box-shadow:0 0 0 0 rgba(255,118,84,.5);animation:ping 2s infinite}
+@keyframes ping{70%{box-shadow:0 0 0 8px rgba(255,118,84,0)}100%{box-shadow:0 0 0 0 rgba(255,118,84,0)}}
+
+/* ---------- секции ---------- */
+section{margin:28px 16px 0}
+.h{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 4px 12px}
+.h h2{margin:0;font-size:21px;line-height:1.15;color:var(--mgts-navy)}
+.h span{font-size:13px;color:var(--mgts-muted);text-align:right}
+.card{background:#fff;border-radius:var(--r);padding:18px;box-shadow:var(--shadow)}
+.avg{display:flex;align-items:flex-end;gap:12px}
+.avg .v{font-family:var(--font-title);font-weight:500;font-size:44px;line-height:.9;color:var(--mgts-navy)}
+.avg .of{font-size:14px;color:var(--mgts-muted);padding-bottom:4px}
+.pill{margin-left:auto;display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 10px;border-radius:14px;font-size:13px;font-weight:500;background:var(--mgts-bg-soft)}
+.pill.up{color:#1E8A50;background:rgba(43,174,102,.12)}
+.pill.down{color:#C2373C;background:rgba(229,72,77,.10)}
+.chartbox{position:relative;height:150px;margin:14px -4px 0}
+.cap{font-size:12px;color:var(--mgts-muted);margin-top:6px}
+
+.moves{display:grid;gap:10px;margin-top:10px}
+.mv{display:flex;align-items:center;gap:14px;background:#fff;border-radius:18px;padding:14px 16px;box-shadow:var(--shadow)}
+.mv .ic{flex:none;width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:15px;font-weight:700}
+.mv.up .ic{background:rgba(43,174,102,.12);color:#1E8A50}
+.mv.down .ic{background:rgba(229,72,77,.10);color:#C2373C}
+.mv.flat .ic{background:var(--mgts-bg-soft);color:var(--mgts-blue)}
+.mv .t{flex:1;min-width:0}
+.mv .k{display:block;font-size:12px;color:var(--mgts-muted);text-transform:lowercase}
+.mv .n{display:block;font-weight:500;line-height:1.25}
+.mv .sc{font-family:var(--font-title);font-weight:500;font-size:17px;white-space:nowrap;color:var(--mgts-navy)}
+.mv .sc em{font-style:normal;color:var(--mgts-muted);font-size:14px;padding:0 3px}
+
+/* помощь */
+.help{display:grid;gap:10px}
+.hb{display:flex;align-items:center;gap:14px;width:100%;min-height:64px;padding:12px 14px 12px 12px;background:#fff;border-radius:18px;box-shadow:var(--shadow);text-align:left;transition:transform .18s var(--ease),box-shadow .2s}
+.hb:active{transform:scale(.98)}
+.hb .ic{flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--mgts-bg-soft);color:var(--mgts-blue)}
+.hb .t{flex:1}
+.hb b{display:block;font-weight:500;font-size:16px;line-height:1.2}
+.hb small{display:block;font-size:13px;color:var(--mgts-muted);margin-top:2px}
+.hb .chev{color:var(--mgts-muted)}
+
+/* полезное */
+.tips{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -16px;padding:2px 16px 14px;scrollbar-width:none}
+.tips::-webkit-scrollbar{display:none}
+.tip{flex:0 0 78%;scroll-snap-align:start;background:#fff;border-radius:var(--r);padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px}
+.tip .no{font-family:var(--font-title);font-weight:900;font-size:13px;color:var(--mgts-blue);letter-spacing:.06em}
+.tip b{font-family:var(--font-title);font-weight:700;font-size:16px;line-height:1.2;color:var(--mgts-navy)}
+.tip p{margin:0;font-size:14px;line-height:1.45;color:var(--mgts-navy);opacity:.85}
+.why{margin:0 4px 10px;font-size:14px;color:var(--mgts-muted)}
+
+.priv{display:flex;gap:8px;align-items:flex-start;margin:26px 20px 0;font-size:12.5px;line-height:1.4;color:var(--mgts-muted)}
+.priv svg{flex:none;margin-top:1px}
+
+/* выбор «Кто ты?» */
+.pick{display:grid;gap:10px}
+.pk{display:flex;align-items:center;gap:14px;min-height:68px;padding:12px 16px;background:#fff;border-radius:18px;box-shadow:var(--shadow);text-decoration:none;transition:transform .18s var(--ease)}
+.pk:active{transform:scale(.98)}
+.pk .av{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--mgts-bg-soft);color:var(--mgts-blue);font-family:var(--font-title);font-weight:900;font-size:14px}
+.pk b{display:block;font-family:var(--font-title);font-weight:700;font-size:17px}
+.pk small{display:block;font-size:13px;color:var(--mgts-muted)}
+.pk .chev{margin-left:auto;color:var(--mgts-muted)}
+.hero.short{padding-bottom:36px}
+.hero.short .hello{max-width:70%}
+
+.empty{text-align:center;padding:40px 24px;color:var(--mgts-navy)}
+.empty a{display:inline-flex;margin-top:14px;min-height:48px;align-items:center;padding:0 20px;border-radius:14px;background:var(--mgts-blue);color:#fff;text-decoration:none;font-weight:500}
+.demo{margin:14px 16px 0;padding:8px 12px;border-radius:12px;background:var(--mgts-blue-soft);font-size:12.5px;color:var(--mgts-navy);text-align:center}
+
+/* ---------- нижний лист ---------- */
+.scrim{position:fixed;inset:0;background:rgba(16,44,81,.42);opacity:0;pointer-events:none;transition:opacity .35s var(--ease);z-index:40}
+.scrim.open{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:480px;background:#fff;border-radius:28px 28px 0 0;padding:10px 20px calc(20px + env(safe-area-inset-bottom));z-index:41;transform:translateY(105%);transition:transform .42s var(--ease);box-shadow:0 -10px 40px -10px rgba(16,44,81,.3);max-height:92vh;overflow:auto}
+.sheet.open{transform:none}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--mgts-line);margin:0 auto 14px}
+.sheet h3{margin:0 0 4px;font-size:20px;line-height:1.15;color:var(--mgts-navy);padding-right:44px}
+.sheet .sub{font-size:14px;color:var(--mgts-muted);margin:0 0 14px;min-height:20px}
+.x{position:absolute;right:12px;top:14px;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--mgts-muted)}
+.x:active{background:var(--mgts-bg-soft)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.chip{min-height:38px;padding:0 14px;border-radius:19px;background:var(--mgts-bg-soft);font-size:14px;color:var(--mgts-navy);transition:background .2s,transform .15s var(--ease)}
+.chip:active{transform:scale(.96)}
+.chip.on{background:var(--mgts-blue-soft)}
+textarea{width:100%;min-height:118px;resize:none;border:1.5px solid var(--mgts-line);border-radius:16px;padding:14px;font-size:16px;line-height:1.4;outline:none;transition:border-color .2s;background:#fff}
+textarea:focus{border-color:var(--mgts-blue)}
+textarea::placeholder{color:var(--mgts-muted)}
+.sw{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;margin-top:8px;text-align:left}
+.sw .t{flex:1}
+.sw b{display:block;font-weight:500}
+.sw small{display:block;font-size:13px;color:var(--mgts-muted)}
+.tg{flex:none;width:52px;height:32px;border-radius:16px;background:var(--mgts-line);position:relative;transition:background .25s var(--ease)}
+.tg::after{content:"";position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .25s var(--ease)}
+.sw[aria-checked="true"] .tg{background:var(--mgts-blue)}
+.sw[aria-checked="true"] .tg::after{transform:translateX(20px)}
+.send{width:100%;min-height:56px;margin-top:10px;border-radius:16px;background:var(--mgts-blue);color:#fff;font-weight:700;font-size:17px;transition:opacity .2s,transform .18s var(--ease)}
+.send:active{transform:scale(.98)}
+.send:disabled{opacity:.4;cursor:default;transform:none}
+.done{display:none;text-align:center;padding:18px 0 8px}
+.sheet.ok .form{display:none}
+.sheet.ok .done{display:block}
+.done svg{width:76px;height:76px}
+.done circle{stroke-dasharray:220;stroke-dashoffset:220;animation:draw .6s var(--ease) forwards}
+.done path{stroke-dasharray:60;stroke-dashoffset:60;animation:draw .4s var(--ease) .45s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.done b{display:block;font-family:var(--font-title);font-weight:900;font-size:22px;color:var(--mgts-navy);margin-top:10px}
+.done p{margin:6px 0 0;font-size:14px;color:var(--mgts-muted)}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;background:var(--mgts-navy-2);color:#fff;font-size:14px;padding:12px 18px;border-radius:14px;z-index:50;transition:all .35s var(--ease);pointer-events:none;max-width:calc(100% - 32px);width:max-content}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .rise{opacity:1;transform:none}
+  .segs i.on::after{transform:scaleX(1)}
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app" aria-live="polite"></div>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="shT" aria-hidden="true">
+  <div class="grab"></div>
+  <button class="x" id="shX" aria-label="Закрыть"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg></button>
+  <div class="form">
+    <h3 id="shT"></h3>
+    <p class="sub" id="shS"></p>
+    <div class="chips" id="shC"></div>
+    <label class="sr" for="shText">Сообщение</label>
+    <textarea id="shText" maxlength="1000"></textarea>
+    <button class="sw" id="shA" role="switch" aria-checked="false">
+      <span class="t"><b>Отправить анонимно</b><small id="shAs">без имени и ID</small></span>
+      <span class="tg" aria-hidden="true"></span>
+    </button>
+    <button class="send" id="shGo" disabled>Отправить</button>
+  </div>
+  <div class="done">
+    <svg viewBox="0 0 76 76" fill="none"><circle cx="38" cy="38" r="34" stroke="#2BAE66" stroke-width="4"/><path d="M24 39l10 10 18-20" stroke="#2BAE66" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <b>Отправлено ✓</b>
+    <p id="shDone"></p>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+// ---------- адрес API — как в index.html ----------
+const qs = new URLSearchParams(location.search);
+const API = (() => { let a = qs.get('api'); try { if(a) localStorage.setItem('radar.api', a); else a = localStorage.getItem('radar.api'); } catch {}
+  return (a || window.RADAR_API || '').replace(/\/$/, ''); })();
+const STATIC_HOST = /vercel\.app$|netlify\.app$|github\.io$/.test(location.hostname) && !API;
+const MOCKS = [2,3,4,6];
+const IDS = ['СТ-001','СТ-002','СТ-003','СТ-004','СТ-005'];
+const TOTAL = 6;
+const ID = (qs.get('id') || '').trim().toUpperCase().replace(/^CT/, 'СТ');
+const PERIOD = +qs.get('period') || null;
+const S = {mock: qs.has('mock') ? (+qs.get('mock') || 6) : (STATIC_HOST ? 6 : null), data:null, ov:null, ver:null, chart:null, sheet:null};
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = v => v == null ? '—' : (Math.round(v * 10) / 10).toString().replace('.', ',');
+const plural = (n, a, b, c) => { const m = n % 10, h = n % 100; return m === 1 && h !== 11 ? a : m >= 2 && m <= 4 && (h < 12 || h > 14) ? b : c; };
+
+async function getJSON(url){ const r = await fetch(url, {cache:'no-store'}); if(!r.ok) throw new Error(r.status); return r.json(); }
+function mockDir(){ const want = PERIOD || S.mock || 6; return 'mock/p' + (MOCKS.filter(m => m <= want).pop() || MOCKS[0]); }
+const pq = () => PERIOD ? `?period=${PERIOD}` : '';
+async function load(path, mockFile){
+  if(S.mock) return getJSON(`${mockDir()}/${mockFile}`);
+  try { return await getJSON(API + path + pq()); }
+  catch(e){ S.mock = PERIOD || 6; return getJSON(`${mockDir()}/${mockFile}`); }
+}
+function clip(d){ if(d && PERIOD) d.periods = (d.periods || []).filter(p => p.period <= PERIOD); return d; }
+function link(id){ const u = new URLSearchParams(qs); id ? u.set('id', id) : u.delete('id'); const s = u.toString(); return location.pathname + (s ? '?' + s : ''); }
+
+// короткие человеческие названия своих показателей
+const SHORT = {
+  'Понятность задач':'Понятность задач',
+  'Поддержка и обратная связь наставника':'Поддержка наставника',
+  'Комфортность нагрузки':'Комфортность нагрузки',
+  'Интерес к задачам':'Интерес к задачам',
+  'Профессиональное развитие':'Своё развитие',
+  'Взаимодействие с командой':'Команда',
+  'Общая удовлетворенность стажировкой':'Стажировка в целом'
+};
+const short = k => SHORT[k] || k;
+
+// советы: привязаны к просевшему показателю
+const TIPS = {
+  'Комфортность нагрузки': {about:'про нагрузку', list:[
+    ['Как договориться о приоритетах', 'Выпиши все задачи и спроси наставника: что важно на этой неделе? Остальному — дату позже.'],
+    ['«Не успеваю» — нормальная фраза', 'Скажи за пару дней до срока, а не в последний вечер. И сразу предложи: перенести или упростить.'],
+    ['Полтора часа тишины', 'Один фокус-блок в день на главную задачу. Чаты на беззвучный — мир подождёт.']]},
+  'Понятность задач': {about:'про понятность задач', list:[
+    ['Перескажи задачу своими словами', '«Я правильно понял, что на выходе нужно…?» — 30 секунд, и половина переделок не случится.'],
+    ['Спроси, что значит «готово»', 'Файл, презентация, цифра в отчёте? Когда финиш виден, бежать проще.'],
+    ['Покажи черновик пораньше', 'Сырой вариант на 20% поправить легче, чем готовый в пятницу вечером.']]},
+  'Поддержка и обратная связь наставника': {about:'про связь с наставником', list:[
+    ['15 минут в неделю по расписанию', 'Короткая встреча в календаре надёжнее, чем ловить наставника между созвонами.'],
+    ['Копи вопросы списком', 'Заметка в телефоне, пачка вопросов за раз — быстрее для вас обоих.'],
+    ['Спроси прямо', '«Что мне сделать иначе в следующей задаче?» Один вопрос — много пользы.']]},
+  'Интерес к задачам': {about:'про интерес к задачам', list:[
+    ['Скажи, что тебе интересно', 'Задачи часто раздают, просто не зная, кому что нравится. Подскажи наставнику.'],
+    ['Узнай, зачем это всё', 'Спроси, кто пользуется результатом твоей работы. Смысл меняет отношение к рутине.'],
+    ['Предложи мини-улучшение', 'Есть процесс, который бесит? Набросай, как сделать его проще, — это уже свой проект.']]},
+  'Профессиональное развитие': {about:'про развитие', list:[
+    ['Одна цель на месяц', 'Выбери навык — SQL, презентации, переговоры — и попроси задачу под него.'],
+    ['Записывай, чему научился', 'Две строки по пятницам. К концу стажировки — готовое портфолио.'],
+    ['Сходи на чужую встречу', 'Попросись послушать соседнюю команду: увидишь, как всё устроено целиком.']]},
+  'Взаимодействие с командой': {about:'про команду', list:[
+    ['Обед с коллегой', 'Позови кого-нибудь из команды на обед. После этого просить помощь в разы проще.'],
+    ['Карта «кто что знает»', 'Спроси, кто за что отвечает, и запиши. Сэкономит часы поисков.'],
+    ['Расскажи, что сделал', 'Минута на планёрке про свою задачу — и тебя знают не только по ID.']]},
+  'Общая удовлетворенность стажировкой': {about:'про стажировку в целом', list:[
+    ['Что бы ты поменял?', 'Сформулируй одну вещь и напиши HR. Можно анонимно — кнопка выше.'],
+    ['Три победы месяца', 'Вспомни, что сейчас умеешь, а месяц назад — нет. Обычно список длиннее, чем кажется.'],
+    ['Поговори о том, что дальше', 'Обсуди с наставником планы после стажировки: неопределённость утомляет больше задач.']]},
+  _ok: {about:'чтобы держать темп', list:[
+    ['Записывай, чему научился', 'Две строки по пятницам. К концу стажировки — готовое портфолио.'],
+    ['Попроси задачу на вырост', 'Всё идёт ровно — самое время взять что-то чуть сложнее, чем обычно.'],
+    ['Скажи спасибо', 'Отметь коллегу, который помог. Мелочь, а команда запоминает.']]}
+};
+
+const ICON = {
+  chev:'<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5l5 5-5 5"/></svg>',
+  arr:'<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h12M11 5l5 5-5 5"/></svg>',
+  swap:'<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8l3-3 3 3M8 5v10M15 12l-3 3-3-3M12 15V5"/></svg>',
+  mentor:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h11a2 2 0 012 2v6a2 2 0 01-2 2H9l-4 3v-3H4a2 2 0 01-2-2V7a2 2 0 012-2z"/><path d="M19 9h1a2 2 0 012 2v6a2 2 0 01-2 2h-1v3l-4-3h-3"/></svg>',
+  hr:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3.5 7l8.5 6 8.5-6"/></svg>',
+  anon:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 018 0v2.5"/><circle cx="12" cy="15.5" r="1.4"/></svg>',
+  lock:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 018 0v2.5"/></svg>'
+};
+
+const HELP = {
+  mentor:{title:'Обсудить с наставником', sub:'Предложим наставнику встречу. Напиши тему — так он подготовится.',
+          anonSub:'HR передаст наставнику без имени.', ph:'Например: хочу разобрать сроки по проекту',
+          chips:['Нужна короткая встреча','Не понимаю задачу','Много параллельных задач'], anon:false, btn:'Обсудить с наставником', small:'Тема встречи — в пару слов'},
+  hr:{title:'Написать HR', sub:'Сообщение увидит только HR программы.', anonSub:'Без имени и ID. Увидит только HR программы.',
+      ph:'О чём хочешь поговорить?', chips:['Вопрос про нагрузку','Хочу сменить задачи','Вопрос про оформление'], anon:false, btn:'Написать HR', small:'Вопрос, идея, что угодно'},
+  anonymous:{title:'Анонимно сообщить о проблеме', sub:'Без имени и ID. HR увидит только текст.', anonSub:'Без имени и ID. HR увидит только текст.',
+             idSub:'С твоим ID — HR сможет ответить лично.', ph:'Что происходит? Можно коротко', chips:['Слишком большая нагрузка','Некомфортно в команде','Нет обратной связи'],
+             anon:true, btn:'Анонимно сообщить о проблеме', small:'Имя и ID не передаём'}
+};
+
+// ---------- экран выбора «Кто ты?» ----------
+async function renderPick(){
+  setTimeout(() => $('app').classList.add('settled'), 2600);
+  let ov = null; try { ov = await load('/api/overview', 'overview.json'); } catch {}
+  const dep = Object.fromEntries((ov?.survey_status || ov?.interns || []).map(s => [s.intern_id, s.department]));
+  const ids = (ov?.survey_status || []).map(s => s.intern_id).filter(Boolean);
+  const list = ids.length ? ids : IDS;
+  document.title = 'Кто ты? · Радар стажировки';
+  $('app').innerHTML = `
+    <header class="hero short">
+      <div class="bar rise"><img src="brand/logos/logo1.svg" alt="МГТС"><b>Радар стажировки</b></div>
+      <img class="cube" src="brand/img/cube.png" alt="" aria-hidden="true">
+      <div class="hello rise" style="--i:1"><h1>Кто ты?</h1><div class="m">Выбери свой ID — покажем твои ответы и подсказки</div></div>
+    </header>
+    <section><div class="pick">
+      ${list.map((id, i) => `<a class="pk rise" style="--i:${i + 2}" href="${esc(link(id))}">
+        <span class="av">${esc(id.replace(/\D/g, '').slice(-2))}</span>
+        <span><b>${esc(id)}</b><small>${esc(dep[id] || 'Стажёр МГТС')}</small></span>
+        <span class="chev">${ICON.chev}</span></a>`).join('')}
+    </div></section>
+    ${privacy(list.length + 2)}`;
+}
+const privacy = i => `<p class="priv rise" style="--i:${i}">${ICON.lock}<span>Твои ответы видит только HR программы. Наставник видит только общий статус.</span></p>`;
+
+// ---------- расчёты по своим ответам ----------
+function own(d){ return (d.periods || []).filter(p => p.intern && Object.keys(p.intern).length).sort((a, b) => a.period - b.period); }
+function avgOf(p){ if(p.intern_avg != null) return p.intern_avg; const v = Object.values(p.intern).filter(x => typeof x === 'number'); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; }
+function moves(last, prev){
+  if(!last || !prev) return null;
+  return Object.keys(last.intern).filter(k => typeof last.intern[k] === 'number' && typeof prev.intern?.[k] === 'number')
+    .map(k => ({k, from:prev.intern[k], to:last.intern[k], d:last.intern[k] - prev.intern[k]}));
+}
+function pickMoves(all){
+  const downs = all.filter(m => m.d < 0).sort((a, b) => a.d - b.d);
+  const ups = all.filter(m => m.d > 0).sort((a, b) => b.d - a.d);
+  if(!downs.length && !ups.length) return [];
+  const out = [...downs.slice(0, ups.length ? 2 : 3)];
+  out.push(...ups.slice(0, 3 - out.length));
+  return out.slice(0, 3);
+}
+function tipTopic(last, all){
+  const worst = (all || []).filter(m => m.d < 0).sort((a, b) => a.d - b.d || a.to - b.to)[0];
+  if(worst && TIPS[worst.k]) return {key:worst.k, why:`Потому что «${short(worst.k)}» просела: ${worst.from} → ${worst.to}`};
+  if(last){ const low = Object.entries(last.intern).filter(([k, v]) => typeof v === 'number' && v < 4 && TIPS[k]).sort((a, b) => a[1] - b[1])[0];
+    if(low) return {key:low[0], why:`Потому что «${short(low[0])}» пока на ${low[1]} из 5`}; }
+  return {key:'_ok', why:'Всё ровно — пара идей, как сделать ещё лучше'};
+}
+
+// ---------- экран стажёра ----------
+function render(quiet){
+  const d = S.data, mine = own(d), last = mine.at(-1), prev = mine.at(-2);
+  const maxP = Math.max(0, ...(d.periods || []).map(p => p.period));
+  const cur = PERIOD || S.ov?.current_period || maxP || 1;
+  const st = S.ov?.survey_status?.find(s => s.intern_id === d.intern_id)?.periods?.[cur]?.intern;
+  const sent = st ?? mine.some(p => p.period === cur);
+  const left = Math.max(0, TOTAL - cur);
+  const monthLine = cur <= TOTAL ? `Месяц <b>${cur}</b> из ${TOTAL}` : `Месяц <b>${cur}</b> · сверх программы`;
+  const leftLine = left === 0 ? 'финишная прямая' : left === 1 ? 'остался 1 месяц' : `ещё ${left} ${plural(left, 'месяц', 'месяца', 'месяцев')}`;
+  const form = window.RADAR_FORMS?.intern || '#';
+  const all = moves(last, prev), mv = all ? pickMoves(all) : null;
+  const a = last ? avgOf(last) : null, pa = prev ? avgOf(prev) : null, da = a != null && pa != null ? Math.round((a - pa) * 10) / 10 : null;
+  const tp = tipTopic(last, all), tips = TIPS[tp.key];
+  let i = 0; const n = () => `style="--i:${i++}"`;
+
+  document.title = `Моя стажировка · ${d.intern_id}`;
+  $('app').classList.toggle('quiet', !!quiet);
+  $('app').innerHTML = `
+    <header class="hero">
+      <div class="bar rise" ${n()}><img src="brand/logos/logo1.svg" alt="МГТС"><b>Радар стажировки</b>
+        <a class="who" href="${esc(link(null))}" aria-label="Сменить стажёра">${esc(d.intern_id)} ${ICON.swap}</a></div>
+      <img class="cube" src="brand/img/cube.png" alt="" aria-hidden="true">
+      <div class="hello rise" ${n()}><h1>Привет!</h1><div class="m">${monthLine}</div>${d.department ? `<div class="dept">${esc(d.department)}</div>` : ''}</div>
+      <div class="prog rise" ${n()} role="progressbar" aria-valuemin="0" aria-valuemax="${TOTAL}" aria-valuenow="${Math.min(cur, TOTAL)}" aria-label="Прогресс стажировки">
+        <div class="segs">${Array.from({length:TOTAL}, (_, k) => `<i style="--k:${k}" class="${k < cur ? 'on' : ''} ${k === cur - 1 ? 'now' : ''}"></i>`).join('')}</div>
+        <small><span>старт</span><span>${leftLine}</span></small>
+      </div>
+    </header>
+
+    <div class="cta rise" ${n()}>
+      <a class="go" id="go" href="${esc(form)}" ${form !== '#' ? 'target="_blank" rel="noopener"' : ''}>
+        <span>Пройти пульс-опрос <small>· 2 мин</small></span><b class="arr">${ICON.arr}</b></a>
+      <div class="state ${sent ? '' : 'wait'}"><i></i>${sent ? `За Месяц ${cur} ответ отправлен ✓` : `Ждём твой ответ за Месяц ${cur}`}</div>
+    </div>
+    ${S.mock ? `<div class="demo rise" ${n()}>Демо-данные · без связи с сервером ответы сохраняются на телефоне</div>` : ''}
+
+    <section>
+      <div class="h rise" ${n()}><h2>Мой месяц</h2><span>только твои ответы</span></div>
+      ${last ? `
+      <div class="card rise" ${n()}>
+        <div class="avg"><span class="v num">${a == null ? '—' : a.toFixed(1).replace('.', ',')}</span><span class="of">из 5 · средняя<br>за Месяц ${last.period}</span>
+          ${da != null ? `<span class="pill ${da > 0 ? 'up' : da < 0 ? 'down' : ''}">${da > 0 ? '▲ +' : da < 0 ? '▼ −' : ''}${da === 0 ? 'как в прошлом' : fmt(Math.abs(da))}</span>` : ''}</div>
+        <div class="chartbox"><canvas id="ch" aria-label="Твоя средняя оценка по месяцам"></canvas></div>
+        <div class="cap">Средняя по 7 вопросам пульс-опроса, месяц за месяцем</div>
+      </div>
+      <div class="moves">
+        ${mv === null ? `<div class="mv flat rise" ${n()}><span class="ic">1</span><span class="t"><span class="n">Это твой первый опрос. Сравним после следующего</span></span></div>`
+        : !mv.length ? `<div class="mv flat rise" ${n()}><span class="ic">=</span><span class="t"><span class="k">без изменений</span><span class="n">Всё ровно, как в прошлом месяце</span></span></div>`
+        : mv.map(m => `<div class="mv ${m.d > 0 ? 'up' : 'down'} rise" ${n()}>
+            <span class="ic" aria-hidden="true">${m.d > 0 ? '▲' : '▼'}</span>
+            <span class="t"><span class="k">${m.d > 0 ? 'Что выросло' : 'Что просело'}</span><span class="n">${esc(short(m.k))}</span></span>
+            <span class="sc">${m.from}<em>→</em>${m.to}</span></div>`).join('')}
+      </div>` : `<div class="card rise" ${n()}>Пока нет твоих ответов. Пройди первый пульс-опрос — здесь появится твой график.</div>`}
+    </section>
+
+    <section>
+      <div class="h rise" ${n()}><h2>Нужна помощь?</h2></div>
+      <div class="help">
+        ${Object.entries(HELP).map(([t, h]) => `<button class="hb rise" ${n()} data-help="${t}">
+          <span class="ic">${ICON[t === 'anonymous' ? 'anon' : t]}</span><span class="t"><b>${h.btn}</b><small>${h.small}</small></span><span class="chev">${ICON.chev}</span></button>`).join('')}
+      </div>
+    </section>
+
+    <section>
+      <div class="h rise" ${n()}><h2>Полезное</h2><span>${esc(tips.about)}</span></div>
+      <p class="why rise" ${n()}>${esc(tp.why)}</p>
+      <div class="tips rise" ${n()}>
+        ${tips.list.map((t, k) => `<article class="tip"><span class="no">0${k + 1}</span><b>${esc(t[0])}</b><p>${esc(t[1])}</p></article>`).join('')}
+      </div>
+    </section>
+    ${privacy(i++)}`;
+
+  $('go').onclick = e => { if(form === '#'){ e.preventDefault(); toast('Ссылку на форму скоро добавит HR'); } };
+  document.querySelectorAll('[data-help]').forEach(b => b.onclick = () => openSheet(b.dataset.help));
+  if(last) drawChart(mine, cur, quiet);
+}
+
+function drawChart(mine, cur, quiet){
+  if(!window.Chart) return;
+  const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+  const n = Math.max(TOTAL, cur, mine.at(-1)?.period || 0);
+  const by = Object.fromEntries(mine.map(p => [p.period, avgOf(p)]));
+  const data = Array.from({length:n}, (_, k) => by[k + 1] ?? null);
+  const lastIdx = mine.at(-1).period - 1;
+  const blue = css('--mgts-blue') || '#008AE0';
+  if(S.chart) S.chart.destroy();
+  const ctx = $('ch').getContext('2d');
+  const g = ctx.createLinearGradient(0, 0, 0, 150); g.addColorStop(0, 'rgba(0,138,224,.20)'); g.addColorStop(1, 'rgba(0,138,224,0)');
+  S.chart = new Chart(ctx, {
+    type:'line',
+    data:{labels:data.map((_, k) => 'М' + (k + 1)), datasets:[{data, borderColor:blue, backgroundColor:g, fill:true, tension:.35, borderWidth:2.5,
+      pointRadius:data.map((_, k) => k === lastIdx ? 6 : 3.5), pointHoverRadius:7,
+      pointBackgroundColor:data.map((_, k) => k === lastIdx ? blue : '#fff'), pointBorderColor:blue, pointBorderWidth:2}]},
+    options:{responsive:true, maintainAspectRatio:false,
+      animation:(RM || quiet) ? false : {duration:900, easing:'easeOutQuart'},
+      layout:{padding:{top:8, right:8, left:2}},
+      plugins:{legend:{display:false}, tooltip:{displayColors:false, backgroundColor:css('--mgts-navy-2') || '#102C51', padding:10, cornerRadius:10,
+        callbacks:{title:it => 'Месяц ' + (it[0].dataIndex + 1), label:it => fmt(it.parsed.y) + ' из 5'}}},
+      scales:{y:{min:1, max:5, ticks:{stepSize:1, color:'#829CB5', font:{family:'MTSText', size:11}}, grid:{color:'#EAF1F8'}, border:{display:false}},
+              x:{ticks:{color:'#829CB5', font:{family:'MTSText', size:11}}, grid:{display:false}, border:{display:false}}}}
+  });
+}
+
+// ---------- нижний лист помощи ----------
+function openSheet(type){
+  const h = HELP[type]; S.sheet = {type, anon:h.anon};
+  const sh = $('sheet'); sh.classList.remove('ok');
+  $('shT').textContent = h.title; $('shText').value = ''; $('shText').placeholder = h.ph;
+  $('shC').innerHTML = h.chips.map(c => `<button class="chip" type="button">${esc(c)}</button>`).join('');
+  $('shC').querySelectorAll('.chip').forEach(c => c.onclick = () => {
+    const t = $('shText'); const v = t.value.trim();
+    t.value = v ? (v.includes(c.textContent) ? v : v + '. ' + c.textContent) : c.textContent; c.classList.add('on'); sync(); t.focus();
+  });
+  setAnon(h.anon); sync();
+  sh.setAttribute('aria-hidden', 'false'); sh.classList.add('open'); $('scrim').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  S.lastFocus = document.activeElement;
+  setTimeout(() => $('shX').focus({preventScroll:true}), 60);
+}
+function closeSheet(){
+  const sh = $('sheet'); if(!sh.classList.contains('open')) return;
+  sh.classList.remove('open'); $('scrim').classList.remove('open'); sh.setAttribute('aria-hidden', 'true');
+  sh.style.transform = ''; document.body.style.overflow = ''; clearTimeout(S.closeT);
+  S.lastFocus?.focus?.({preventScroll:true});
+}
+function setAnon(v){
+  S.sheet.anon = v; const h = HELP[S.sheet.type];
+  $('shA').setAttribute('aria-checked', String(v));
+  $('shS').textContent = v ? h.anonSub : (h.idSub || h.sub);
+  $('shAs').textContent = v ? 'имя и ID не передаём' : 'сейчас — с твоим ID';
+}
+function sync(){ $('shGo').disabled = $('shText').value.trim().length < 2; }
+
+async function send(){
+  const btn = $('shGo'); btn.disabled = true; btn.textContent = 'Отправляем…';
+  const body = {intern_id: S.sheet.anon ? null : (S.data?.intern_id || ID || null), type:S.sheet.type, text:$('shText').value.trim(), anonymous:S.sheet.anon};
+  let where = 'server';
+  try {
+    if(S.mock) throw new Error('mock');
+    const r = await fetch(API + '/api/intern-requests', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+    if(!r.ok) throw new Error(r.status);
+  } catch(e){
+    where = 'local';
+    try { const k = 'radar.intern-requests', all = JSON.parse(localStorage.getItem(k) || '[]');
+      all.push({...body, at:new Date().toISOString()}); localStorage.setItem(k, JSON.stringify(all.slice(-50))); } catch {}
+  }
+  btn.textContent = 'Отправить';
+  $('shDone').textContent = (S.sheet.type === 'mentor' ? 'Наставник получит запрос на встречу.' : 'Сообщение ушло HR программы.')
+    + (where === 'local' ? ' (Демо: сохранили на этом устройстве.)' : '');
+  $('sheet').classList.add('ok');
+  S.closeT = setTimeout(() => { closeSheet(); toast('Отправлено ✓'); }, 1900);
+}
+
+$('shA').onclick = () => setAnon(!S.sheet.anon);
+$('shText').oninput = sync;
+$('shGo').onclick = send;
+$('shX').onclick = closeSheet;
+$('scrim').onclick = closeSheet;
+addEventListener('keydown', e => { if(e.key === 'Escape') closeSheet(); });
+// свайп листа вниз
+(() => { const sh = $('sheet'); let y0 = null, dy = 0;
+  sh.addEventListener('touchstart', e => { if(sh.scrollTop > 0 || e.target.tagName === 'TEXTAREA') return; y0 = e.touches[0].clientY; dy = 0; sh.style.transition = 'none'; }, {passive:true});
+  sh.addEventListener('touchmove', e => { if(y0 == null) return; dy = Math.max(0, e.touches[0].clientY - y0); sh.style.transform = `translateY(${dy}px)`; }, {passive:true});
+  sh.addEventListener('touchend', () => { if(y0 == null) return; sh.style.transition = ''; y0 = null; if(dy > 90) closeSheet(); else sh.style.transform = ''; });
+})();
+
+let toastT;
+function toast(t){ const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2400); }
+
+// ---------- загрузка ----------
+async function loadAll(){
+  const d = clip(await load(`/api/interns/${encodeURIComponent(ID)}`, `intern_${ID}.json`));
+  let ov = null; try { ov = await load('/api/overview', 'overview.json'); } catch {}
+  S.data = d; S.ov = ov;
+}
+async function poll(){
+  if(S.mock || document.hidden) return;
+  try {
+    const v = await getJSON(API + '/api/version');
+    if(S.ver != null && v.version !== S.ver){ await loadAll(); render(true); if(v.last_event?.intern_id === ID) toast('Твои данные обновились'); }
+    S.ver = v.version;
+  } catch {}
+}
+(async function init(){
+  if(!ID){ renderPick(); return; }
+  try { await loadAll(); }
+  catch(e){
+    $('app').innerHTML = `<div class="empty"><h2>Не нашли ${esc(ID)}</h2><p>Проверь ID или выбери себя из списка.</p><a href="${esc(link(null))}">Кто ты?</a></div>`;
+    return;
+  }
+  render(false);
+  setTimeout(() => $('app').classList.add('settled'), 2600); // страховка, если анимации заморожены (фоновая вкладка)
+  if(!S.mock){ poll(); setInterval(poll, 4000); }
+})();
+</script>
+</body>
+</html>
