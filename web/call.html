@@ -12,36 +12,43 @@
 <body>
   <main>
     <header>
-      <div class="brand"><img src="brand/logos/logo1.svg" alt="МГТС" width="38" height="38"><strong>Радар стажировки</strong></div>
-      <h1>Видеозвонок</h1>
+      <div class="heading">
+        <div class="brand"><img src="brand/logos/logo1.svg" alt="МГТС" width="38" height="38"><strong>Радар стажировки</strong></div>
+        <h1>Видеозвонок</h1>
+      </div>
       <p id="status" role="status">Подготовка комнаты</p>
-      <p id="media-status" role="status" hidden></p>
     </header>
+    <p id="media-status" role="status" hidden></p>
     <div class="layout">
-      <section aria-label="Участники видеозвонка">
+      <section class="video-panel" aria-label="Участники видеозвонка">
         <div class="stage">
-          <p id="waiting">Здесь появится собеседник</p>
+          <div id="waiting">
+            <span class="stage-icon"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="3"/><path d="m16 10 5-3v10l-5-3"/></svg></span>
+            <p>Здесь появится собеседник</p>
+          </div>
           <div id="peers"></div>
           <figure class="self">
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 21v-2a7 7 0 0 1 14 0v2"/></svg>
             <video id="preview" autoplay playsinline muted hidden></video>
             <figcaption>Вы</figcaption>
           </figure>
         </div>
         <div class="controls">
           <button type="button" id="join">Войти в звонок</button>
-          <button type="button" id="mic" aria-pressed="false" hidden>Микрофон</button>
-          <button type="button" id="cam" aria-pressed="false" hidden>Камера</button>
+          <button type="button" id="mic" aria-pressed="false" hidden><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11v1a7 7 0 0 0 14 0v-1M12 19v3"/><path class="device-off" d="m3 3 18 18"/></svg><span>Микрофон</span></button>
+          <button type="button" id="cam" aria-pressed="false" hidden><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="3"/><path d="m16 10 5-3v10l-5-3"/><path class="device-off" d="m3 3 18 18"/></svg><span>Камера</span></button>
           <button type="button" id="leave" hidden>Завершить</button>
         </div>
       </section>
       <section class="chat" aria-labelledby="chat-title">
-        <h2 id="chat-title">Чат звонка</h2>
+        <div class="chat-header"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a7 7 0 0 1-7 7H9l-5 3V9a5 5 0 0 1 5-5h6a5 5 0 0 1 5 5zM8 9h8m-8 4h5"/></svg><h2 id="chat-title">Чат звонка</h2></div>
+        <p class="chat-empty">Здесь можно обмениваться сообщениями во время звонка</p>
         <ol id="messages" role="log" aria-label="Сообщения"></ol>
         <p id="chat-status" role="status" hidden></p>
         <form id="chat">
           <label for="message">Сообщение</label>
-          <input id="message" maxlength="500" required disabled autocomplete="off">
-          <button type="submit" id="send" disabled>Отправить</button>
+          <input id="message" placeholder="Напишите сообщение" maxlength="500" required disabled autocomplete="off">
+          <button type="submit" id="send" disabled aria-label="Отправить"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5m-6 6 6-6 6 6"/></svg></button>
         </form>
       </section>
     </div>

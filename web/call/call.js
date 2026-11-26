@@ -15,8 +15,10 @@ const messages = byId('messages');
 const peers = new Map();
 let room;
 
-function status(text) {
-  byId('status').textContent = text;
+function status(text, connected = false) {
+  const item = byId('status');
+  item.textContent = text;
+  item.dataset.connected = connected;
 }
 
 function notice(id, text) {
@@ -111,7 +113,7 @@ async function enter() {
         chatEnabled(state === 'connected');
         if (state === 'reconnecting') removePeers();
         const labels = { connecting: 'Подключение', connected: 'Вы в звонке', reconnecting: 'Восстанавливаем соединение' };
-        if (labels[state]) status(labels[state]);
+        if (labels[state]) status(labels[state], state === 'connected');
       },
       presence,
       remote(id, stream) {
