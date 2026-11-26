@@ -7,7 +7,8 @@
 <link rel="stylesheet" href="brand/brand.css">
 <script src="vendor/chart.umd.min.js"></script>
 <script src="config.js" onerror=""></script>
-<script src="shared/store.js?v=3"></script>
+<script src="shared/store.js?v=4"></script>
+<script src="shared/insight.js?v=1"></script>
 <script src="hr-tools.js?v=3" onerror=""></script>
 <style>
 :root{--sh:0 1px 2px rgba(19,64,116,.06),0 12px 32px -10px rgba(0,138,224,.16);--sh-h:0 2px 4px rgba(19,64,116,.08),0 18px 40px -10px rgba(0,138,224,.26);
@@ -115,7 +116,7 @@ table{border-collapse:collapse;width:100%}
 .row .sc{font-family:var(--font-title);font-weight:500;font-size:16px;text-align:right;white-space:nowrap}
 .row .sc small{display:block;font-family:var(--font-text);font-weight:400;font-size:12px;color:var(--mgts-muted)}
 .row .chev{color:var(--mgts-muted)}
-.trend{font-size:13px;font-weight:700;margin-left:6px}.trend.up{color:var(--st-green)}.trend.down{color:var(--st-red)}
+.trend{font-size:13px;font-weight:700;margin-left:6px}.row .sc small.trend{margin-left:0;font-size:12px}.row .sc small.trend.up{color:var(--st-green)}.row .sc small.trend.down{color:var(--st-red)}.whys{margin:0 0 8px;padding-left:18px;font-size:14px}.whys li{margin:2px 0}.trend.up{color:var(--st-green)}.trend.down{color:var(--st-red)}
 .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
 .chip{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 14px;border-radius:20px;border:1px solid var(--mgts-line);background:#fff;color:var(--mgts-navy);font-weight:500}
 .chip.on{background:var(--mgts-navy);border-color:var(--mgts-navy);color:#fff}
@@ -501,7 +502,8 @@ function rowHtml(i){
     <span class="dot st-${i.status||'grey'}" title="${ST[i.status]||''}"></span>
     <span style="min-width:0"><b>${esc(i.intern_id)}</b> <span class="sub">· ${esc(i.department)}</span>
       <div class="why">${esc(i.status === 'green' ? 'Всё в порядке' : (i.reason || ST[i.status]))}</div></span>
-    <span class="sc">${fmt(i.intern_avg)}${i.trend ? `<span class="trend ${i.trend>0?'up':'down'}">${i.trend>0?'▲':'▼'}${fmt(Math.abs(i.trend))}</span>` : ''}<small>${i.signals ? i.signals + ' сигн.' : 'балл стажёра'}</small></span>
+    <span class="sc" title="Средняя оценка в пульс-опросе стажёра за Месяц ${cur()} (из 5) и изменение к прошлому месяцу">${fmt(i.intern_avg)}<span class="mut" style="font-size:12px"> из 5</span>
+      <small>оценка стажёра</small>${i.trend ? `<small class="trend ${i.trend>0?'up':'down'}">${i.trend>0?'▲ +':'▼ −'}${fmt(Math.abs(i.trend))} за месяц</small>` : ''}</span>
     <span class="chev">›</span></a>`;
 }
 async function viewHome(v){
@@ -527,7 +529,7 @@ async function viewHome(v){
     <div>
       <section class="panel"><h2>Требуют внимания <a href="#/interns">Все стажёры →</a></h2>
         <div class="rows">${bad.length ? bad.map(rowHtml).join('') : `<div class="empty">${ico('check')} Все ${L.length} стажёров в норме</div>`}</div></section>
-      ${(S.ov.themes || []).length ? `<section class="panel"><h2>Повторяется в программе</h2>${S.ov.themes.map(x => `<div class="theme"><b>${esc(x.topic)}</b> <span class="mut">· ${(x.interns||[]).map(esc).join(', ')}</span>${(x.quotes||[]).slice(0,1).map(q => `<q>«${esc(q)}»</q>`).join('')}</div>`).join('')}</section>` : ''}
+      <section class="panel" id="themesBox" style="display:none"></section>
     </div>
     <div>
       <section class="panel"><h2>Обращения <a href="#/inbox">Открыть →</a></h2><div class="mini" id="homeInbox"><div class="mut">Загрузка…</div></div></section>
@@ -544,6 +546,7 @@ async function viewHome(v){
   </div>`;
   v.querySelectorAll('[data-n]').forEach(countUp);
   $('heroAsk').onclick = () => chatOpen(true);
+  programThemes().then(renderThemes).catch(() => {});
   v.querySelectorAll('[data-remind]').forEach(b => b.onclick = () => remind(b.dataset.remind, b));
   // мини-лента обращений
   const items = await inboxItems();
@@ -551,6 +554,44 @@ async function viewHome(v){
   box.innerHTML = items.length ? items.slice(0, 3).map(x => `<div><span class="badge ${x.anon ? 'b-grey' : 'b-blue'}">${x.anon ? 'анонимно' : esc(x.who)}</span>
       <span class="grow" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.text)}<small>${esc(x.kind)} · ${when(x.at)}</small></span></div>`).join('')
     : '<div><span class="grow mut">Новых обращений нет</span></div>';
+}
+// ---------- повторяющиеся темы программы ----------
+// Бэк размечает темы комментариев по каждому стажёру (comment_analysis). Здесь только сводим их:
+// тема, которая в месяцы с риском встречалась у 2+ стажёров, — вопрос уровня программы, а не одного человека.
+const plural = window.RadarInsight.plural;
+const monthsTxt = ms => { ms = [...new Set(ms)].sort((a, b) => a - b); return ms.length > 2 && ms.at(-1) - ms[0] === ms.length - 1 ? `М${ms[0]}–${ms.at(-1)}` : ms.map(m => 'М' + m).join(', '); };
+const STEMS = {'Коммуникация':['общ','коммуник','обратн','встреч','связ','созвон'], 'Поддержка наставника':['наставн','поддерж','сверк','обратн'],
+  'Нагрузка':['нагруз','срок','много задач','перегр'], 'Навыки стажёра':['навык','опыт','самостоят','умени','знани'], 'Задачи и их качество':['задач','постановк','переделыв'],
+  'Процессы и организация':['процесс','организац','доступ','согласован'], 'Команда и атмосфера':['команд','коллег','атмосфер']};
+function quoteFor(topic, p){
+  const stems = STEMS[topic] || topic.toLowerCase().split(/[^а-яё]+/).filter(w => w.length > 3).map(w => w.slice(0, 5));
+  const texts = [...Object.values(p.comments?.intern || {}), ...Object.values(p.comments?.mentor || {})].filter(t => t && t !== 'nan');
+  const sent = texts.flatMap(t => String(t).split(/(?<=[.!?;])\s+/)).find(s => stems.some(st => s.toLowerCase().includes(st)));
+  return (sent || '').replace(/[;.]$/, '');
+}
+async function programThemes(){
+  if(S.ov.themes?.length) return S.ov.themes;
+  const key = cur() + ':' + (S.ov.version ?? '') + ':' + (S.mock ? 'm' : 'a');
+  if(S.themesKey === key) return S.themes;
+  const cards = (await Promise.all((S.ov.interns || []).map(i => loadIntern(i.intern_id).catch(() => null)))).filter(Boolean);
+  const T = {};
+  for(const c of cards) for(const p of c.periods || []){ const a = p.comment_analysis || {};
+    if(!(a.risk || a.tone === 'негатив')) continue;
+    for(const t of a.topics || []){ const x = T[t] ||= {topic:t, by:{}, quote:''}; (x.by[c.intern_id] ||= []).push(p.period); if(!x.quote) x.quote = quoteFor(t, p); } }
+  const list = Object.values(T).map(x => ({...x, interns:Object.keys(x.by).sort()})).filter(x => x.interns.length >= 2)
+    .sort((a, b) => b.interns.length - a.interns.length).slice(0, 4);
+  S.themesKey = key; S.themes = list; return list;
+}
+function renderThemes(list){
+  const box = $('themesBox'); if(!box) return;
+  if(!list?.length){ box.style.display = 'none'; return; }
+  const n = (S.ov.interns || []).length;
+  box.style.display = '';
+  box.innerHTML = `<h2>Повторяется у нескольких стажёров</h2>
+    <p class="mut" style="margin:-6px 0 12px;font-size:14px">Темы из комментариев в анкетах, где ИИ отметил риск. Если тема у многих — это вопрос к программе, а не к одному стажёру.</p>
+    ${list.map(x => `<div class="theme"><b>${esc(x.topic)}</b> <span class="badge b-grey">${x.interns.length} из ${n}</span>
+      <div class="mut" style="font-size:14px;margin-top:4px">${x.interns.map(id => `<a href="#/intern/${esc(id)}">${esc(id)}</a> (${monthsTxt(x.by[id] || [])})`).join(' · ')}</div>
+      ${x.quote ? `<q>«${esc(x.quote)}»</q>` : ''}</div>`).join('')}`;
 }
 function remind(name, btn){ btn.disabled = true; btn.innerHTML = ico('check') + 'Отправлено'; toast(`Напоминание отправлено: <b>${esc(name)}</b>`);
   if(!S.mock) fetch(API + '/api/remind', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({who:name, period:cur()})}).catch(() => {}); }
@@ -632,7 +673,7 @@ function viewIntern(v){
       <span class="badge b-${c.status||'grey'}"><span class="dot st-${c.status||'grey'}" style="width:10px;height:10px"></span>${ST[c.status]||''}</span>
       <span class="meta" style="flex-basis:100%;margin-top:-6px">${esc(c.department)} · наставник ${esc(c.mentor_id)} · срез на Месяц ${cur()}</span>
       <div class="acts">
-        <a class="btn" href="${reportUrl({tpl:'intern', id:c.intern_id})}">${ico('doc')}Отчёт 1:1</a>
+        <a class="btn" href="${reportUrl({tpl:'intern', id:c.intern_id})}">${ico('doc')}Скачать отчёт</a>
         <button class="btn" id="aKudos">${ico('heart')}Дать ОС</button>
         <button class="btn" id="aMeet">${ico('cal')}Назначить 1:1</button>
         <a class="btn" id="aCall" style="display:none" target="_blank" rel="noopener" href="call.html?room=${encodeURIComponent(c.intern_id)}&name=HR">${ico('phone')}Созвониться</a>
@@ -651,61 +692,73 @@ function viewIntern(v){
   if(S.tab === 'adapt') return tabAdapt(body, c);
   return tabSum(body, c);
 }
-function sigList(){ const s = S.card?.signals || []; return S.onlyConfirmed ? s.filter(x => reviewOf(x) === 'confirmed') : s; }
+const {groupsOf, whoOf, summaryOf, kindOf} = window.RadarInsight;
+function groupReview(g){ const r = g.sigs.map(reviewOf); return r.every(x => x && x === r[0]) ? r[0] : null; }
+function setGroupReview(gid, status){
+  const g = (S.groups || []).find(x => x.id === gid); if(!g) return;
+  const all = reviews(), off = g.sigs.every(s => reviewOf(s) === status);
+  for(const s of g.sigs){ all[s.id] = off ? null : status;
+    if(!S.mock) fetch(API + `/api/signals/${encodeURIComponent(s.id)}/review`, {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({status: all[s.id] || 'none', intern_id: S.cardId, period: cur()})}).catch(() => {}); }
+  RS.ls.set(RKEY, all); renderView();
+}
 function tabSum(el, c){
   const acts = actionsOf(c), dn = RS.ls.get('radar.actdone.' + c.intern_id, {});
-  const sigs = sigList(), shown = S.allSig ? sigs : [...sigs].sort((x, y) => (x.level==='red'?0:1) - (y.level==='red'?0:1)).slice(0, 3);
+  const groups = S.groups = groupsOf(c), shown = S.allSig ? groups : groups.slice(0, 3);
+  const nSig = (c.signals || []).length;
   el.innerHTML = `<div class="grid2">
     <div>
-      <div class="sum">${esc(c.summary || (c.status === 'green' ? 'Динамика стабильная, сигналов нет.' : '—'))}</div>
+      <div class="sum" title="${esc(c.summary || '')}">${esc(summaryOf(c, groups))}</div>
       <h3 class="h2" style="font-size:18px">Что сделать</h3>
       <div class="todo">${acts.length ? acts.map((a, i) => `<label class="${dn[a.t] ? 'done' : ''}"><input type="checkbox" data-a="${esc(a.t)}" ${dn[a.t] ? 'checked' : ''}><span>${esc(a.t)}${a.why ? `<small>${esc(a.why)}</small>` : ''}</span></label>`).join('')
         : '<div class="mut">Действий не требуется — достаточно планового опроса.</div>'}</div>
-      <h3 class="h2" style="font-size:18px;margin-top:22px">Средний балл <a href="#" id="toDyn">Подробно →</a></h3>
+      <h3 class="h2" style="font-size:18px;margin-top:22px">Средняя оценка по месяцам <a href="#" id="toDyn">Подробно →</a></h3>
       <div class="chartbox sm"><canvas id="ch"></canvas></div>
     </div>
     <div>
-      <h3 class="h2" style="font-size:18px">Сигналы <span class="badge b-grey">${sigs.length}</span>
-        <label style="margin-left:auto;font-family:var(--font-text);font-weight:400;font-size:14px;display:flex;gap:6px;align-items:center;color:var(--mgts-muted)"><input type="checkbox" id="onlyc" ${S.onlyConfirmed?'checked':''}> подтверждённые</label></h3>
-      ${sigs.length ? shown.map(sigHtml).join('') + (sigs.length > 3 ? `<button class="more" id="moreSig">${S.allSig ? 'Свернуть' : 'Ещё ' + (sigs.length - 3)}</button>` : '')
-        : `<div class="empty">${S.onlyConfirmed ? 'Нет подтверждённых' : 'Сигналов нет'}</div>`}
+      <h3 class="h2" style="font-size:18px">Почему в зоне внимания ${groups.length ? `<span class="badge b-grey">${groups.length} ${plural(groups.length, ['причина', 'причины', 'причин'])}</span>` : ''}</h3>
+      ${groups.length ? `<p class="mut" style="margin:-4px 0 10px;font-size:14px">Каждая причина подтверждена оценками и цитатами из анкет${nSig > groups.length ? ` (всего ${nSig} ${plural(nSig, ['основание', 'основания', 'оснований'])})` : ''}. Отметьте, что HR с этим делает.</p>` : ''}
+      ${groups.length ? shown.map(grpHtml).join('') + (groups.length > 3 ? `<button class="more" id="moreSig">${S.allSig ? 'Свернуть' : 'Ещё ' + (groups.length - 3)}</button>` : '')
+        : `<div class="empty">${ico('check')} Тревожных сигналов нет</div>`}
     </div></div>`;
   el.querySelectorAll('[data-a]').forEach(x => x.onchange = () => { const d = RS.ls.get('radar.actdone.' + c.intern_id, {}); d[x.dataset.a] = x.checked || undefined;
     RS.ls.set('radar.actdone.' + c.intern_id, d); x.closest('label').classList.toggle('done', x.checked); });
   $('toDyn').onclick = e => { e.preventDefault(); S.tab = 'dyn'; viewIntern($('view')); };
-  $('onlyc').onchange = e => { S.onlyConfirmed = e.target.checked; tabSum(el, c); };
   if($('moreSig')) $('moreSig').onclick = () => { S.allSig = !S.allSig; tabSum(el, c); };
-  el.querySelectorAll('.rev button[data-s]').forEach(b => b.onclick = () => setReview(b.dataset.id, b.dataset.s));
-  el.querySelectorAll('.rev .lnk').forEach(b => b.onclick = () => { S.focus = (c.signals || []).find(x => x.id === b.dataset.id); S.tab = 'dyn'; viewIntern($('view')); });
+  el.querySelectorAll('.rev button[data-s]').forEach(b => b.onclick = () => setGroupReview(b.dataset.g, b.dataset.s));
+  el.querySelectorAll('.rev .lnk').forEach(b => b.onclick = () => { const g = groups.find(x => x.id === b.dataset.g), key = g.ev.filter(e => e.quote || +e.value <= 3); S.focus = {...g, evidence: key.length ? key : g.ev}; S.tab = 'dyn'; viewIntern($('view')); });
   const keepMode = S.mode; S.mode = 'avg'; drawChart(c); S.mode = keepMode;
 }
-function sigHtml(s){
-  const r = reviewOf(s);
-  const ev = (s.evidence || []).slice(0, 6).map(e => e.quote ? `<span>М${e.period} · ${esc(e.source)}: <q>«${esc(e.quote)}»</q></span>` : `<span>М${e.period} · ${esc(e.field)}: <b>${esc(e.value)}</b></span>`).join('');
-  return `<div class="sig ${S.focus?.id === s.id ? 'on' : ''}">
-    <div class="t"><span class="dot st-${s.level}" style="width:11px;height:11px"></span>${esc(s.title)}
+function evHtml(e){ return e.quote ? `<span>М${e.period} · ${esc(e.source)}: <q>«${esc(e.quote)}»</q></span>` : `<span>М${e.period} · ${esc(e.source ? e.source + ', ' : '')}${esc(e.field)}: <b>${esc(e.value)}</b></span>`; }
+function grpHtml(g){
+  const last = Math.max(...g.ev.map(e => +e.period || 0)), key = g.ev.filter(e => e.quote || +e.value <= 3 || +e.period === last), ev = key.length ? key : g.ev, r = groupReview(g), more = ev.length - 5;
+  return `<div class="sig ${S.focus?.id === g.id ? 'on' : ''}">
+    <div class="t"><span class="dot st-${g.level}" style="width:11px;height:11px"></span>${esc(g.subj)}
       ${r ? `<span class="badge ${r==='confirmed'?'b-green':r==='in_work'?'b-blue':'b-grey'}" style="margin-left:auto">${{confirmed:'подтверждено',false_alarm:'ложная тревога',in_work:'в работе'}[r] || r}</span>` : ''}</div>
-    <div class="w">${esc(s.why)}</div>${ev ? `<div class="ev">${ev}</div>` : ''}
+    <div class="w">${esc(whoOf(g).replace(/^./, m => m.toUpperCase()))}.</div>
+    <ul class="whys">${g.sigs.map(s => `<li><b>${esc(kindOf(s))}</b>${/^Комментарии/.test(kindOf(s)) ? '' : ` · ${esc(String(s.title).split(':').slice(1).join(':').trim())}`}. <span class="mut">${esc(s.why || '')}</span></li>`).join('')}</ul>
+    ${ev.length ? `<div class="ev">${ev.slice(0, 5).map(evHtml).join('')}${more > 0 ? `<span class="mut">ещё ${more}</span>` : ''}</div>` : ''}
     <div class="rev">
-      <button class="c ${r==='confirmed'?'on':''}" data-id="${esc(s.id)}" data-s="confirmed">✓ Подтвердить</button>
-      <button class="w ${r==='in_work'?'on':''}" data-id="${esc(s.id)}" data-s="in_work">В работе</button>
-      <button class="f ${r==='false_alarm'?'on':''}" data-id="${esc(s.id)}" data-s="false_alarm">Ложная</button>
-      <button class="lnk" data-id="${esc(s.id)}">на графике →</button></div></div>`;
+      <button class="c ${r==='confirmed'?'on':''}" data-g="${esc(g.id)}" data-s="confirmed" title="HR согласен: проблема есть">✓ Подтвердить</button>
+      <button class="w ${r==='in_work'?'on':''}" data-g="${esc(g.id)}" data-s="in_work" title="HR уже занимается">В работе</button>
+      <button class="f ${r==='false_alarm'?'on':''}" data-g="${esc(g.id)}" data-s="false_alarm" title="Проблемы нет — сигнал ошибочный">Ложная тревога</button>
+      <button class="lnk" data-g="${esc(g.id)}">показать на графике →</button></div></div>`;
 }
 function short(s){ return String(s).split(' ')[0]; }
 function tabDyn(el, c){
-  el.innerHTML = `${S.focus ? `<div class="sig on" style="display:flex;align-items:center;gap:10px"><span class="dot st-${S.focus.level}"></span><span><b>${esc(S.focus.title)}</b> — точки-основания выделены</span><button class="btn sm" id="unfocus" style="margin-left:auto">Сбросить</button></div>` : ''}
-    <div class="modes" id="modes">
-      <button data-m="avg" class="${S.mode==='avg'?'on':''}">Средний балл</button>
-      <button data-m="norm" class="${S.mode==='norm'?'on':''}" title="отклонение от личной нормы">От нормы</button>
+  el.innerHTML = `${S.focus ? `<div class="sig on" style="display:flex;align-items:center;gap:10px"><span class="dot st-${S.focus.level}"></span><span><b>${esc(S.focus.title)}</b> — месяцы, на которых основан вывод, выделены</span><button class="btn sm" id="unfocus" style="margin-left:auto">Сбросить</button></div>` : ''}
+    <div class="modes" id="modes"><span class="mut" style="font-size:14px;align-self:center">Показать:</span>
+      <button data-m="avg" class="${S.mode==='avg'?'on':''}" title="средняя оценка стажёра и наставника по месяцам">Средняя оценка</button>
+      <button data-m="norm" class="${S.mode==='norm'?'on':''}" title="насколько оценки ушли от обычного уровня этого стажёра">Отклонение от нормы</button>
       ${(c.pairs||[]).map((p, i) => `<button data-m="pair${i}" class="${S.mode==='pair'+i?'on':''}" title="${esc(p.intern)} ↔ ${esc(p.mentor)}">${esc(short(p.intern))}</button>`).join('')}
     </div>
     <div class="chartbox"><canvas id="ch"></canvas></div><div class="mut" id="chnote" style="font-size:14px;margin-top:6px"></div>
-    ${(c.pairs||[]).length ? `<h3 class="h2" style="font-size:18px;margin-top:24px">Стажёр vs наставник</h3>
-      <div class="scroll"><table class="pairs"><tr><th>Показатель</th>${c.periods.map(p => `<th>М${p.period}</th>`).join('')}</tr>
+    ${(c.pairs||[]).length ? `<h3 class="h2" style="font-size:18px;margin-top:24px">Как оценивают стажёр и наставник</h3>
+      <p class="mut" style="margin:-4px 0 10px;font-size:14px">В каждой клетке: <b>оценка стажёра / оценка наставника</b> по похожим вопросам, шкала 1–5. Цветом выделено, где они расходятся.</p>
+      <div class="scroll"><table class="pairs"><tr><th>Стажёр ↔ наставник</th>${c.periods.map(p => `<th>М${p.period}</th>`).join('')}</tr>
       ${c.pairs.map(p => `<tr><td>${esc(p.intern)} <span class="mut">↔ ${esc(p.mentor)}</span></td>${p.by_period.map(([a, b]) => {
         const g = (a != null && b != null) ? Math.abs(a - b) : 0; return `<td class="${g>=2?'gap2':g>=1?'gap1':''}">${a ?? '—'} / ${b ?? '—'}</td>`; }).join('')}</tr>`).join('')}</table></div>
-      <div class="legend"><span>стажёр / наставник</span><span><b class="gap1" style="padding:0 8px">1+</b> расхождение</span><span><b class="gap2" style="padding:0 8px">2+</b> сильное</span></div>` : ''}`;
+      <div class="legend"><span><b class="gap1" style="padding:0 8px">1 балл</b> расходятся</span><span><b class="gap2" style="padding:0 8px">2+ балла</b> сильно расходятся — стоит сверить ожидания</span></div>` : ''}`;
   el.querySelectorAll('#modes button').forEach(b => b.onclick = () => { S.mode = b.dataset.m; tabDyn(el, c); });
   if($('unfocus')) $('unfocus').onclick = () => { S.focus = null; tabDyn(el, c); };
   drawChart(c);
@@ -781,8 +834,8 @@ function okView(title, text){ return `${head(title)}<div class="body"><div class
 
 function huntflowDlg(c){
   const acts = actionsOf(c).map(a => '• ' + a.t).join('\n');
-  const sig = (c.signals || []).slice(0, 3).map(s => '• ' + s.title).join('\n');
-  const text = `Радар стажировки · Месяц ${cur()} · ${ST[c.status]}\n${c.summary || ''}${sig ? '\n\nСигналы:\n' + sig : ''}${acts ? '\n\nПлан HR:\n' + acts : ''}`.trim();
+  const gr = groupsOf(c), sig = gr.slice(0, 3).map(g => '• ' + g.subj + ' — ' + whoOf(g)).join('\n');
+  const text = `Радар стажировки · Месяц ${cur()} · ${ST[c.status]}\n${summaryOf(c, gr)}${sig ? '\n\nПричины:\n' + sig : ''}${acts ? '\n\nПлан HR:\n' + acts : ''}`.trim();
   const tags = ['Стажировка 2026', 'Радар: ' + ST[c.status], c.department];
   dlg(`${head('Отправить в Huntflow', `Карточка кандидата ${esc(c.intern_id)} · комментарий и метки`)}
     <div class="body">
@@ -911,14 +964,15 @@ async function localAnswer(q){
   const idm = q.toUpperCase().replace(/C/g, 'С').replace(/T/g, 'Т').match(/СТ-?\s?0*(\d+)/);
   const id = idm ? 'СТ-' + String(idm[1]).padStart(3, '0') : null;
   const p = cur();
-  if(id && /почему|что с|как дела|расскажи|сигнал|риск|красн|жёлт|желт/.test(t) || id && !/сдела|действ|встреч/.test(t) && !/наставник/.test(t)){
+  if(id && /почему|что с|как дела|расскажи|сигнал|риск|красн|жёлт|желт/.test(t) || id && !/сдела|делать|действ|встреч|помочь/.test(t) && !/наставник|расхожд/.test(t)){
     const c = await cardOf(id); if(!c) return `Не нашёл ${esc(id)}.`;
-    const sg = c.signals || [];
-    if(!sg.length) return `${link(id)} (${esc(c.department)}): сигналов нет, динамика в норме.`;
+    const gr = groupsOf(c);
+    if(!gr.length) return `${link(id)} (${esc(c.department)}): ${esc(summaryOf(c, gr))}`;
     const acts = actionsOf(c);
-    return `${link(id)} · ${esc(c.department)} — <b>${ST[c.status]}</b>.<ul>${sg.slice(0, 4).map(s => `<li><b>${esc(s.title)}</b>: ${esc(s.why)}${(s.evidence||[]).find(e => e.quote) ? ` — «${esc((s.evidence||[]).find(e => e.quote).quote)}»` : ''}</li>`).join('')}</ul>${acts.length ? 'Что сделать: ' + acts.map(a => esc(a.t)).join('; ') + '.' : ''}`;
+    return `${link(id)} · ${esc(c.department)} — <b>${ST[c.status]}</b>. ${esc(summaryOf(c, gr))}<ul>${gr.slice(0, 3).map(g => { const q = g.ev.find(e => e.quote);
+      return `<li><b>${esc(g.subj)}</b> — ${esc(whoOf(g))}${q ? `: «${esc(q.quote)}» (${esc(q.source)}, М${q.period})` : ''}</li>`; }).join('')}</ul>${acts.length ? 'Что сделать: ' + acts.map(a => esc(a.t)).join('; ') + '.' : ''}`;
   }
-  if(id && /сдела|действ|встреч|помочь/.test(t)){ const c = await cardOf(id); const acts = c ? actionsOf(c) : []; return acts.length ? `По ${link(id)}:<ul>${acts.map(a => `<li>${esc(a.t)}</li>`).join('')}</ul>` : `По ${link(id)} действий не требуется.`; }
+  if(id && /сдела|делать|действ|встреч|помочь/.test(t)){ const c = await cardOf(id); const acts = c ? actionsOf(c) : []; return acts.length ? `По ${link(id)}:<ul>${acts.map(a => `<li>${esc(a.t)}</li>`).join('')}</ul>` : `По ${link(id)} действий не требуется.`; }
   if(id && /наставник|расхожд|разрыв/.test(t)){ const c = await cardOf(id); if(!c) return 'Не нашёл стажёра.';
     const g = (c.pairs||[]).map(p => { const l = p.by_period.filter(x => x[0] != null && x[1] != null).at(-1); return l ? {p, d:l[0] - l[1], l} : null; }).filter(Boolean).sort((a, b) => Math.abs(b.d) - Math.abs(a.d));
     return g.length ? `${link(id)}: самое большое расхождение — «${esc(g[0].p.intern)}» ${g[0].l[0]} у стажёра против ${g[0].l[1]} у наставника.` : 'Нет данных для сравнения.'; }
@@ -926,7 +980,8 @@ async function localAnswer(q){
     const miss = missing();
     return miss.length ? `За Месяц ${p} нет анкет:<ul>${miss.map(m => `<li>${m.who === 'Стажёр' ? link(m.id) : esc(m.name) + ' — наставник ' + link(m.id)}</li>`).join('')}</ul>Напомнить можно в разделе «Анкеты».` : `За Месяц ${p} анкеты заполнили все.`; }
   if(/повтор|общ|програм|тем|чаще/.test(t)){
-    if((ov.themes||[]).length) return `Повторяется:<ul>${ov.themes.map(x => `<li><b>${esc(x.topic)}</b> — у ${(x.interns||[]).map(link).join(', ')}</li>`).join('')}</ul>`;
+    const th = await programThemes().catch(() => []);
+    if(th.length) return `Повторяется у нескольких стажёров (по комментариям с риском):<ul>${th.map(x => `<li><b>${esc(x.topic)}</b> — у ${(x.interns||[]).map(link).join(', ')}</li>`).join('')}</ul>Это вопрос к программе: например, ввести регулярные короткие 1:1 с наставником.`;
     const cnt = {}; for(const i of list){ const c = await cardOf(i.intern_id); (c?.periods||[]).forEach(pp => (pp.comment_analysis?.topics||[]).forEach(tp => { (cnt[tp] ||= new Set()).add(i.intern_id); })); }
     const top = Object.entries(cnt).filter(([, v]) => v.size > 1).sort((a, b) => b[1].size - a[1].size).slice(0, 4);
     return top.length ? `Чаще всего в комментариях:<ul>${top.map(([k, v]) => `<li><b>${esc(k)}</b> — у ${[...v].map(link).join(', ')}</li>`).join('')}</ul>` : 'Общих тем у нескольких стажёров не нашёл.'; }

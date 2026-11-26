@@ -171,24 +171,24 @@
    "mentor_id": "Н-001",
    "department": "Технический блок",
    "status": "green",
-   "intern_avg": 5.0,
-   "mentor_avg": 5.0,
-   "gap": 0.0,
-   "trend": 1.0,
+   "intern_avg": 5,
+   "mentor_avg": 5,
+   "gap": 0,
+   "trend": 1,
    "signals": 0,
-   "reason": "без сигналов"
+   "reason": "Сигналов по анкетам нет"
   },
   {
    "intern_id": "СТ-002",
    "mentor_id": "Н-002",
    "department": "Коммерческий блок",
    "status": "green",
-   "intern_avg": 5.0,
-   "mentor_avg": 5.0,
-   "gap": 0.0,
+   "intern_avg": 5,
+   "mentor_avg": 5,
+   "gap": 0,
    "trend": 0.3,
    "signals": 0,
-   "reason": "без сигналов"
+   "reason": "Сигналов по анкетам нет"
   },
   {
    "intern_id": "СТ-003",
@@ -200,19 +200,19 @@
    "gap": -0.1,
    "trend": 1.4,
    "signals": 0,
-   "reason": "без сигналов"
+   "reason": "Сигналов по анкетам нет"
   },
   {
    "intern_id": "СТ-004",
    "mentor_id": "Н-004",
    "department": "HR-блок",
-   "status": "yellow",
-   "intern_avg": 5.0,
-   "mentor_avg": 5.0,
-   "gap": 0.0,
+   "status": "green",
+   "intern_avg": 5,
+   "mentor_avg": 5,
+   "gap": 0,
    "trend": 0.3,
-   "signals": 1,
-   "reason": "Тревожный комментарий"
+   "signals": 0,
+   "reason": "Сигналов по анкетам нет"
   },
   {
    "intern_id": "СТ-005",
@@ -220,19 +220,20 @@
    "department": "IT",
    "status": "green",
    "intern_avg": 4.9,
-   "mentor_avg": 5.0,
+   "mentor_avg": 5,
    "gap": -0.1,
-   "trend": 1.5,
+   "trend": 1.4,
    "signals": 0,
-   "reason": "без сигналов"
+   "reason": "Сигналов по анкетам нет"
   }
  ],
  "kpi": {
   "responded_interns": "5/5",
   "responded_mentors": "5/5",
   "red": 0,
-  "yellow": 1,
-  "green": 4
+  "yellow": 0,
+  "green": 5
  },
- "version": 1
+ "version": 2,
+ "analysis": "feedback.case"
 }

@@ -1,4 +1,5 @@
 // Радар стажировки · модуль «Отчёты» для HR.
+const RI = window.RadarInsight;
 // Данные — по API-контракту из CLAUDE.md (GET /api/overview, GET /api/interns/{id}), при недоступности — моки web/mock/p{2,3,4,6}.
 // Фронт аналитику не считает: только фильтрует, группирует и усредняет то, что отдал бэк, для подписи графиков.
 // URL: ?tpl=program|dept|status|intern&dept=HR-блок&id=СТ-004&period=4  (+ ?api=… и ?mock=N как на дашборде)
@@ -86,7 +87,12 @@ async function buildModel(){
   const signals = [];
   for(const i of set){
     const c = cards[i.intern_id]; if(!c) continue;
-    for(const s of c.signals || []) signals.push({intern:i, s, ev:groupEvidence(s.evidence || [], cur), quotes:quotesFor(s, c)});
+    // как на дашборде: одна причина = одна строка, основания объединены
+    for(const g of RI.groupsOf(c)){
+      const s = {id:g.id, level:g.level, title:g.subj, evidence:g.ev,
+        why: RI.whoOf(g).replace(/^./, x => x.toUpperCase()) + '. ' + g.sigs.map(x => x.why).filter(Boolean).join(' ')};
+      signals.push({intern:i, s, ev:groupEvidence(s.evidence, cur), quotes:quotesFor(s, c)});
+    }
   }
   signals.sort((a, b) => (a.s.level === 'red' ? 0 : 1) - (b.s.level === 'red' ? 0 : 1) || a.intern.intern_id.localeCompare(b.intern.intern_id));
 
@@ -97,7 +103,7 @@ async function buildModel(){
     const own = (c?.actions || []).filter(Boolean);
     if(own.length) own.forEach(a => actions.push({who:i.intern_id, text:a}));
     else if(i.status === 'red' || i.status === 'yellow'){
-      const top = (c?.signals || [])[0]?.title || i.reason || 'сигнал по анкетам';
+      const top = (c ? RI.groupsOf(c)[0]?.subj : null) || i.reason || 'сигнал по анкетам';
       actions.push({who:i.intern_id, tpl:true, text: i.status === 'red'
         ? `Встреча 1:1 со стажёром ${i.intern_id} на этой неделе; обсудить с наставником ${i.mentor_id}: «${top}»`
         : `Уточнить у ${i.intern_id} на ближайшей встрече: «${top}»; проверить в следующем месяце`});
@@ -207,7 +213,7 @@ function render(m){
       ${ev.length ? `<ul class="ev">${ev.map(g => `<li>${esc(g.field)} <span class="mut">(${esc(g.source)})</span>: ${g.pts.map(e =>
           `М${e.period} ${e.period === m.cur ? `<em>${esc(fmtVal(e.value))}</em>` : esc(fmtVal(e.value))}`).join(' · ')}</li>`).join('')}</ul>` : ''}
       ${quotes.map(q => `<q><small>${q.derived ? 'Комментарий' : 'Цитата'} · ${esc(q.source)} · М${q.period}${q.field ? ' · ' + esc(q.field) : ''}</small>«${esc(q.text)}»</q>`).join('')}
-    </div>`).join('') : `<div class="empty">Сигналов на Месяц ${m.cur} нет</div>`;
+    </div>`).join('') : `<div class="empty">Тревожных сигналов на Месяц ${m.cur} нет</div>`;
 
   const acts = m.actions.length ? `<ol class="acts">${m.actions.map(a => `<li><span>${esc(a.text)}${a.tpl ? ' <small>· типовая рекомендация</small>' : ''}</span></li>`).join('')}</ol>`
     : `<div class="empty">Действий не требуется — продолжать плановые встречи</div>`;
@@ -223,7 +229,7 @@ function render(m){
     const cm = (who, t) => `<div class="cm"><b>${t}</b>${Object.entries((last.comments || {})[who] || {}).map(([f, v]) => `<p><span class="mut">${esc(f)}:</span> ${esc(v || '—')}</p>`).join('') || '<p>—</p>'}</div>`;
     const ca = last.comment_analysis || {};
     extra = `
-      <section class="sec"><h2>Резюме для HR</h2><div class="summary">${esc(card.summary || intern.reason || '—')}</div></section>
+      <section class="sec"><h2>Резюме для HR</h2><div class="summary">${esc(RI.summaryOf(card, RI.groupsOf(card)) || intern.reason || '—')}</div></section>
       <section class="sec"><h2>Оценки по месяцам <small>1–5, текущий месяц выделен</small></h2>
         <table class="t"><thead><tr><th>Показатель</th>${P.map(p => `<th class="r">М${p.period}</th>`).join('')}</tr></thead><tbody>
         ${block('Стажёр', names, 'intern')}${block('Наставник', mnames, 'mentor')}
@@ -242,7 +248,7 @@ function render(m){
     ${intern && !card ? '<div class="empty" style="margin-top:16px">Карточка стажёра не загрузилась — показаны данные из обзора</div>' : ''}
     <section class="sec"><div class="charts">${intern ? chart('dyn') + chart('dept') + chart('status', true) : chart('status') + chart('dyn') + chart('dept', true)}</div></section>
     ${intern ? extra : `<section class="sec"><h2>Стажёры <small>${m.set.length} чел. · средние оценки за Месяц ${m.cur}, шкала 1–5</small></h2>${table}</section>`}
-    <section class="sec"><h2>Ключевые сигналы <small>с основаниями: оценки и комментарии</small></h2><div class="sigs">${sigs}</div></section>
+    <section class="sec"><h2>Почему в зоне внимания <small>каждая причина — с основаниями: оценки и цитаты из анкет</small></h2><div class="sigs">${sigs}</div></section>
     <section class="sec"><h2>Рекомендованные действия</h2>${acts}</section>
     <footer class="df"><span>Источник: анкеты стажёров и наставников · ${esc(m.src)}</span><span>Решение о человеке принимает HR; система даёт сигнал и основания.</span></footer>`;
   drawCharts(m);
@@ -409,7 +415,7 @@ async function exportXLSX(){
   const kr = ws.getRow(8); kr.values = ['Показатель', 'Значение']; head(kr);
   const kv = [['Ответили стажёры', m.kpi.responded_interns], ['Ответили наставники', m.kpi.responded_mentors],
               ['Критично', m.kpi.red ?? 0, 'red'], ['Внимание', m.kpi.yellow ?? 0, 'yellow'], ['Положительно', m.kpi.green ?? 0, 'green'],
-              ['Сигналов', m.signals.length]];
+              ['Причин для внимания', m.signals.length]];
   kv.forEach((r, k) => { const row = ws.getRow(9 + k); row.getCell(1).value = r[0]; row.getCell(2).value = r[1];
     row.getCell(1).font = font; row.getCell(2).font = {...font, bold:true}; row.getCell(2).alignment = {horizontal:'center'};
     if(r[2]) stFill(row.getCell(1), r[2]);
@@ -433,15 +439,15 @@ async function exportXLSX(){
   table(wb.addWorksheet('Стажёры'), [
     {h:'ID стажёра', k:'id', w:13}, {h:'Наставник', k:'mentor', w:12}, {h:'Подразделение', k:'dept', w:24}, {h:'Статус', k:'st', w:15},
     {h:'Причина', k:'reason', w:46, wrap:true}, {h:'Ср. оценка стажёра', k:'ia', w:12, num:'0.0'}, {h:'Ср. оценка наставника', k:'ma', w:12, num:'0.0'},
-    {h:'Разрыв', k:'gap', w:10, num:'+0.0;-0.0;0.0'}, {h:'Динамика', k:'trend', w:11, num:'+0.0;-0.0;0.0'}, {h:'Сигналов', k:'sig', w:10},
+    {h:'Разрыв', k:'gap', w:10, num:'+0.0;-0.0;0.0'}, {h:'Динамика', k:'trend', w:11, num:'+0.0;-0.0;0.0'}, {h:'Оснований', k:'sig', w:11},
     {h:'Анкета стажёра', k:'si', w:11}, {h:'Анкета наставника', k:'sm', w:12}],
     m.set.map(i => ({id:i.intern_id, mentor:i.mentor_id, dept:i.department, st:statusRu(i.status), _st:i.status, reason:i.reason || '',
       ia:i.intern_avg, ma:i.mentor_avg, gap:i.gap, trend:i.trend, sig:i.signals ?? 0,
       si: m.done(i.intern_id, 'intern') ? 'да' : 'нет', sm: m.done(i.intern_id, 'mentor') ? 'да' : 'нет'})), 'st');
 
   // Сигналы
-  table(wb.addWorksheet('Сигналы'), [
-    {h:'ID стажёра', k:'id', w:13}, {h:'Подразделение', k:'dept', w:22}, {h:'Уровень', k:'lvl', w:14}, {h:'Сигнал', k:'title', w:40, wrap:true},
+  table(wb.addWorksheet('Причины'), [
+    {h:'ID стажёра', k:'id', w:13}, {h:'Подразделение', k:'dept', w:22}, {h:'Уровень', k:'lvl', w:14}, {h:'Причина', k:'title', w:40, wrap:true},
     {h:'Почему', k:'why', w:40, wrap:true}, {h:'Основания (оценки)', k:'ev', w:55, wrap:true}, {h:'Цитаты / комментарии', k:'q', w:60, wrap:true}],
     m.signals.map(x => ({id:x.intern.intern_id, dept:x.intern.department, lvl:statusRu(x.s.level), _st:x.s.level, title:x.s.title, why:x.s.why || '',
       ev:evText(x), q:quoteText(x)})), 'lvl');
@@ -527,7 +533,7 @@ async function exportPPTX(){
     s.addShape(pp.shapes.ROUNDED_RECTANGLE, {x, y:2.55, w:1.7, h:1.45, fill:{color:HEX.soft}, line:{color:HEX.soft}, rectRadius:0.12});
     s.addText(v, {x, y:2.7, w:1.7, h:0.75, align:'center', fontFace:FT, fontSize: String(v).length > 6 ? 18 : 30, color:col, margin:0, fit:'shrink'});
     s.addText(l, {x, y:3.45, w:1.7, h:0.4, align:'center', fontFace:FB, fontSize:11, color:HEX.muted, margin:0}); });
-  const lead = intern ? (m.cards[intern.intern_id]?.summary || intern.reason || '') : `Стажёров в отчёте: ${m.set.length}. Сигналов: ${m.signals.length}.` +
+  const lead = intern ? (m.cards[intern.intern_id] ? RI.summaryOf(m.cards[intern.intern_id], RI.groupsOf(m.cards[intern.intern_id])) : intern.reason || '') : `Стажёров в отчёте: ${m.set.length}. Причин для внимания: ${m.signals.length}.` +
     (m.missing.length ? ` Не сдали анкету: ${m.missing.join(', ')}.` : ' Все анкеты за месяц получены.');
   s.addText(lead, {x:0.45, y:4.2, w:9.1, h:0.6, fontFace:FB, fontSize:12, color:HEX.navy, margin:0, fit:'shrink', valign:'top'});
 
@@ -557,12 +563,12 @@ async function exportPPTX(){
 
   // 5. Сигналы и действия
   s = pp.addSlide({masterName:'MGTS'});
-  title(s, 'Сигналы и действия', 'Каждый сигнал — с основаниями из анкет. Решение принимает HR.');
+  title(s, 'Причины и действия', 'Каждая причина — с основаниями из анкет. Решение принимает HR.');
   const sg = m.signals.slice(0, 6), more = m.signals.length - sg.length;
   const sigRuns = sg.length ? sg.flatMap(x => [
       {text:`${x.intern.intern_id} · ${x.s.title}`, options:{bold:true, color: x.s.level === 'red' ? HEX.red : 'C98100', bullet:{code:'25CF'}, breakLine:true}},
       {text: (x.s.why ? x.s.why + ' ' : '') + (x.quotes[0] ? `«${x.quotes[0].text}»` : evText(x)), options:{color:HEX.navy, fontSize:10, indentLevel:1, breakLine:true}}])
-    : [{text:`Сигналов на Месяц ${m.cur} нет`, options:{color:HEX.muted}}];
+    : [{text:`Тревожных сигналов на Месяц ${m.cur} нет`, options:{color:HEX.muted}}];
   if(more > 0) sigRuns.push({text:`…и ещё ${more} в Excel-выгрузке`, options:{color:HEX.muted, fontSize:10}});
   s.addText('Ключевые сигналы', {x:0.45, y:1.25, w:5.3, h:0.35, fontFace:FT, bold:true, fontSize:14, color:HEX.navy, margin:0});
   s.addText(sigRuns, {x:0.45, y:1.65, w:5.3, h:3.25, fontFace:FB, fontSize:11, valign:'top', margin:0, paraSpaceAfter:3, fit:'shrink'});
@@ -582,7 +588,7 @@ function exportCSV(){
   const m = R.m, q = v => { const s = v == null ? '' : String(v); return /[;"\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
   const num = v => v == null ? '' : String(v).replace('.', ',');
   const head = ['Срез (месяц)', 'ID стажёра', 'ID наставника', 'Подразделение', 'Статус', 'Код статуса', 'Причина', 'Ср. оценка стажёра',
-                'Ср. оценка наставника', 'Разрыв', 'Динамика', 'Сигналов', 'Анкета стажёра', 'Анкета наставника', 'Сигналы', 'Дата формирования'];
+                'Ср. оценка наставника', 'Разрыв', 'Динамика', 'Оснований', 'Анкета стажёра', 'Анкета наставника', 'Причины', 'Дата формирования'];
   const rows = m.set.map(i => [m.cur, i.intern_id, i.mentor_id, i.department, statusRu(i.status), i.status, i.reason, num(i.intern_avg), num(i.mentor_avg),
     num(i.gap), num(i.trend), i.signals ?? 0, m.done(i.intern_id, 'intern') ? 'да' : 'нет', m.done(i.intern_id, 'mentor') ? 'да' : 'нет',
     m.signals.filter(x => x.intern.intern_id === i.intern_id).map(x => `${statusRu(x.s.level)}: ${x.s.title}`).join(' | '), dateISO(m.at)]);

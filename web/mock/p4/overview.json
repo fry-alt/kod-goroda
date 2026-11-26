@@ -134,31 +134,31 @@
    "gap": 0.0,
    "trend": 0.9,
    "signals": 0,
-   "reason": "без сигналов"
+   "reason": "Сигналов по анкетам нет"
   },
   {
    "intern_id": "СТ-002",
    "mentor_id": "Н-002",
    "department": "Коммерческий блок",
-   "status": "green",
+   "status": "yellow",
    "intern_avg": 4.9,
    "mentor_avg": 4.8,
    "gap": 0.0,
-   "trend": 0.2,
-   "signals": 0,
-   "reason": "без сигналов"
+   "trend": 0.1,
+   "signals": 2,
+   "reason": "Нагрузка"
   },
   {
    "intern_id": "СТ-003",
    "mentor_id": "Н-003",
    "department": "Административный блок",
-   "status": "yellow",
-   "intern_avg": 4.0,
-   "mentor_avg": 4.0,
-   "gap": 0.0,
+   "status": "red",
+   "intern_avg": 4,
+   "mentor_avg": 4,
+   "gap": 0,
    "trend": 0.7,
    "signals": 1,
-   "reason": "Расхождение: Поддержка и обратная связь наставника ↔ Взаимодействие с наставником и командой"
+   "reason": "Расхождение: Поддержка и обратная связь наставника"
   },
   {
    "intern_id": "СТ-004",
@@ -169,8 +169,8 @@
    "mentor_avg": 4.8,
    "gap": -0.4,
    "trend": -0.3,
-   "signals": 2,
-   "reason": "Падение: Комфортность нагрузки"
+   "signals": 5,
+   "reason": "Нагрузка"
   },
   {
    "intern_id": "СТ-005",
@@ -182,15 +182,16 @@
    "gap": 0.1,
    "trend": 0.9,
    "signals": 0,
-   "reason": "без сигналов"
+   "reason": "Сигналов по анкетам нет"
   }
  ],
  "kpi": {
   "responded_interns": "5/5",
   "responded_mentors": "5/5",
-  "red": 1,
+  "red": 2,
   "yellow": 1,
-  "green": 3
+  "green": 2
  },
- "version": 1
+ "version": 2,
+ "analysis": "feedback.case"
 }

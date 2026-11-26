@@ -107,69 +107,70 @@
    "intern_id": "СТ-001",
    "mentor_id": "Н-001",
    "department": "Технический блок",
-   "status": "yellow",
+   "status": "green",
    "intern_avg": 4.6,
    "mentor_avg": 4.5,
    "gap": 0.1,
    "trend": 0.6,
-   "signals": 1,
-   "reason": "Тревожный комментарий"
+   "signals": 0,
+   "reason": "Сигналов по анкетам нет"
   },
   {
    "intern_id": "СТ-002",
    "mentor_id": "Н-002",
    "department": "Коммерческий блок",
    "status": "green",
-   "intern_avg": 5.0,
-   "mentor_avg": 5.0,
-   "gap": 0.0,
+   "intern_avg": 5,
+   "mentor_avg": 5,
+   "gap": 0,
    "trend": 0.3,
    "signals": 0,
-   "reason": "без сигналов"
+   "reason": "Сигналов по анкетам нет"
   },
   {
    "intern_id": "СТ-003",
    "mentor_id": "Н-003",
    "department": "Административный блок",
-   "status": "yellow",
+   "status": "red",
    "intern_avg": 2.7,
-   "mentor_avg": 3.0,
+   "mentor_avg": 3,
    "gap": -0.3,
    "trend": -0.6,
-   "signals": 2,
-   "reason": "Расхождение: Поддержка и обратная связь наставника ↔ Взаимодействие с наставником и командой"
+   "signals": 11,
+   "reason": "Низкая оценка: Понятность задач, Поддержка и обратная связь наставника, Общая удовлетворенность стажировкой"
   },
   {
    "intern_id": "СТ-004",
    "mentor_id": "Н-004",
    "department": "HR-блок",
-   "status": "green",
+   "status": "yellow",
    "intern_avg": 4.9,
-   "mentor_avg": 5.0,
+   "mentor_avg": 5,
    "gap": -0.1,
-   "trend": 0.2,
-   "signals": 0,
-   "reason": "без сигналов"
+   "trend": 0.1,
+   "signals": 1,
+   "reason": "Снижение: Комфортность нагрузки"
   },
   {
    "intern_id": "СТ-005",
    "mentor_id": "Н-005",
    "department": "IT",
-   "status": "yellow",
+   "status": "red",
    "intern_avg": 3.4,
    "mentor_avg": 3.7,
    "gap": -0.2,
    "trend": 0.0,
-   "signals": 2,
-   "reason": "Расхождение: Понятность задач ↔ Понимание задач и ожиданий"
+   "signals": 4,
+   "reason": "Низкая оценка: Поддержка и обратная связь наставника"
   }
  ],
  "kpi": {
   "responded_interns": "5/5",
   "responded_mentors": "5/5",
-  "red": 0,
-  "yellow": 3,
+  "red": 2,
+  "yellow": 1,
   "green": 2
  },
- "version": 1
+ "version": 2,
+ "analysis": "feedback.case"
 }
