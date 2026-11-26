@@ -103,16 +103,22 @@
 .ht-seg button{min-height:40px;padding:0 16px;border:0;border-radius:10px;background:none;font:500 15px var(--font-text);color:var(--mgts-navy);cursor:pointer}
 .ht-seg button[aria-pressed=true]{background:#fff;box-shadow:0 1px 3px rgba(19,64,116,.15)}
 .ht-empty{text-align:center;color:var(--mgts-muted);padding:28px 12px}
-.ht-nine{display:grid;grid-template-columns:28px minmax(0,1fr);grid-template-rows:minmax(0,1fr) 28px;gap:6px}
+.ht-nine{display:grid;grid-template-columns:28px minmax(0,1fr);grid-template-rows:auto auto auto;gap:6px}
 .ht-ylab{writing-mode:vertical-rl;transform:rotate(180deg);text-align:center;font-size:14px;color:var(--mgts-muted);font-weight:500}
 .ht-xlab{grid-column:2;text-align:center;font-size:14px;color:var(--mgts-muted);font-weight:500}
-.ht-box{position:relative;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);gap:4px;aspect-ratio:1.25;min-height:300px}
-.ht-cell{border-radius:14px;padding:10px;font-size:13px;font-weight:500;line-height:1.25;color:var(--mgts-navy);background:var(--mgts-bg-soft)}
-.ht-cell small{display:block;font-weight:400;color:var(--mgts-muted);font-size:12px;margin-top:2px}
+.ht-box{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:minmax(128px,auto);gap:6px}
+.ht-cell{border-radius:14px;padding:10px 12px;font-size:14px;font-weight:500;line-height:1.25;color:var(--mgts-navy);background:var(--mgts-bg-soft);display:flex;flex-direction:column;gap:2px;min-width:0}
+.ht-cell small{display:block;font-weight:400;color:var(--mgts-muted);font-size:12px}
 .ht-cell.ht-c-top{background:#E6F6EE} .ht-cell.ht-c-risk{background:#FDECEC} .ht-cell.ht-c-mid{background:#EEF5FC}
-.ht-pt{position:absolute;transform:translate(-50%,50%);min-width:44px;height:30px;padding:0 8px;border-radius:15px;border:2px solid #fff;background:var(--mgts-navy);color:#fff;font:500 12px var(--font-title);cursor:pointer;box-shadow:0 2px 8px rgba(19,64,116,.3);white-space:nowrap}
-.ht-pt.red{background:var(--st-red)} .ht-pt.yellow{background:var(--st-yellow);color:#3a2600} .ht-pt.green{background:var(--st-green)}
-.ht-pt:hover,.ht-pt:focus{z-index:3;outline:3px solid var(--mgts-blue-soft)}
+.ht-cell.ht-empty-c{opacity:.75}
+.ht-cn{display:flex;align-items:center;justify-content:space-between;gap:6px}.ht-cn span{min-width:0;overflow-wrap:anywhere;hyphens:auto}
+.ht-cnt{font:700 12px var(--font-title);min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:var(--mgts-navy);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-style:normal}
+.ht-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:auto;padding-top:8px}
+.ht-pt{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 10px 0 8px;border-radius:15px;border:0;background:#fff;color:var(--mgts-navy);font:500 13px var(--font-title);cursor:pointer;box-shadow:0 1px 4px rgba(19,64,116,.18);white-space:nowrap}
+.ht-pt .ht-dot{width:10px;height:10px}
+.ht-pt.red{box-shadow:0 0 0 2px var(--st-red)}
+.ht-pt:hover,.ht-pt:focus-visible{outline:3px solid var(--mgts-blue-soft)}
+.ht-xb{grid-column:2;display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-size:12px;color:var(--mgts-muted);text-align:center}
 .ht-ticks{position:absolute;inset:0;pointer-events:none}
 .ht-note{display:flex;gap:10px;align-items:center;background:var(--mgts-bg-soft);border-radius:14px;padding:12px 14px;font-size:15px;margin-top:16px}
 .ht-note b{color:var(--mgts-orange)}
@@ -127,7 +133,8 @@
   .ht-tabs::-webkit-scrollbar{display:none}
   .ht-tab{flex:none}
   .ht-row>.ht-btn{flex:1 1 100%}
-  .ht-box{min-height:280px;aspect-ratio:auto;height:320px}
+  .ht-box{grid-auto-rows:minmax(96px,auto);gap:4px}
+  .ht-pt{height:26px;padding:0 8px 0 6px;font-size:11px;gap:4px}.ht-pt .ht-dot{width:8px;height:8px}.ht-chips{gap:4px}.ht-cnt{min-width:18px;height:18px;font-size:10px}
   .ht-cell{font-size:11px;padding:6px} .ht-cell small{display:none}
   .ht-kpi{flex:1 1 40%;min-width:0}
 }`;
@@ -426,15 +433,13 @@
   // =====================================================================
   const B1 = 3.5, B2 = 4.3;
   const band = v => v >= B2 ? 2 : v >= B1 ? 1 : 0;
-  // позиция 0..1: клетка по границам 3,5 / 4,3, внутри клетки — сжато, чтобы точка не наезжала на подпись (lo..hi)
-  const pos = (v, lo, hi) => { v = Math.max(1, Math.min(5, Number(v) || 1)); const b = band(v);
-    const f = b === 0 ? (v - 1) / (B1 - 1) : b === 1 ? (v - B1) / (B2 - B1) : (v - B2) / (5 - B2); return (b + lo + (hi - lo) * f) / 3; };
   // CELLS[y][x]: y — вовлечённость (0 низ), x — результат (0 лево)
   const CELLS = [
     [{n: 'Критично', s: 'низкие результат и вовлечённость', cls: 'ht-c-risk', rec: 'Удержание: встреча'}, {n: 'Нужна поддержка', s: 'вовлечённость падает', cls: 'ht-c-risk', rec: 'Удержание: встреча'}, {n: 'Риск ухода', s: 'сильный, но теряет интерес', cls: 'ht-c-risk', rec: 'Удержание: встреча'}],
     [{n: 'Под вопросом', s: 'результат ниже ожиданий', cls: '', rec: 'Развивать: ИПР'}, {n: 'Стабильные', s: 'ровно, без рывка', cls: 'ht-c-mid', rec: 'Развивать: ИПР'}, {n: 'Сильные исполнители', s: 'результат есть, зажечь', cls: 'ht-c-mid', rec: 'Развивать: ИПР'}],
     [{n: 'Мотивированные', s: 'хотят, но нужен навык', cls: '', rec: 'Развивать: ИПР'}, {n: 'Растущие', s: 'кандидаты в резерв', cls: 'ht-c-mid', rec: 'Развивать: ИПР'}, {n: 'Звёзды', s: 'кандидаты на оффер', cls: 'ht-c-top', rec: 'Готовить оффер'}],
   ];
+  const fmt1 = v => v == null || v === '' ? '—' : (+v).toFixed(1).replace('.', ',');
   const ST_L = {green: ['Норма', 'ht-green'], yellow: ['Внимание', 'ht-yellow'], red: ['Критично', 'ht-red']};
   function talent(el, ctx){
     injectCss(); const c = C(ctx);
@@ -443,26 +448,19 @@
       // красный статус важнее клетки: сначала разобраться с проблемой, потом говорить об оффере
       const label = i.status === 'red' ? `${cell.n}, но сейчас «Критично»` : i.status === 'yellow' && x + y >= 3 ? `${cell.n}, есть сигнал` : cell.n;
       return {i, x, y, cell, rec, label}; });
-    // одна точка в клетке — ставим по оценкам; несколько — раскладываем рядами по 2, иначе метки ложатся друг на друга
-    const groups = {}; L.forEach(r => (groups[r.x + '|' + r.y] ||= []).push(r));
-    Object.values(groups).forEach(g => g.forEach((r, k) => {
-      if(g.length === 1){ r.style = `left:${(pos(r.i.mentor_avg, .2, .8) * 100).toFixed(1)}%;bottom:${(pos(r.i.intern_avg, .12, .55) * 100).toFixed(1)}%`; return; }
-      const cols = Math.min(2, g.length), col = k % 2, rows = Math.ceil(g.length / 2), row = rows - 1 - Math.floor(k / 2), lastRow = Math.floor(k / 2) === rows - 1 && g.length % 2; // первые — сверху слева
-      const dx = lastRow ? 0 : (col - (cols - 1) / 2) * 50;
-      r.style = `left:calc(${((r.x + .5) / 3 * 100).toFixed(2)}% + ${dx}px);bottom:calc(${(r.y / 3 * 100).toFixed(2)}% + ${22 + row * 34}px)`;
-    }));
     const offer = L.filter(r => r.rec === 'Готовить оффер').length, keep = L.filter(r => /Удержание/.test(r.rec)).length;
     el.innerHTML = `<div class="ht"><div class="ht-two ht-two-eq">
-      <div class="ht-panel"><h3 class="ht-h">Матрица 9-box</h3><p class="ht-sub">По горизонтали — как наставник оценивает результат, по вертикали — как стажёр оценивает свою стажировку. Месяц ${c.period}. Цвет точки — статус светофора. Нажмите на стажёра.</p>
+      <div class="ht-panel"><h3 class="ht-h">Матрица 9-box</h3><p class="ht-sub">По горизонтали — как наставник оценивает результат, по вертикали — как стажёр оценивает свою стажировку. Месяц ${c.period}. Цвет метки — статус светофора, красная рамка — «Критично». Нажмите на стажёра.</p>
         <div class="ht-nine"><div class="ht-ylab">Вовлечённость (стажёр) →</div>
-          <div class="ht-box">${[2, 1, 0].map(y => [0, 1, 2].map(x => `<div class="ht-cell ${CELLS[y][x].cls}">${CELLS[y][x].n}<small>${CELLS[y][x].s}</small></div>`).join('')).join('')}
-            ${L.map(r => `<button class="ht-pt ${c.esc(r.i.status)}" data-open="${c.esc(r.i.intern_id)}" style="${r.style}"
-              title="${c.esc(r.i.intern_id)}: оценка наставника ${r.i.mentor_avg}, оценка стажёра ${r.i.intern_avg}${r.i.status === 'red' ? ' — сейчас Критично' : ''}">${c.esc(r.i.intern_id.replace(/^СТ-0*/, 'СТ-'))}</button>`).join('')}</div>
-          <div></div><div class="ht-xlab">Результат (наставник) →</div></div>
-        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mgts-muted);margin:4px 0 0 34px"><span>1</span><span>${B1}</span><span>${B2}</span><span>5</span></div></div>
+          <div class="ht-box">${[2, 1, 0].map(y => [0, 1, 2].map(x => { const K = CELLS[y][x], R = L.filter(r => r.x === x && r.y === y);
+            return `<div class="ht-cell ${K.cls}${R.length ? '' : ' ht-empty-c'}"><div class="ht-cn"><span>${K.n}</span>${R.length ? `<i class="ht-cnt">${R.length}</i>` : ''}</div><small>${K.s}</small>
+              ${R.length ? `<div class="ht-chips">${R.map(r => `<button class="ht-pt ${c.esc(r.i.status)}" data-open="${c.esc(r.i.intern_id)}"
+                title="${c.esc(r.i.intern_id)}: наставник ${c.esc(fmt1(r.i.mentor_avg))}, стажёр ${c.esc(fmt1(r.i.intern_avg))}${r.i.status === 'red' ? ' — сейчас Критично' : ''}"><i class="ht-dot ${c.esc(r.i.status)}"></i>${c.esc(r.i.intern_id)}</button>`).join('')}</div>` : ''}</div>`; }).join('')).join('')}</div>
+          <div></div><div class="ht-xlab">Результат (наставник) →</div>
+          <div></div><div class="ht-xb"><span>ниже ${fmt1(B1)}</span><span>${fmt1(B1)}–${fmt1(B2)}</span><span>${fmt1(B2)} и выше</span></div></div></div>
       <div class="ht-panel"><h3 class="ht-h">Готовность к офферу</h3><p class="ht-sub">Подсказка системы по оценкам и сигналам</p>
         <div class="ht-kpis"><div class="ht-kpi"><b>${offer}</b><span>готовить оффер</span></div><div class="ht-kpi ${keep ? 'ht-warn' : ''}"><b>${keep}</b><span>нужна встреча</span></div></div>
-        <div class="ht-scroll"><table class="ht-table" style="min-width:520px"><thead><tr><th>Стажёр</th><th>Клетка</th><th>Статус</th><th>Рекомендация</th></tr></thead><tbody>
+        <div class="ht-scroll"><table class="ht-table" style="min-width:440px"><thead><tr><th>Стажёр</th><th>Клетка</th><th>Статус</th><th>Рекомендация</th></tr></thead><tbody>
         ${L.slice().sort((a, b) => (b.y * 3 + b.x) - (a.y * 3 + a.x)).map(r => `<tr><td><button class="ht-link ht-id" data-open="${c.esc(r.i.intern_id)}">${c.esc(r.i.intern_id)}</button><div style="font-size:13px;color:var(--mgts-muted)">${c.esc(r.i.department)}</div></td>
           <td>${c.esc(r.label)}<div style="font-size:13px;color:var(--mgts-muted)">наставник ${String(r.i.mentor_avg).replace('.', ',')} · стажёр ${String(r.i.intern_avg).replace('.', ',')}</div></td>
           <td><span class="ht-tag ${(ST_L[r.i.status] || ST_L.green)[1]}"><i class="ht-dot ${c.esc(r.i.status)}"></i>${(ST_L[r.i.status] || ['—'])[0]}</span></td>
