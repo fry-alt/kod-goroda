@@ -1,0 +1,25 @@
+/* Фирменный стиль МГТС (брендбук внутренних коммуникаций 2026). Подключить: <link rel="stylesheet" href="brand/brand.css"> */
+@font-face{font-family:MTSText;src:url('fonts/MTSText-Regular.otf') format('opentype');font-weight:400;font-display:swap}
+@font-face{font-family:MTSText;src:url('fonts/MTSText-Medium.otf') format('opentype');font-weight:500;font-display:swap}
+@font-face{font-family:MTSText;src:url('fonts/MTSText-Bold.otf') format('opentype');font-weight:700;font-display:swap}
+@font-face{font-family:MTSExtended;src:url('fonts/MTSExtended-Medium.otf') format('opentype');font-weight:500;font-display:swap}
+@font-face{font-family:MTSExtended;src:url('fonts/MTSExtended-Bold.otf') format('opentype');font-weight:700;font-display:swap}
+@font-face{font-family:MTSExtended;src:url('fonts/MTSExtended-Black.otf') format('opentype');font-weight:900;font-display:swap}
+@font-face{font-family:MTSUltraExtended;src:url('fonts/MTSUltraExtended-Light.otf') format('opentype');font-weight:300;font-display:swap}
+:root{
+  --mgts-white:#FFFFFF;   /* базовый фон */
+  --mgts-blue:#008AE0;    /* заголовки, основной акцент */
+  --mgts-navy:#134074;    /* основной текст на светлом */
+  --mgts-navy-2:#102C51;  /* тёмные плашки */
+  --mgts-orange:#FF7654;  /* ОДНА выделяемая деталь */
+  --mgts-logo:#57A5D7;    /* только цвет знака */
+  --mgts-bg-soft:#F2F7FC; --mgts-line:#D9E5F1; --mgts-blue-soft:#C8E2F6; --mgts-muted:#829CB5;
+  /* светофор кейса: в палитре бренда нет красного/зелёного — берём спокойные, читаемые на белом */
+  --st-green:#2BAE66; --st-yellow:#F5A623; --st-red:#E5484D;
+  --font-title:MTSExtended,system-ui,sans-serif;   /* заголовки: Black 900, крупные числа: Medium 500 */
+  --font-light:MTSUltraExtended,system-ui,sans-serif; /* лёгкая строка заголовка: Light 300 */
+  --font-text:MTSText,system-ui,sans-serif;        /* обычный текст: Regular/Medium */
+}
+body{font-family:var(--font-text);color:var(--mgts-navy);background:var(--mgts-white)}
+h1,h2,h3{font-family:var(--font-title);font-weight:900;color:var(--mgts-blue)}
+.num{font-family:var(--font-title);font-weight:500}
