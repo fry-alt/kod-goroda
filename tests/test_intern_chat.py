@@ -29,3 +29,13 @@ def test_llm_answers_only_when_found(monkeypatch):
     assert TestClient(app).post("/api/intern-chat", json=body).json()["engine"] == "fake"
     monkeypatch.setattr(intern_chat.pipeline, "get_provider", lambda: Fake(False))
     assert TestClient(app).post("/api/intern-chat", json=body).json()["answer"] is None
+
+
+def test_history_roundtrip(tmp_path, monkeypatch):
+    monkeypatch.setattr(intern_chat, "HISTORY_FILE", tmp_path / "kube.jsonl")
+    c = TestClient(app)
+    assert c.post("/api/intern-chat/history", json={"intern_id": "СТ-001", "topic": "work", "who": "me", "text": "кто мой наставник"}).json() == {"ok": True}
+    c.post("/api/intern-chat/history", json={"intern_id": "СТ-002", "topic": "work", "who": "me", "text": "чужое"})
+    rows = c.get("/api/intern-chat/history", params={"intern_id": "СТ-001", "topic": "work"}).json()
+    assert [r["text"] for r in rows] == ["кто мой наставник"]
+    assert c.post("/api/intern-chat/history", json={"topic": "bad topic!", "who": "me", "text": "x"}).status_code == 422

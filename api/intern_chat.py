@@ -57,3 +57,46 @@ def answer(body: InternChatIn) -> dict:
     if out is None or not out.found or not out.answer.strip():
         return {"answer": None, "engine": "offline"}
     return {"answer": out.answer.strip(), "engine": provider.name}
+
+
+# ---------- история подчатов Куба (чтобы чат продолжался на другом устройстве) ----------
+# Хранится отдельно от анкет и НЕ показывается в дашборде HR: это личный чат стажёра с Кубом.
+import json as _json
+import threading as _threading
+from datetime import datetime as _dt
+
+from feedback.config import ROOT
+
+HISTORY_FILE = ROOT / "data" / "kube_chat.jsonl"
+_lock = _threading.Lock()
+
+
+class HistoryIn(BaseModel):
+    intern_id: str | None = Field(default=None, max_length=20)
+    topic: str = Field(default="main", max_length=20, pattern=r"^[a-z_]+$")
+    who: str = Field(pattern=r"^(me|bot)$")
+    text: str = Field(min_length=1, max_length=1500)
+
+
+def add_history(body: HistoryIn) -> dict:
+    row = {**body.model_dump(), "at": _dt.now().isoformat(timespec="seconds")}
+    with _lock:
+        HISTORY_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with HISTORY_FILE.open("a", encoding="utf-8") as f:
+            f.write(_json.dumps(row, ensure_ascii=False) + "\n")
+    return {"ok": True}
+
+
+def get_history(intern_id: str | None, topic: str, limit: int = 40) -> list[dict]:
+    if not HISTORY_FILE.exists():
+        return []
+    rows = []
+    with _lock, HISTORY_FILE.open(encoding="utf-8") as f:
+        for line in f:
+            try:
+                r = _json.loads(line)
+            except ValueError:
+                continue
+            if r.get("intern_id") == (intern_id or None) and r.get("topic") == topic:
+                rows.append(r)
+    return rows[-limit:]

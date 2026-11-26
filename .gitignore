@@ -15,3 +15,4 @@ data/app.db
 data/*.db-journal
 data/webhook_log.jsonl
 deploy/*.out
+data/kube_chat.jsonl

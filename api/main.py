@@ -98,6 +98,17 @@ def api_intern_chat(body: intern_chat.InternChatIn):
     return intern_chat.answer(body)
 
 
+@app.post("/api/intern-chat/history")
+def api_intern_chat_history_add(body: intern_chat.HistoryIn):
+    """История подчата Куба (личная, в дашборд HR не попадает)."""
+    return intern_chat.add_history(body)
+
+
+@app.get("/api/intern-chat/history")
+def api_intern_chat_history(intern_id: Optional[str] = None, topic: str = "main"):
+    return intern_chat.get_history(intern_id, topic)
+
+
 @app.get("/api/version")
 def api_version():
     return store.get_version()
