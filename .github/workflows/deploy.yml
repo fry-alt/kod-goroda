@@ -6,6 +6,7 @@
 #                  DOMAIN       — свой домен (необязательно)
 #                  SHEET_SINCE  — отсечка ответов с репетиции, напр. 2026-11-26T11:20:27 (нужна на первом запуске)
 #                  LLM_PROVIDER — auto (по умолчанию) | yandex | claude | offline
+#                  COMMENTS_LLM — 0 (офлайн, по умолчанию) | 1 (LLM)
 # Secrets:         SSH_KEY — приватный ключ, открытая часть в /home/deploy/.ssh/authorized_keys на сервере
 #                  SSH_KNOWN_HOSTS — отпечаток сервера (необязательно: без него берётся ssh-keyscan)
 #                  WEBHOOK_SECRET, SHEET_CSV_INTERN, SHEET_CSV_MENTOR, YC_API_KEY, YC_FOLDER_ID — как в .env, все необязательные
@@ -54,6 +55,7 @@ jobs:
           DOMAIN: ${{ vars.DOMAIN }}
           SHEET_SINCE: ${{ vars.SHEET_SINCE }}
           LLM_PROVIDER: ${{ vars.LLM_PROVIDER }}
+          COMMENTS_LLM: ${{ vars.COMMENTS_LLM }}
           WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
           SHEET_CSV_INTERN: ${{ secrets.SHEET_CSV_INTERN }}
           SHEET_CSV_MENTOR: ${{ secrets.SHEET_CSV_MENTOR }}
@@ -65,6 +67,7 @@ jobs:
           echo "DOMAIN=$domain" >> "$GITHUB_ENV"
           {
             echo "LLM_PROVIDER=${LLM_PROVIDER:-auto}"
+            echo "COMMENTS_LLM=${COMMENTS_LLM:-0}"
             echo "POLL_SECONDS=5"
             for name in SHEET_SINCE WEBHOOK_SECRET SHEET_CSV_INTERN SHEET_CSV_MENTOR YC_API_KEY YC_FOLDER_ID; do
               if [ -n "${!name}" ]; then printf '%s=%s\n' "$name" "${!name}"; fi

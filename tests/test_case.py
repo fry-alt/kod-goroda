@@ -111,7 +111,34 @@ def test_live_text_only_response_changes_dashboard_signal(history):
         assert after["actions"]
 
 
+@pytest.mark.parametrize("comments_llm", [None, "0"])
+def test_offline_comment_statuses(history, monkeypatch, comments_llm):
+    from feedback.analyzers import case_comments
+
+    if comments_llm is None:
+        monkeypatch.delenv("COMMENTS_LLM", raising=False)
+    else:
+        monkeypatch.setenv("COMMENTS_LLM", comments_llm)
+
+    def unexpected_provider():
+        pytest.fail("Offline comment classification must not resolve the LLM provider")
+
+    monkeypatch.setattr(case_comments, "get_provider", unexpected_provider)
+    expected = {
+        2: {"СТ-001": "yellow", "СТ-003": "red", "СТ-005": "red"},
+        3: {"СТ-003": "red", "СТ-004": "yellow", "СТ-005": "red"},
+        4: {"СТ-002": "yellow", "СТ-003": "red", "СТ-004": "red"},
+        6: {},
+    }
+    for period, flagged in expected.items():
+        overview = build_overview(history, period)
+        assert len(overview["interns"]) == 5
+        assert {row["intern_id"]: row["status"] for row in overview["interns"]
+                if row["status"] != "green"} == flagged
+
+
 def test_provider_annotations_reach_dashboard(monkeypatch, tmp_path):
+    monkeypatch.setenv("COMMENTS_LLM", "1")
     from dataclasses import replace
 
     from feedback.analyzers import case_comments, llm

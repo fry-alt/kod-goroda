@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import re
 from collections import defaultdict
 from functools import lru_cache
@@ -75,7 +76,7 @@ def classify(details: list[dict]) -> dict[int, list[dict]]:
                     ))
 
     labels = {}
-    if items:
+    if items and os.getenv("COMMENTS_LLM") == "1":
         try:
             provider = get_provider()
             if provider:
