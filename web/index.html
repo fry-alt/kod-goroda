@@ -110,7 +110,7 @@ table{border-collapse:collapse;width:100%}
 <div id="mockbar" class="mockbar" hidden></div>
 <header class="top"><div class="top-in">
   <div class="brand"><img src="brand/logos/logo1.svg" alt="МГТС">
-    <h1>Радар стажировки<small>сигналы по анкетам стажёров и наставников</small></h1></div>
+    <h1>Радар стажировки<small>МГТС · HR</small></h1></div>
   <div class="periods" id="periods"></div>
   <div class="live" id="live"><i></i><span>подключение…</span></div>
 </div></header>
@@ -118,13 +118,13 @@ table{border-collapse:collapse;width:100%}
 <main>
   <section class="kpis" id="kpis"></section>
   <div class="grid2">
-    <section class="panel"><h2>Кому нужно внимание <span class="hint">сначала критичные · нажмите для деталей</span></h2><div class="who" id="who"></div></section>
+    <section class="panel"><h2>Стажёры</h2><div class="who" id="who"></div></section>
     <div>
-      <section class="panel"><h2>Кто заполнил анкеты <span class="hint">С — стажёр, Н — наставник</span></h2><div id="matrix"></div></section>
-      <section class="panel"><h2>Лента событий <span class="hint">ответы из форм в реальном времени</span></h2><div class="feed" id="feed"><div class="mut">пока новых ответов нет</div></div></section>
+      <section class="panel"><h2>Анкеты <span class="hint">стажёр · наставник</span></h2><div id="matrix"></div></section>
+      <section class="panel"><h2>Новые ответы</h2><div class="feed" id="feed"><div class="mut">ждём ответы из форм</div></div></section>
     </div>
   </div>
-  <section class="panel" id="themesBox" hidden><h2>Темы программы <span class="hint">повторяется у нескольких стажёров</span></h2><div id="themes" class="themes"></div></section>
+  <section class="panel" id="themesBox" hidden><h2>Повторяющиеся проблемы</h2><div id="themes" class="themes"></div></section>
   <section class="panel" id="card"><div class="mut">Выберите стажёра</div></section>
 </main>
 <div class="toast" id="toast"></div>
@@ -134,7 +134,7 @@ const S = {ov:null, period:null, sel:null, card:null, ver:null, mock:null, chart
            onlyConfirmed:false, feed:[]};
 const qs = new URLSearchParams(location.search);
 const MOCKS = [2,3,4,6];
-const ST = {red:'Критичный сигнал', yellow:'Зона внимания', green:'Положительная динамика', grey:'Нет данных'};
+const ST = {red:'Критично', yellow:'Внимание', green:'Положительно', grey:'Нет данных'};
 const ORDER = {red:0, yellow:1, grey:2, green:3};
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -154,7 +154,7 @@ async function loadIntern(id){
   return getJSON(`/api/interns/${encodeURIComponent(id)}` + (S.period ? `?period=${S.period}` : ''));
 }
 function banner(){ const b = $('mockbar'); b.hidden = !S.mock;
-  b.textContent = S.mock === 'auto' ? 'Сервер недоступен — показаны сохранённые данные (демо-режим)' : `Демо-режим: данные-моки, срез на Месяц ${S.period || 6}`; }
+  b.textContent = S.mock === 'auto' ? 'Нет связи с сервером — показаны сохранённые данные' : `Демо-данные · Месяц ${S.period || 6}`; }
 
 // ---------- решения HR по сигналам ----------
 const RKEY = 'radar.reviews';
@@ -181,11 +181,11 @@ function renderPeriods(){
 function renderKpis(){
   const k = S.ov.kpi || {}, cur = S.period || S.ov.current_period;
   $('kpis').innerHTML = `
-    <div class="kpi"><div class="v">${esc(k.responded_interns)}</div><div class="l">стажёров ответили · Месяц ${cur}</div></div>
-    <div class="kpi"><div class="v">${esc(k.responded_mentors)}</div><div class="l">наставников ответили · Месяц ${cur}</div></div>
-    <div class="kpi red"><div class="v">${k.red ?? 0}</div><div class="l">критичный сигнал</div></div>
-    <div class="kpi yellow"><div class="v">${k.yellow ?? 0}</div><div class="l">зона внимания</div></div>
-    <div class="kpi green"><div class="v">${k.green ?? 0}</div><div class="l">положительная динамика</div></div>`;
+    <div class="kpi"><div class="v">${esc(k.responded_interns)}</div><div class="l">стажёры · Месяц ${cur}</div></div>
+    <div class="kpi"><div class="v">${esc(k.responded_mentors)}</div><div class="l">наставники · Месяц ${cur}</div></div>
+    <div class="kpi red"><div class="v">${k.red ?? 0}</div><div class="l">критично</div></div>
+    <div class="kpi yellow"><div class="v">${k.yellow ?? 0}</div><div class="l">внимание</div></div>
+    <div class="kpi green"><div class="v">${k.green ?? 0}</div><div class="l">положительно</div></div>`;
 }
 function renderWho(flashId){
   const list = [...(S.ov.interns || [])].sort((a,b) => (ORDER[a.status]??9) - (ORDER[b.status]??9) || (b.signals||0) - (a.signals||0));
@@ -194,7 +194,7 @@ function renderWho(flashId){
       <span class="dot st-${i.status||'grey'}" title="${ST[i.status]||''}"></span>
       <span><b>${esc(i.intern_id)}</b> <span class="mut">· ${esc(i.department)}</span>
         <div class="why">${i.signals ? `<b style="font-size:13px;color:var(--mgts-navy)">${i.signals} сигн.</b> · ` : ''}${esc(i.reason || ST[i.status] || '')}</div></span>
-      <span class="sc">${fmt(i.intern_avg)} / ${fmt(i.mentor_avg)}<small>стажёр / наставник</small></span>
+      <span class="sc">${fmt(i.intern_avg)} / ${fmt(i.mentor_avg)}<small>стажёр / наставн.</small></span>
     </button>`).join('');
   $('who').querySelectorAll('.icard').forEach(b => b.onclick = () => openIntern(b.dataset.id));
 }
@@ -207,7 +207,7 @@ function renderMatrix(){
     ${rows.map(r => `<tr><td><b>${esc(r.intern_id)}</b> <span class="mut">· ${esc(r.mentor_id)}</span></td>${ps.map(p => {
       const c = (r.periods||{})[p] || {}; return `<td class="${p===cur?'cur':''}"><span class="cell">${mark(c.intern,p)}${mark(c.mentor,p)}</span></td>`;
     }).join('')}</tr>`).join('')}</table>
-    <div class="note" style="margin-top:8px">✓ заполнено · ✕ пропуск · … опрос текущего месяца ещё идёт</div>`;
+    <div class="note" style="margin-top:8px">✓ есть · ✕ пропуск · … опрос идёт</div>`;
 }
 function renderThemes(){
   const t = S.ov.themes || [];
@@ -227,34 +227,34 @@ function renderCard(){
   const focusPeriods = new Set((S.focus?.evidence || []).map(e => e.period));
   $('card').innerHTML = `
     <div class="chead">
-      <div><h2>${esc(c.intern_id)}</h2><div class="meta">${esc(c.department)} · наставник ${esc(c.mentor_id)} · периодов: ${(c.periods||[]).length}</div></div>
+      <div><h2>${esc(c.intern_id)}</h2><div class="meta">${esc(c.department)} · наставник ${esc(c.mentor_id)}</div></div>
       <span class="badge b-${c.status||'grey'}" style="margin-left:auto"><span class="dot st-${c.status||'grey'}" style="width:10px;height:10px"></span>${ST[c.status]||''}</span>
     </div>
-    <div class="summary"><b>Резюме для HR.</b> ${esc(c.summary || '—')}
+    <div class="summary"><b>Итог:</b> ${esc(c.summary || '—')}
       ${(c.actions||[]).length ? `<ul>${c.actions.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : ''}</div>
     <div class="two">
       <div>
-        <h3 style="font-size:17px;margin:0 0 6px">Динамика: стажёр и наставник</h3>
+        <h3 style="font-size:17px;margin:0 0 6px">Динамика</h3>
         <div class="tabs" id="modes">
           <button data-m="avg" class="${S.mode==='avg'?'on':''}">Средний балл</button>
-          <button data-m="norm" class="${S.mode==='norm'?'on':''}" title="отклонение от личной нормы (у каждого своя «валюта» баллов)">От личной нормы</button>
+          <button data-m="norm" class="${S.mode==='norm'?'on':''}" title="отклонение от личной нормы (у каждого своя «валюта» баллов)">От нормы</button>
           ${(c.pairs||[]).map((p,i) => `<button data-m="pair${i}" class="${S.mode==='pair'+i?'on':''}" title="${esc(p.intern)} ↔ ${esc(p.mentor)}">${esc(short(p.intern))}</button>`).join('')}
         </div>
         <div class="chartbox"><canvas id="ch"></canvas></div>
         <div class="note" id="chnote"></div>
       </div>
       <div>
-        <h3 style="font-size:17px;margin:0 0 10px;display:flex;align-items:center">Сигналы и основания
-          <label class="note" style="margin-left:auto;font-weight:400"><input type="checkbox" id="onlyc" ${S.onlyConfirmed?'checked':''}> только подтверждённые HR</label></h3>
-        ${sigs.length ? sigs.map(s => sigHtml(s)).join('') : `<div class="mut" style="padding:14px 0">${S.onlyConfirmed ? 'Нет подтверждённых сигналов' : 'Сигналов нет — динамика в норме'}</div>`}
+        <h3 style="font-size:17px;margin:0 0 10px;display:flex;align-items:center">Сигналы
+          <label class="note" style="margin-left:auto;font-weight:400"><input type="checkbox" id="onlyc" ${S.onlyConfirmed?'checked':''}> подтверждённые</label></h3>
+        ${sigs.length ? sigs.map(s => sigHtml(s)).join('') : `<div class="mut" style="padding:14px 0">${S.onlyConfirmed ? 'Нет подтверждённых' : 'Сигналов нет'}</div>`}
       </div>
     </div>
-    ${(c.pairs||[]).length ? `<h3 style="font-size:17px;margin:22px 0 8px">Стажёр ↔ наставник по парам показателей</h3>
-      <table class="pairs"><tr><th>Стажёр ↔ наставник</th>${c.periods.map(p => `<th>М${p.period}</th>`).join('')}</tr>
+    ${(c.pairs||[]).length ? `<h3 style="font-size:17px;margin:22px 0 8px">Стажёр vs наставник</h3>
+      <table class="pairs"><tr><th>Показатель</th>${c.periods.map(p => `<th>М${p.period}</th>`).join('')}</tr>
       ${c.pairs.map(p => `<tr><td>${esc(p.intern)} <span class="mut">↔ ${esc(p.mentor)}</span></td>${p.by_period.map(([a,b]) => {
         const g = (a!=null && b!=null) ? Math.abs(a-b) : 0; return `<td class="${g>=2?'gap2':g>=1?'gap1':''}">${a ?? '—'} / ${b ?? '—'}</td>`; }).join('')}</tr>`).join('')}
       </table>` : ''}
-    <h3 style="font-size:17px;margin:22px 0 4px">Комментарии и разметка ИИ</h3>
+    <h3 style="font-size:17px;margin:22px 0 4px">Комментарии</h3>
     ${[...(c.periods||[])].reverse().map(p => commentRow(p, focusPeriods.has(p.period))).join('')}`;
   $('modes').querySelectorAll('button').forEach(b => b.onclick = () => { S.mode = b.dataset.m; renderCard(); });
   $('onlyc').onchange = e => { S.onlyConfirmed = e.target.checked; renderCard(); };
@@ -271,7 +271,7 @@ function sigHtml(s){
   const ev = (s.evidence||[]).slice(0,8).map(e => e.quote
       ? `<span>М${e.period} · ${esc(e.source)}: <q>«${esc(e.quote)}»</q></span>`
       : `<span>М${e.period} · ${esc(e.field)}: <b>${esc(e.value)}</b></span>`).join('');
-  return `<div class="sig ${on?'on':''}" data-id="${esc(s.id)}">
+  return `<div class="sig ${on?'on':''}" data-id="${esc(s.id)}" title="Показать основания на графике">
     <div class="t"><span class="dot st-${s.level}" style="width:11px;height:11px"></span>${esc(s.title)}
       ${r ? `<span class="badge ${r==='confirmed'?'b-green':r==='in_work'?'b-blue':'b-grey'}" style="margin-left:auto">${{confirmed:'подтверждено HR',false_alarm:'ложная тревога',in_work:'в работе'}[r]}</span>` : ''}</div>
     <div class="w">${esc(s.why)}</div>
@@ -280,7 +280,6 @@ function sigHtml(s){
       <button class="c ${r==='confirmed'?'on':''}" data-id="${esc(s.id)}" data-s="confirmed">✓ Подтвердить</button>
       <button class="w ${r==='in_work'?'on':''}" data-id="${esc(s.id)}" data-s="in_work">В работе</button>
       <button class="f ${r==='false_alarm'?'on':''}" data-id="${esc(s.id)}" data-s="false_alarm">Ложная тревога</button>
-      <span class="note" style="align-self:center">${on ? 'основания подсвечены на графике и в комментариях' : 'нажмите, чтобы увидеть основания'}</span>
     </div></div>`;
 }
 function commentRow(p, hl){
@@ -294,16 +293,16 @@ function commentRow(p, hl){
 }
 function drawChart(){
   const c = S.card, P = c.periods || [], labels = P.map(p => 'М' + p.period);
-  let a, b, la = 'Стажёр', lb = 'Наставник', yMin = 1, yMax = 5, note = 'Средний балл по анкете (1–5).';
+  let a, b, la = 'Стажёр', lb = 'Наставник', yMin = 1, yMax = 5, note = '';
   if(S.mode === 'norm'){
     const base = (k) => { const v = P.slice(0, 3).map(p => p[k]).filter(x => x != null); return v.length ? v.reduce((s,x)=>s+x,0)/v.length : null; };
     const bi = base('intern_avg'), bm = base('mentor_avg');
     a = P.map(p => p.intern_avg != null && bi != null ? +(p.intern_avg - bi).toFixed(2) : null);
     b = P.map(p => p.mentor_avg != null && bm != null ? +(p.mentor_avg - bm).toFixed(2) : null);
-    yMin = -2.5; yMax = 2.5; note = 'Отклонение от личной нормы (среднее первых 3 месяцев). У каждого своя «валюта» баллов: 4 у строгого — не то же, что 4 у щедрого.';
+    yMin = -2.5; yMax = 2.5; note = 'Отклонение от личной нормы: у каждого своя шкала оценок.';
   } else if(S.mode.startsWith('pair')){
     const pr = c.pairs[+S.mode.slice(4)]; a = pr.by_period.map(x => x[0]); b = pr.by_period.map(x => x[1]);
-    la = pr.intern; lb = pr.mentor; note = `Одна шкала 1–5: «${pr.intern}» (стажёр) ↔ «${pr.mentor}» (наставник).`;
+    la = pr.intern; lb = pr.mentor; note = `${pr.intern} ↔ ${pr.mentor}`;
   } else { a = P.map(p => p.intern_avg); b = P.map(p => p.mentor_avg); }
   const fp = new Set((S.focus?.evidence || []).map(e => e.period));
   const rad = P.map(p => fp.has(p.period) ? 9 : 4), col = P.map(p => fp.has(p.period) ? css('--mgts-orange') : null);
@@ -325,7 +324,7 @@ function toast(html){ const t = $('toast'); t.innerHTML = html; t.classList.add(
 function setLive(ok, txt){ $('live').className = 'live' + (ok ? '' : ' off'); $('live').querySelector('span').textContent = txt; }
 function renderFeed(){
   $('feed').innerHTML = S.feed.length ? S.feed.map(f => `<div><time>${esc(f.at)}</time><b>${esc(f.intern_id||'')}</b> · Месяц ${esc(f.period??'—')} · ${esc(f.what)}${f.change ? ` · <b>${f.change}</b>` : ''}</div>`).join('')
-    : '<div class="mut">пока новых ответов нет</div>';
+    : '<div class="mut">ждём ответы из форм</div>';
 }
 async function refresh(flashId){
   const prev = Object.fromEntries((S.ov?.interns || []).map(i => [i.intern_id, i.status]));
@@ -349,7 +348,7 @@ async function poll(){
       S.feed.unshift({at: e.at || new Date().toLocaleTimeString('ru', {hour:'2-digit', minute:'2-digit'}), intern_id:id, period:e.period, what: `${what}${e.via ? ' (' + e.via + ')' : ''}`, change: ch});
       S.feed = S.feed.slice(0, 30); renderFeed();
       if(id){ S.sel = id; S.card = await loadIntern(id); renderWho(id); renderCard(); }
-      toast(`<b>Новый ответ из формы</b><br>${esc(id || '')} · Месяц ${esc(e.period ?? '')}${ch ? `<br>Статус: <b>${ch}</b>` : '<br>история обновлена, анализ пересчитан'}`);
+      toast(`<b>Новый ответ: ${esc(id || '')} · Месяц ${esc(e.period ?? '')}</b>${ch ? `<br>${ch}` : ''}`);
     }
     S.ver = v.version;
   } catch(e){ setLive(false, 'нет связи с сервером'); }
