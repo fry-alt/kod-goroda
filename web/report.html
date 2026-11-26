@@ -79,7 +79,8 @@ button{cursor:pointer}
 .dh .k{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--mgts-muted)}
 .dh h1{margin:2px 0 0;font-size:26px;line-height:1.1}
 .dh .f{font-size:14px;margin-top:4px}
-.dh .meta{text-align:right;font-size:12.5px;color:var(--mgts-muted)}
+.dh .meta{text-align:right;font-size:12.5px;color:var(--mgts-muted);min-width:0;overflow-wrap:anywhere}
+.dh > *{min-width:0}
 .dh .meta b{display:block;font-family:var(--font-title);font-weight:700;font-size:17px;color:var(--mgts-navy);margin-bottom:2px}
 
 .sec{margin-top:18px;break-inside:avoid}
@@ -158,6 +159,7 @@ table.t{border-collapse:collapse;width:100%;font-size:12.5px}
   .sheet{min-height:0;padding:16px}
 }
 @media (max-width:640px){
+  .sheet{overflow-x:auto}
   .brand small{display:none}
   .kpis{grid-template-columns:repeat(2,1fr)}
   .charts,.cms{grid-template-columns:1fr}

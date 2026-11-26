@@ -67,6 +67,7 @@ svg.i{width:22px;height:22px;flex:none;fill:none;stroke:currentColor;stroke-widt
 .panel h2,.h2{font-size:20px;margin:0 0 14px;display:flex;align-items:center;gap:10px;line-height:1.2}
 .panel h2 a,.h2 a{margin-left:auto;font-family:var(--font-text);font-weight:500;font-size:15px;text-decoration:none}
 .grid2{display:grid;grid-template-columns:1.35fr 1fr;gap:20px;align-items:start}
+.grid2 > *,.panel{min-width:0} .scroll{max-width:100%}
 .grid2 > div > .panel:last-child{margin-bottom:0}
 @media (min-width:1181px){.grid2 > .stick{position:sticky;top:96px}} /* сводка карточки: вывод и график едут рядом с длинным списком причин */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 18px;border-radius:14px;border:1px solid var(--mgts-line);
@@ -544,7 +545,7 @@ async function viewHome(v){
       <div class="prog"><i style="width:${sv.total ? sv.n / sv.total * 100 : 0}%"></i></div></a>
   </section>
   <section class="panel" id="heatBox"><h2>Светофор по месяцам <a href="#/interns">Все стажёры →</a></h2>
-    <p class="mut" style="margin:-6px 0 12px;font-size:14px">Каждая клетка — стажёр в конкретном месяце, число — его средняя оценка. Видно, когда начались проблемы и ушли ли они. Нажмите на клетку, чтобы открыть карточку на тот месяц.</p>
+    <p class="mut" style="margin:-6px 0 12px;font-size:14px">Каждая клетка — стажёр в конкретном месяце. Число — средняя оценка, цвет — статус с учётом комментариев и пропусков: при высокой оценке клетка может быть красной, если в анкете тревожный комментарий. Видно, когда начались проблемы и ушли ли они. Нажмите на клетку, чтобы открыть карточку на тот месяц.</p>
     <div id="heat"><div class="mut">Загрузка…</div></div></section>
   <div class="grid2">
     <div>
@@ -778,7 +779,7 @@ function tabSum(el, c){
   $('toDyn').onclick = e => { e.preventDefault(); S.tab = 'dyn'; viewIntern($('view')); };
   if($('moreSig')) $('moreSig').onclick = () => { S.allSig = !S.allSig; tabSum(el, c); };
   el.querySelectorAll('.rev button[data-s]').forEach(b => b.onclick = () => setGroupReview(b.dataset.g, b.dataset.s));
-  el.querySelectorAll('.rev .lnk').forEach(b => b.onclick = () => { const g = groups.find(x => x.id === b.dataset.g), key = g.ev.filter(e => e.quote || +e.value <= 3); S.focus = {...g, evidence: key.length ? key : g.ev}; S.tab = 'dyn'; viewIntern($('view')); });
+  el.querySelectorAll('.rev .lnk').forEach(b => b.onclick = () => { const g = groups.find(x => x.id === b.dataset.g), key = g.ev.filter(e => e.quote || +e.value <= 3); S.focus = {...g, evidence: key.length ? key : g.ev}; S.mode = 'avg'; S.tab = 'dyn'; viewIntern($('view')); });
   const keepMode = S.mode; S.mode = 'avg'; drawChart(c); S.mode = keepMode;
 }
 function evHtml(e){ return e.quote ? `<span>М${e.period} · ${esc(e.source)}: <q>«${esc(e.quote)}»</q></span>` : `<span>М${e.period} · ${esc(e.source ? e.source + ', ' : '')}${esc(e.field)}: <b>${esc(e.value)}</b></span>`; }
@@ -829,6 +830,7 @@ async function tabAdapt(el, c){
   const pct = list.length ? Math.round(list.filter(x => done.has(x.id)).length / list.length * 100) : 0;
   const [kd, mt] = await Promise.all([RS.kudos(c.intern_id), RS.meetings(c.intern_id)]);
   const stages = [...new Set(list.map(x => x.stage))];
+  if(!el.isConnected) return; // HR ушёл с вкладки, пока грузились данные
   el.innerHTML = `<div class="grid2">
     <div>
       <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px"><div class="ring" style="--p:${pct}"><b>${pct}%</b></div>
@@ -844,7 +846,7 @@ async function tabAdapt(el, c){
       <h3 class="h2" style="font-size:18px;margin-top:22px">Встречи <button class="btn sm" id="mAdd" style="margin-left:auto">${ico('cal')}Назначить</button></h3>
       ${mt.length ? mt.map(m => `<div class="kud"><span class="ic g">${ico('cal')}</span><span><b>${esc(m.title)}</b><div class="mut">${when(m.start)} · ${m.minutes || 30} мин${m.link ? ' · ' + esc(m.link) : ''}</div></span></div>`).join('') : '<div class="empty">Встреч нет</div>'}
     </div></div>`;
-  $('kAdd').onclick = () => kudosDlg(c.intern_id); $('mAdd').onclick = () => meetDlg(c.intern_id);
+  const kA = el.querySelector('#kAdd'), mA = el.querySelector('#mAdd'); if(kA) kA.onclick = () => kudosDlg(c.intern_id); if(mA) mA.onclick = () => meetDlg(c.intern_id);
 }
 function drawChart(c){
   const P = c.periods || [], labels = P.map(p => 'М' + p.period);
