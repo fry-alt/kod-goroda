@@ -7,8 +7,8 @@
 <link rel="stylesheet" href="brand/brand.css">
 <script src="vendor/chart.umd.min.js"></script>
 <script src="config.js" onerror=""></script>
-<script src="shared/store.js?v=2"></script>
-<script src="hr-tools.js?v=2" onerror=""></script>
+<script src="shared/store.js?v=3"></script>
+<script src="hr-tools.js?v=3" onerror=""></script>
 <style>
 :root{--sh:0 1px 2px rgba(19,64,116,.06),0 12px 32px -10px rgba(0,138,224,.16);--sh-h:0 2px 4px rgba(19,64,116,.08),0 18px 40px -10px rgba(0,138,224,.26);
   --ease:cubic-bezier(.2,0,0,1);--side:248px;--r:22px}
@@ -941,7 +941,8 @@ async function ask(q){
   let ans = null;
   if(!S.mock){ try { const r = await fetch(API + '/api/chat', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({question:q, period:S.period, intern_id:S.cardId, history:CHAT.hist.slice(-8)})});
-      if(r.ok){ const j = await r.json(); ans = j.answer_html || (j.answer ? esc(j.answer).replace(/\n/g, '<br>').replace(/(СТ-\d{3})/g, m => link(m)) : null); } } catch {} }
+      if(r.ok){ const j = await r.json(); ans = j.answer_html || (j.answer ? esc(j.answer).replace(/\n/g, '<br>').replace(/(СТ-\d{3})/g, m => link(m)) : null);
+        if(ans && (j.sources || []).length) ans += `<div style="margin-top:6px;font-size:12px;color:var(--mgts-muted)">Источники: ${j.sources.map(esc).join(' · ')}${j.engine ? ' · ' + esc(j.engine) : ''}</div>`; } } catch {} }
   if(!ans) ans = await localAnswer(q);
   await new Promise(r => setTimeout(r, 350));
   typing.remove();

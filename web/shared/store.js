@@ -14,6 +14,21 @@
   const API = (() => { let a = qs.get('api'); try { if(a) localStorage.setItem('radar.api', a); else a = localStorage.getItem('radar.api'); } catch {}
     return (a || window.RADAR_API || '').replace(/\/$/, ''); })();
   const STATIC = /vercel\.app$|netlify\.app$|github\.io$/.test(location.hostname) && !API;
+  // Бэк через HTTPS-туннель (ngrok / Pinggy) в бесплатном режиме отдаёт браузеру HTML-заглушку вместо JSON.
+  // Эти заголовки её отключают. Добавляем их ко ВСЕМ запросам к API на странице (store, дашборд, кабинет, отчёты), см. issue #4.
+  if(API && !window.__radarTunnel){
+    window.__radarTunnel = true;
+    const nativeFetch = window.fetch.bind(window);
+    window.fetch = (input, init = {}) => {
+      const url = typeof input === 'string' ? input : (input && input.url) || '';
+      if(url.startsWith(API)){
+        const h = new Headers(init.headers || (typeof input !== 'string' && input.headers) || undefined);
+        h.set('ngrok-skip-browser-warning', '1'); h.set('X-Pinggy-No-Screen', '1');
+        init = {...init, headers: h};
+      }
+      return nativeFetch(input, init);
+    };
+  }
   const ls = {
     get(k, d){ try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch { return d; } },
     set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
