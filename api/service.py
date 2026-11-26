@@ -23,7 +23,11 @@ def ingest_answer(form: Optional[str], answers: dict, via: str) -> dict:
     if intern_id:  # подставляем подразделение и наставника из истории, если форма их не спросила
         known = {p["intern_id"]: p for p in store.roster(store.load_history())}.get(intern_id)
         if known:
-            row.setdefault(store.DEPT, known["department"])
+            # ID стажёра — источник правды: подразделение берём из истории, даже если в форме выбрали другое
+            if known["department"] and row.get(store.DEPT) not in (None, known["department"]):
+                log.warning("%s: в форме подразделение «%s», в истории «%s» — оставляем из истории",
+                            intern_id, row[store.DEPT], known["department"])
+            row[store.DEPT] = known["department"] or row.get(store.DEPT)
             if form == "mentor":
                 row.setdefault(store.MENTOR_ID, known["mentor_id"])
     res = store.upsert(form, row, source=via)
