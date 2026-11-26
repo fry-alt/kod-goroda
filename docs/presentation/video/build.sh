@@ -8,17 +8,19 @@ python3 - <<'PY' > /tmp/radar_cut.txt
 import json
 C = {c["name"]: c for c in json.load(open("raw/cuts.json"))}
 for n in ["s1_live", "s2_report", "s3_intern"]:
-    c = C[n]; print(c["file"], max(0, c["start"] - 0.2), c["end"] - 0.3)
+    c = C[n]; end = c["end"] - (6.6 if n == "s1_live" else 0.3)  # без светофора в конце сцены 1
+    print(c["file"], max(0, c["start"] - 0.2), end)
 PY
 i=0; INPUTS=(); FILTER=""
 # титр и финал: по 3 с
-INPUTS+=(-loop 1 -t 3 -i cards/title.png)
+INPUTS+=(-loop 1 -t 2.5 -i cards/title.png)
 while read f a b; do INPUTS+=(-ss "$a" -to "$b" -i "$f"); done < /tmp/radar_cut.txt
-INPUTS+=(-loop 1 -t 4 -i cards/end.png)
+INPUTS+=(-loop 1 -t 3.5 -i cards/end.png)
 N=5
-for k in $(seq 0 $((N-1))); do FILTER+="[$k:v]scale=1920:1080:flags=lanczos,fps=30,format=yuv420p,setsar=1[v$k];"; done
+SP=1.3  # ускорение сцен
+for k in $(seq 0 $((N-1))); do if [ $k -ge 1 ] && [ $k -le 3 ]; then PT="setpts=PTS/$SP,"; else PT=""; fi; FILTER+="[$k:v]${PT}scale=1920:1080:flags=lanczos,fps=30,format=yuv420p,setsar=1[v$k];"; done
 # длительности для xfade
-D=(3); while read f a b; do D+=($(python3 -c "print(round($b-$a,2))")); done < /tmp/radar_cut.txt; D+=(4)
+D=(2.5); while read f a b; do D+=($(python3 -c "print(round(($b-$a)/1.3,2))")); done < /tmp/radar_cut.txt; D+=(3.5)
 T=0.5; off=$(python3 -c "print(${D[0]}-$T)"); FILTER+="[v0][v1]xfade=transition=fade:duration=$T:offset=$off[x1];"
 acc=$(python3 -c "print(${D[0]}+${D[1]}-$T)")
 for k in 2 3 4; do off=$(python3 -c "print(round($acc-$T,2))"); FILTER+="[x$((k-1))][v$k]xfade=transition=fade:duration=$T:offset=$off[x$k];"; acc=$(python3 -c "print(round($acc+${D[$k]}-$T,2))"); done
