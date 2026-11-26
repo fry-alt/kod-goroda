@@ -5,6 +5,7 @@
 <link rel="icon" href="brand/logos/logo1.png">
 <link rel="stylesheet" href="brand/brand.css">
 <script src="vendor/chart.umd.min.js"></script>
+<script src="config.js" onerror=""></script>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:var(--mgts-bg-soft);font-size:15px;line-height:1.45}
@@ -98,12 +99,72 @@ table{border-collapse:collapse;width:100%}
 .cm h4{margin:0 0 3px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--mgts-muted);font-weight:500}
 .chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
 .two{display:grid;grid-template-columns:1.25fr 1fr;gap:28px}
-.toast{position:fixed;right:24px;bottom:24px;z-index:50;background:var(--mgts-navy);color:#fff;border-radius:16px;padding:16px 20px;
-  max-width:420px;box-shadow:0 10px 30px rgba(16,44,81,.35);transform:translateY(140%);transition:.35s}
-.toast.show{transform:none}
+.toast{position:fixed;right:24px;bottom:96px;z-index:50;background:var(--mgts-navy);color:#fff;border-radius:16px;padding:16px 20px;
+  max-width:420px;box-shadow:0 10px 30px rgba(16,44,81,.35);transform:translateY(30px);opacity:0;pointer-events:none;transition:.35s}
+.toast.show{transform:none;opacity:1}
 .toast b{color:#fff}
 .note{font-size:12px;color:var(--mgts-muted)}
 .mockbar{background:var(--mgts-orange);color:#fff;text-align:center;font-size:13px;padding:4px}
+
+/* чат «Спросить Радар» */
+.askbtn{position:fixed;right:24px;bottom:24px;z-index:40;display:flex;align-items:center;gap:10px;border:0;border-radius:30px;
+  background:var(--mgts-blue);color:#fff;padding:14px 22px 14px 16px;font-weight:500;box-shadow:0 10px 30px rgba(0,138,224,.35);transition:transform .15s}
+.askbtn:hover{transform:translateY(-2px)}
+.askbtn img{width:28px;height:28px;border-radius:8px;background:#fff;padding:3px}
+.chat{position:fixed;right:24px;bottom:24px;z-index:45;width:420px;max-width:calc(100vw - 32px);height:600px;max-height:calc(100vh - 110px);
+  background:#fff;border-radius:24px;box-shadow:0 20px 60px rgba(16,44,81,.28);display:flex;flex-direction:column;overflow:hidden;
+  transform:translateY(20px) scale(.98);opacity:0;pointer-events:none;transition:.22s}
+.chat.open{transform:none;opacity:1;pointer-events:auto}
+.chat header{display:flex;align-items:center;gap:12px;padding:16px 18px;background:var(--mgts-blue);color:#fff}
+.chat header b{font-family:var(--font-title);font-weight:700;font-size:17px}
+.chat header small{display:block;opacity:.8;font-size:12px}
+.chat header button{margin-left:auto;border:0;background:rgba(255,255,255,.18);color:#fff;width:32px;height:32px;border-radius:10px;font-size:18px}
+.msgs{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:10px;background:var(--mgts-bg-soft)}
+.msg{max-width:88%;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.45;animation:pop .18s ease-out}
+.msg.me{align-self:flex-end;background:var(--mgts-blue);color:#fff;border-bottom-right-radius:6px}
+.msg.bot{align-self:flex-start;background:#fff;color:var(--mgts-navy);border-bottom-left-radius:6px;box-shadow:0 1px 2px rgba(16,44,81,.06)}
+.msg.bot ul{margin:6px 0 0;padding-left:18px}.msg.bot li{margin:3px 0}
+.msg a{color:var(--mgts-blue);cursor:pointer;font-weight:500;text-decoration:none;border-bottom:1px dashed}
+.typing{display:inline-flex;gap:4px}.typing i{width:6px;height:6px;border-radius:50%;background:var(--mgts-muted);animation:blink 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes blink{50%{opacity:.25}}@keyframes pop{from{transform:translateY(6px);opacity:0}}
+.sugg{display:flex;gap:6px;flex-wrap:wrap;padding:10px 14px 0;background:#fff}
+.sugg button{border:1px solid var(--mgts-line);background:#fff;border-radius:16px;padding:5px 11px;font-size:12.5px;color:var(--mgts-navy)}
+.sugg button:hover{border-color:var(--mgts-blue);color:var(--mgts-blue)}
+.chat form{display:flex;gap:8px;padding:12px 14px 14px;background:#fff}
+.chat input{flex:1;border:1px solid var(--mgts-line);border-radius:14px;padding:11px 14px;font:inherit;color:var(--mgts-navy);outline:none}
+.chat input:focus{border-color:var(--mgts-blue)}
+.chat form button{border:0;background:var(--mgts-blue);color:#fff;border-radius:14px;width:46px;font-size:18px}
+
+/* --- живой слой: тени, движение, шиммер (приёмы из Yapp и МиоТренера) --- */
+:root{--sh:0 1px 2px rgba(19,64,116,.06),0 12px 32px -10px rgba(0,138,224,.16);--sh-h:0 2px 4px rgba(19,64,116,.08),0 18px 40px -10px rgba(0,138,224,.26);--ease:cubic-bezier(.2,0,0,1)}
+.top{background:rgba(255,255,255,.78);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px)}
+.panel,.kpi{border-radius:22px;box-shadow:var(--sh)}
+.kpi{transition:transform .35s var(--ease),box-shadow .35s var(--ease)}
+.kpi:hover{transform:translateY(-2px);box-shadow:var(--sh-h)}
+button:active{transform:scale(.97)}
+.icard{transition:transform .25s var(--ease),border-color .2s,background .2s,box-shadow .25s}
+.icard:hover{transform:translateX(3px);box-shadow:var(--sh)}
+.rise>*{animation:rise .5s var(--ease) both}
+.rise>*:nth-child(2){animation-delay:.05s}.rise>*:nth-child(3){animation-delay:.1s}.rise>*:nth-child(4){animation-delay:.15s}.rise>*:nth-child(5){animation-delay:.2s}.rise>*:nth-child(6){animation-delay:.25s}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}}
+.shimmer{border-radius:14px;background:linear-gradient(90deg,#EEF4FA 25%,#F7FAFD 50%,#EEF4FA 75%);background-size:200% 100%;animation:sh 1.6s linear infinite}
+@keyframes sh{to{background-position:-200% 0}}
+.live i{animation:breathe 1.8s ease-in-out infinite}
+@keyframes breathe{50%{opacity:.35;transform:scale(.85)}}
+.trend{font-size:12px;font-weight:700;margin-left:6px}.trend.up{color:var(--st-green)}.trend.down{color:var(--st-red)}
+/* приветственная полоса */
+.hero{position:relative;overflow:hidden;border-radius:26px;background:linear-gradient(115deg,#008AE0 0%,#0A6FC2 55%,#134074 100%);color:#fff;
+  padding:28px 34px;margin-bottom:22px;min-height:150px;box-shadow:var(--sh)}
+.hero h2{font-family:var(--font-title);font-weight:900;font-size:30px;line-height:1.15;color:#fff;margin:0 0 8px;max-width:760px}
+.hero p{margin:0;opacity:.9;font-size:16px;max-width:680px}
+.hero .cta{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
+.hero .cta button{border:0;border-radius:999px;padding:9px 18px;font-weight:500;background:#fff;color:var(--mgts-navy)}
+.hero .cta button.ghost{background:rgba(255,255,255,.16);color:#fff}
+.hero img{position:absolute;right:-10px;top:-40px;height:250px;pointer-events:none;animation:float 6s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(10px) rotate(2deg)}}
+@media (prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+@media (max-width:800px){.hero img{opacity:.25}}
 @media (max-width:1100px){.grid2,.two{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
 </style></head>
 <body>
@@ -115,8 +176,9 @@ table{border-collapse:collapse;width:100%}
   <div class="live" id="live"><i></i><span>подключение…</span></div>
 </div></header>
 
-<main>
-  <section class="kpis" id="kpis"></section>
+<main class="rise">
+  <section class="hero" id="hero"><img src="brand/img/cube.png" alt=""><h2>Загрузка…</h2></section>
+  <section class="kpis" id="kpis"><div class="kpi shimmer" style="height:96px"></div><div class="kpi shimmer" style="height:96px"></div><div class="kpi shimmer" style="height:96px"></div><div class="kpi shimmer" style="height:96px"></div><div class="kpi shimmer" style="height:96px"></div></section>
   <div class="grid2">
     <section class="panel"><h2>Стажёры</h2><div class="who" id="who"></div></section>
     <div>
@@ -128,11 +190,23 @@ table{border-collapse:collapse;width:100%}
   <section class="panel" id="card"><div class="mut">Выберите стажёра</div></section>
 </main>
 <div class="toast" id="toast"></div>
+<button class="askbtn" id="askbtn"><img src="brand/logos/logo1.png" alt="">Спросить Радар</button>
+<section class="chat" id="chat" aria-label="Чат с ассистентом HR">
+  <header><div><b>Радар</b><small>ассистент HR по стажёрам</small></div><button id="chatx" aria-label="Закрыть">×</button></header>
+  <div class="msgs" id="msgs"></div>
+  <div class="sugg" id="sugg"></div>
+  <form id="chatf"><input id="chatq" placeholder="Например: почему СТ-004 красный?" autocomplete="off"><button aria-label="Отправить">↑</button></form>
+</section>
+
 
 <script>
 const S = {ov:null, period:null, sel:null, card:null, ver:null, mock:null, chart:null, mode:'avg', focus:null,
            onlyConfirmed:false, feed:[]};
 const qs = new URLSearchParams(location.search);
+// адрес бэка: ?api=https://…  (запоминается) → window.RADAR_API из config.js → тот же сервер
+const API = (() => { let a = qs.get('api'); try { if(a) localStorage.setItem('radar.api', a); else a = localStorage.getItem('radar.api'); } catch {}
+  return (a || window.RADAR_API || '').replace(/\/$/, ''); })();
+const STATIC_HOST = /vercel\.app$|netlify\.app$|github\.io$/.test(location.hostname) && !API;
 const MOCKS = [2,3,4,6];
 const ST = {red:'Критично', yellow:'Внимание', green:'Положительно', grey:'Нет данных'};
 const ORDER = {red:0, yellow:1, grey:2, green:3};
@@ -146,12 +220,12 @@ async function getJSON(url){ const r = await fetch(url, {cache:'no-store'}); if(
 function mockDir(p){ const want = p || 6; return 'mock/p' + (MOCKS.filter(m => m <= want).pop() || MOCKS[0]); }
 async function loadOverview(){
   if(S.mock) return getJSON(`${mockDir(S.period)}/overview.json`);
-  try { return await getJSON('/api/overview' + (S.period ? `?period=${S.period}` : '')); }
+  try { return await getJSON(API + '/api/overview' + (S.period ? `?period=${S.period}` : '')); }
   catch(e){ S.mock = 'auto'; banner(); return getJSON(`${mockDir(S.period)}/overview.json`); }
 }
 async function loadIntern(id){
   if(S.mock) return getJSON(`${mockDir(S.period)}/intern_${id}.json`);
-  return getJSON(`/api/interns/${encodeURIComponent(id)}` + (S.period ? `?period=${S.period}` : ''));
+  return getJSON(API + `/api/interns/${encodeURIComponent(id)}` + (S.period ? `?period=${S.period}` : ''));
 }
 function banner(){ const b = $('mockbar'); b.hidden = !S.mock;
   b.textContent = S.mock === 'auto' ? 'Нет связи с сервером — показаны сохранённые данные' : `Демо-данные · Месяц ${S.period || 6}`; }
@@ -163,7 +237,7 @@ function reviewOf(sig){ return sig.review?.status || reviews()[sig.id] || null; 
 async function setReview(id, status){
   const all = reviews(); all[id] = all[id] === status ? null : status;
   try { localStorage.setItem(RKEY, JSON.stringify(all)); } catch {}
-  if(!S.mock) fetch(`/api/signals/${encodeURIComponent(id)}/review`, {method:'POST', headers:{'Content-Type':'application/json'},
+  if(!S.mock) fetch(API + `/api/signals/${encodeURIComponent(id)}/review`, {method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({status: all[id] || 'none'})}).catch(()=>{});
   renderCard();
 }
@@ -183,9 +257,10 @@ function renderKpis(){
   $('kpis').innerHTML = `
     <div class="kpi"><div class="v">${esc(k.responded_interns)}</div><div class="l">стажёры · Месяц ${cur}</div></div>
     <div class="kpi"><div class="v">${esc(k.responded_mentors)}</div><div class="l">наставники · Месяц ${cur}</div></div>
-    <div class="kpi red"><div class="v">${k.red ?? 0}</div><div class="l">критично</div></div>
-    <div class="kpi yellow"><div class="v">${k.yellow ?? 0}</div><div class="l">внимание</div></div>
-    <div class="kpi green"><div class="v">${k.green ?? 0}</div><div class="l">положительно</div></div>`;
+    <div class="kpi red"><div class="v" data-n="${k.red ?? 0}">0</div><div class="l">критично</div></div>
+    <div class="kpi yellow"><div class="v" data-n="${k.yellow ?? 0}">0</div><div class="l">внимание</div></div>
+    <div class="kpi green"><div class="v" data-n="${k.green ?? 0}">0</div><div class="l">положительно</div></div>`;
+  $('kpis').querySelectorAll('[data-n]').forEach(countUp);
 }
 function renderWho(flashId){
   const list = [...(S.ov.interns || [])].sort((a,b) => (ORDER[a.status]??9) - (ORDER[b.status]??9) || (b.signals||0) - (a.signals||0));
@@ -194,7 +269,7 @@ function renderWho(flashId){
       <span class="dot st-${i.status||'grey'}" title="${ST[i.status]||''}"></span>
       <span><b>${esc(i.intern_id)}</b> <span class="mut">· ${esc(i.department)}</span>
         <div class="why">${i.signals ? `<b style="font-size:13px;color:var(--mgts-navy)">${i.signals} сигн.</b> · ` : ''}${esc(i.reason || ST[i.status] || '')}</div></span>
-      <span class="sc">${fmt(i.intern_avg)} / ${fmt(i.mentor_avg)}<small>стажёр / наставн.</small></span>
+      <span class="sc">${fmt(i.intern_avg)} / ${fmt(i.mentor_avg)}${i.trend ? `<span class="trend ${i.trend>0?'up':'down'}">${i.trend>0?'▲':'▼'}${fmt(Math.abs(i.trend))}</span>` : ''}<small>стажёр / наставн.</small></span>
     </button>`).join('');
   $('who').querySelectorAll('.icard').forEach(b => b.onclick = () => openIntern(b.dataset.id));
 }
@@ -329,7 +404,7 @@ function renderFeed(){
 async function refresh(flashId){
   const prev = Object.fromEntries((S.ov?.interns || []).map(i => [i.intern_id, i.status]));
   S.ov = await loadOverview();
-  renderPeriods(); renderKpis(); renderWho(flashId); renderMatrix(); renderThemes(); banner();
+  renderPeriods(); renderHero(); renderKpis(); renderWho(flashId); renderMatrix(); renderThemes(); banner();
   if(!S.sel){ const first = [...S.ov.interns].sort((a,b) => (ORDER[a.status]??9)-(ORDER[b.status]??9))[0]; if(first) S.sel = first.intern_id; }
   if(S.sel){ S.card = await loadIntern(S.sel).catch(() => null); renderWho(flashId); renderCard(); }
   return prev;
@@ -337,7 +412,7 @@ async function refresh(flashId){
 async function poll(){
   if(S.mock){ setLive(false, 'демо-режим'); return; }
   try {
-    const v = await getJSON('/api/version');
+    const v = await getJSON(API + '/api/version');
     setLive(true, 'онлайн · ' + (v.last_event?.at || ''));
     if(S.ver != null && v.version !== S.ver){
       const e = v.last_event || {}, id = e.intern_id;
@@ -356,8 +431,88 @@ async function poll(){
 
 (async function init(){
   if(qs.has('mock')){ S.mock = 'param'; S.period = +qs.get('mock') || 6; }
+  else if(STATIC_HOST){ S.mock = 'param'; S.period = 4; }
   await refresh();
   await poll(); setInterval(poll, 3000);
 })();
+
+// ---------- чат «Спросить Радар» ----------
+// Отвечает по данным дашборда (работает и без бэка). Если у бэка есть POST /api/chat — спрашивает ИИ (YandexGPT).
+const CHAT = {hist:[]};
+const SUGG = ['Кто в зоне риска?', 'Почему СТ-004?', 'Кто не сдал анкету?', 'Что повторяется?', 'План на неделю'];
+function chatOpen(v){ $('chat').classList.toggle('open', v); $('askbtn').style.display = v ? 'none' : ''; if(v){ if(!CHAT.hist.length) botSay(hello()); setTimeout(() => $('chatq').focus(), 200); } }
+function hello(){ const r = (S.ov?.interns||[]).filter(i => i.status === 'red').length, y = (S.ov?.interns||[]).filter(i => i.status === 'yellow').length;
+  return `Привет! Я знаю все анкеты стажёров и наставников. Сейчас: <b>${r}</b> критичн., <b>${y}</b> в зоне внимания. Что посмотрим?`; }
+function addMsg(html, who){ const d = document.createElement('div'); d.className = 'msg ' + who; d.innerHTML = html; $('msgs').appendChild(d);
+  $('msgs').scrollTop = 1e6; d.querySelectorAll('a[data-id]').forEach(a => a.onclick = () => { openIntern(a.dataset.id); $('card').scrollIntoView({behavior:'smooth'}); }); return d; }
+function botSay(html){ CHAT.hist.push({role:'assistant', text:html.replace(/<[^>]+>/g,'')}); return addMsg(html, 'bot'); }
+function renderSugg(){ $('sugg').innerHTML = SUGG.map(q => `<button type="button">${esc(q)}</button>`).join('');
+  $('sugg').querySelectorAll('button').forEach(b => b.onclick = () => ask(b.textContent)); }
+const link = id => `<a data-id="${esc(id)}">${esc(id)}</a>`;
+async function cardOf(id){ try { return await loadIntern(id); } catch { return null; } }
+async function localAnswer(q){
+  const t = q.toLowerCase(), ov = S.ov || {}, list = ov.interns || [];
+  const idm = q.toUpperCase().replace(/C/g,'С').replace(/T/g,'Т').match(/СТ-?\s?0*(\d+)/);
+  const id = idm ? 'СТ-' + String(idm[1]).padStart(3, '0') : null;
+  const cur = S.period || ov.current_period;
+  if(id && /почему|что с|как дела|расскажи|сигнал|риск|красн|жёлт|желт/.test(t) || id && !/сдела|действ|встреч/.test(t) && !/наставник/.test(t)){
+    const c = await cardOf(id); if(!c) return `Не нашёл ${esc(id)}.`;
+    const sg = c.signals || [];
+    if(!sg.length) return `${link(id)} (${esc(c.department)}): сигналов нет, динамика в норме. Средний балл ${fmt(c.periods?.at(-1)?.intern_avg)} у стажёра и ${fmt(c.periods?.at(-1)?.mentor_avg)} у наставника.`;
+    return `${link(id)} · ${esc(c.department)} — <b>${ST[c.status]}</b>.<ul>${sg.slice(0,4).map(s => `<li><b>${esc(s.title)}</b>: ${esc(s.why)}${(s.evidence||[]).find(e=>e.quote) ? ` — «${esc((s.evidence||[]).find(e=>e.quote).quote)}»` : ''}</li>`).join('')}</ul>${c.actions?.length ? 'Что сделать: ' + c.actions.map(esc).join('; ') + '.' : ''}`;
+  }
+  if(id && /сдела|действ|встреч|помочь/.test(t)){ const c = await cardOf(id); return c?.actions?.length ? `По ${link(id)}:<ul>${c.actions.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : `По ${link(id)} действий не требуется.`; }
+  if(id && /наставник|расхожд|разрыв/.test(t)){ const c = await cardOf(id); if(!c) return 'Не нашёл стажёра.';
+    const g = (c.pairs||[]).map(p => { const l = p.by_period.filter(x => x[0]!=null && x[1]!=null).at(-1); return l ? {p, d:l[0]-l[1], l} : null; }).filter(Boolean).sort((a,b) => Math.abs(b.d)-Math.abs(a.d));
+    return g.length ? `${link(id)}: самое большое расхождение — «${esc(g[0].p.intern)}» ${g[0].l[0]} у стажёра против ${g[0].l[1]} у наставника («${esc(g[0].p.mentor)}»).` : 'Нет данных для сравнения.'; }
+  if(/не заполн|не ответ|пропуск|анкет/.test(t)){
+    const miss = (ov.survey_status||[]).flatMap(r => { const c = (r.periods||{})[cur] || {}; const m = []; if(!c.intern) m.push(`${link(r.intern_id)} (стажёр)`); if(!c.mentor) m.push(`${esc(r.mentor_id)} — наставник ${link(r.intern_id)}`); return m; });
+    return miss.length ? `За Месяц ${cur} нет анкет:<ul>${miss.map(m => `<li>${m}</li>`).join('')}</ul>Напомнить им — первое действие.` : `За Месяц ${cur} анкеты заполнили все: ${esc(ov.kpi?.responded_interns)} стажёров и ${esc(ov.kpi?.responded_mentors)} наставников.`; }
+  if(/повтор|общ|програм|тем|чаще/.test(t)){
+    if((ov.themes||[]).length) return `Повторяется:<ul>${ov.themes.map(x => `<li><b>${esc(x.topic)}</b> — у ${(x.interns||[]).map(link).join(', ')}</li>`).join('')}</ul>`;
+    const cnt = {}; for(const i of list){ const c = await cardOf(i.intern_id); (c?.periods||[]).forEach(p => (p.comment_analysis?.topics||[]).forEach(tp => { (cnt[tp] ||= new Set()).add(i.intern_id); })); }
+    const top = Object.entries(cnt).filter(([,v]) => v.size > 1).sort((a,b) => b[1].size - a[1].size).slice(0,4);
+    return top.length ? `Чаще всего в комментариях:<ul>${top.map(([k,v]) => `<li><b>${esc(k)}</b> — у ${[...v].map(link).join(', ')}</li>`).join('')}</ul>` : 'Общих тем у нескольких стажёров не нашёл.'; }
+  if(/недел|сделать|план|приорит|hr/.test(t)){
+    const bad = list.filter(i => i.status !== 'green').sort((a,b) => ORDER[a.status]-ORDER[b.status]);
+    if(!bad.length) return 'Все стажёры в норме. Достаточно планового месячного опроса.';
+    const items = []; for(const i of bad){ const c = await cardOf(i.intern_id); items.push(`<li>${link(i.intern_id)}: ${esc((c?.actions||[])[0] || 'встреча HR со стажёром')}</li>`); }
+    return `План на неделю:<ul>${items.join('')}</ul>`; }
+  if(/вниман|кто|риск|красн|плох|проблем/.test(t)){
+    const bad = list.filter(i => i.status !== 'green').sort((a,b) => ORDER[a.status]-ORDER[b.status]);
+    return bad.length ? `На Месяц ${cur}:<ul>${bad.map(i => `<li>${link(i.intern_id)} — <b>${ST[i.status]}</b>: ${esc(i.reason)}</li>`).join('')}</ul>` : `На Месяц ${cur} все ${list.length} стажёров в норме.`; }
+  return null;
+}
+async function ask(q){
+  q = q.trim(); if(!q) return; $('chatq').value = ''; addMsg(esc(q), 'me'); CHAT.hist.push({role:'user', text:q});
+  const typing = addMsg('<span class="typing"><i></i><i></i><i></i></span>', 'bot');
+  let ans = null;
+  if(!S.mock){ try { const r = await fetch(API + '/api/chat', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({question:q, period:S.period, intern_id:S.sel, history:CHAT.hist.slice(-8)})});
+      if(r.ok){ const j = await r.json(); ans = j.answer_html || (j.answer ? esc(j.answer).replace(/\n/g,'<br>').replace(/(СТ-\d{3})/g, m => link(m)) : null); } } catch {} }
+  if(!ans) ans = await localAnswer(q);
+  await new Promise(r => setTimeout(r, 350));
+  typing.remove();
+  botSay(ans || 'Пока не понял вопрос. Спросите про конкретного стажёра (например, «СТ-004»), про анкеты или про то, что повторяется.');
+}
+$('askbtn').onclick = () => chatOpen(true); $('chatx').onclick = () => chatOpen(false);
+$('chatf').onsubmit = e => { e.preventDefault(); ask($('chatq').value); };
+renderSugg();
+
+// ---------- живой слой ----------
+function countUp(el){ const n = +el.dataset.n || 0, t0 = performance.now(), d = 900;
+  const f = t => { const k = Math.min(1, (t - t0) / d), e = 1 - Math.pow(1 - k, 3); el.textContent = Math.round(n * e); if(k < 1) requestAnimationFrame(f); }; requestAnimationFrame(f); }
+function hour(){ const h = new Date().getHours(); return h < 12 ? 'Доброе утро' : h < 18 ? 'Добрый день' : 'Добрый вечер'; }
+function renderHero(){
+  const L = S.ov.interns || [], red = L.filter(i => i.status === 'red'), yel = L.filter(i => i.status === 'yellow');
+  const cur = S.period || S.ov.current_period, k = S.ov.kpi || {};
+  const head = red.length ? `${red.length === 1 ? 'Одному стажёру' : red.length + ' стажёрам'} нужна помощь` : yel.length ? `${yel.length} в зоне внимания, критичных нет` : 'Все стажёры в норме';
+  const who = [...red, ...yel][0];
+  $('hero').innerHTML = `<img src="brand/img/cube.png" alt=""><h2>${hour()}! ${head}</h2>
+    <p>Месяц ${cur}: анкеты сдали ${esc(k.responded_interns)} стажёров и ${esc(k.responded_mentors)} наставников.${who ? ` Начните с ${esc(who.intern_id)}: ${esc(who.reason)}.` : ''}</p>
+    <div class="cta">${who ? `<button id="heroGo">Открыть ${esc(who.intern_id)}</button>` : ''}<button class="ghost" id="heroAsk">Спросить Радар</button></div>`;
+  if(who) $('heroGo').onclick = () => { openIntern(who.intern_id); $('card').scrollIntoView({behavior:'smooth'}); };
+  $('heroAsk').onclick = () => chatOpen(true);
+}
 </script>
 </body></html>
