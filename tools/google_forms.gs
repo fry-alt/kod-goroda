@@ -117,7 +117,8 @@ function onInternSubmit(e) { send_('intern', e); }
 function onMentorSubmit(e) { send_('mentor', e); }
 
 function send_(form, e) {
-  const answers = {};
+  // время отправки (UTC, ISO) — бэк его не разбирает в оценки, оно нужно для data/webhook_log.jsonl
+  const answers = { 'Отметка времени': e.response.getTimestamp().toISOString() };
   e.response.getItemResponses().forEach(r => { answers[r.getItem().getTitle()] = r.getResponse(); });
   const res = UrlFetchApp.fetch(WEBHOOK_URL + '/api/webhook/' + form + '?source=google', {
     method: 'post', contentType: 'application/json', muteHttpExceptions: true,
