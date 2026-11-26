@@ -11,6 +11,8 @@ services:
     image: kod-goroda-api
     pull_policy: never
     env_file: .env
+    environment:
+      TZ: MSK-3 # время событий на дашборде по Москве (в slim-образе нет tzdata, POSIX-строка работает без неё)
     restart: unless-stopped
     volumes:
       - ./state:/app/state # SQLite: история + ответы из форм, переживает выкладки
