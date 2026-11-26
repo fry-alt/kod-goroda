@@ -8,49 +8,101 @@
 <link rel="stylesheet" href="brand/brand.css">
 <script src="vendor/chart.umd.min.js"></script>
 <script src="config.js"></script>
+<script src="shared/store.js"></script>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-:root{--ease:cubic-bezier(.2,0,0,1);--r:22px;--shadow:0 1px 2px rgba(19,64,116,.06),0 8px 24px -12px rgba(19,64,116,.18)}
+:root{--ease:cubic-bezier(.2,0,0,1);--r:22px;--shadow:0 1px 2px rgba(19,64,116,.06),0 8px 24px -12px rgba(19,64,116,.18);--tabh:64px;--side:248px}
 html,body{margin:0}
 body{background:var(--mgts-bg-soft);font-size:16px;line-height:1.45;min-height:100vh;overflow-x:hidden}
 button,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer;border:0;background:none;padding:0}
 a{color:inherit}
-.wrap{max-width:480px;margin:0 auto;padding-bottom:calc(28px + env(safe-area-inset-bottom))}
-@media (min-width:520px){.wrap{box-shadow:0 0 0 1px var(--mgts-line);background:var(--mgts-bg-soft);min-height:100vh}}
+.wrap{max-width:480px;margin:0 auto;padding-bottom:calc(var(--tabh) + 28px + env(safe-area-inset-bottom))}
+.wrap.nonav{padding-bottom:calc(28px + env(safe-area-inset-bottom))}
+@media (min-width:520px) and (max-width:899px){.wrap{box-shadow:0 0 0 1px var(--mgts-line);min-height:100vh}}
 
 /* появление по очереди */
-.rise{opacity:0;transform:translateY(14px);animation:rise .6s var(--ease) forwards;animation-delay:calc(var(--i,0) * 70ms + 60ms)}
+.rise{opacity:0;transform:translateY(14px);animation:rise .6s var(--ease) forwards;animation-delay:calc(var(--i,0) * 60ms + 40ms)}
 @keyframes rise{to{opacity:1;transform:none}}
 .quiet .rise,.settled .rise{animation:none;opacity:1;transform:none}
+
+/* ---------- навигация: таб-бар / боковое меню ---------- */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--mgts-line);padding-bottom:env(safe-area-inset-bottom)}
+.nav-in{max-width:480px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);height:var(--tabh)}
+.nav .brandrow,.nav .navfoot{display:none}
+.tab{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:48px;color:var(--mgts-muted);font-size:11.5px;font-weight:500;text-decoration:none;transition:color .2s var(--ease)}
+.tab .ti{position:relative;display:grid;place-items:center;width:56px;height:30px;border-radius:15px;transition:background .3s var(--ease)}
+.tab[aria-current="page"]{color:var(--mgts-blue)}
+.tab[aria-current="page"] .ti{background:rgba(0,138,224,.12)}
+.tab:active .ti{transform:scale(.92)}
+.dot{position:absolute;top:3px;right:12px;width:8px;height:8px;border-radius:50%;background:var(--mgts-orange);box-shadow:0 0 0 2px #fff}
+@media (min-width:900px){
+  .wrap{max-width:none;margin:0 0 0 var(--side);padding:24px 40px 48px}
+  .wrap > *{max-width:760px;margin-left:auto;margin-right:auto}
+  .wrap.nonav{margin:0 auto;max-width:560px;padding-top:24px}
+  .nav{top:0;right:auto;width:var(--side);border-top:0;border-right:1px solid var(--mgts-line);background:#fff;padding:22px 14px}
+  .nav-in{display:flex;flex-direction:column;gap:4px;height:100%;max-width:none}
+  .nav .brandrow{display:flex;align-items:center;gap:10px;padding:0 10px 22px}
+  .nav .brandrow img{width:36px;height:36px;border-radius:10px}
+  .nav .brandrow b{font-family:var(--font-title);font-weight:700;font-size:14px;color:var(--mgts-navy);line-height:1.15}
+  .nav .brandrow small{display:block;font-family:var(--font-text);font-weight:400;font-size:12px;color:var(--mgts-muted)}
+  .tab{flex-direction:row;justify-content:flex-start;gap:12px;min-height:48px;padding:0 10px;border-radius:14px;font-size:15px}
+  .tab .ti{width:auto;height:auto;background:none!important}
+  .tab[aria-current="page"]{background:rgba(0,138,224,.10)}
+  .tab:hover{background:var(--mgts-bg-soft)}
+  .dot{top:14px;right:12px;left:auto}
+  .nav .navfoot{display:block;margin-top:auto;padding:0 10px;font-size:12px;color:var(--mgts-muted)}
+  .hero{border-radius:32px}
+  .cube{width:200px;height:200px;right:10px}
+}
 
 /* ---------- шапка ---------- */
 .hero{position:relative;background:var(--mgts-blue);color:#fff;padding:calc(14px + env(safe-area-inset-top)) 20px 64px;border-radius:0 0 32px 32px;overflow:hidden}
 .hero::after{content:"";position:absolute;right:-70px;bottom:-90px;width:240px;height:240px;border-radius:50%;border:1px solid rgba(255,255,255,.18)}
-.bar{display:flex;align-items:center;gap:10px;position:relative;z-index:2}
+.bar{display:flex;align-items:center;gap:10px;position:relative;z-index:2;min-height:36px}
 .bar img{width:30px;height:30px;border-radius:8px}
 .bar b{font-family:var(--font-title);font-weight:700;font-size:13px;letter-spacing:.02em}
+@media (min-width:900px){.hero .bar img,.hero .bar b{display:none}}
 .who{margin-left:auto;display:inline-flex;align-items:center;gap:6px;height:36px;padding:0 12px 0 14px;border-radius:18px;background:rgba(255,255,255,.16);font-size:14px;font-weight:500;color:#fff;text-decoration:none;transition:background .2s var(--ease)}
 .who:active{background:rgba(255,255,255,.28)}
-.who svg{opacity:.8}
-.hello{position:relative;z-index:2;margin-top:30px;max-width:62%}
+.hello{position:relative;z-index:2;margin-top:30px;max-width:60%}
 .hello h1{color:#fff;margin:0;font-size:38px;line-height:1;letter-spacing:-.01em}
 .hello .m{font-family:var(--font-light);font-weight:300;font-size:20px;margin-top:10px;line-height:1.2}
 .hello .m b{font-family:var(--font-title);font-weight:500}
-.dept{font-size:14px;opacity:.78;margin-top:6px}
+.dept{font-size:14px;opacity:.8;margin-top:6px}
 .cube{position:absolute;right:-18px;top:calc(40px + env(safe-area-inset-top));width:168px;height:168px;z-index:1;pointer-events:none;animation:bob 7s ease-in-out infinite}
 @keyframes bob{50%{transform:translateY(-8px) rotate(-2deg)}}
 .prog{position:relative;z-index:2;margin-top:26px}
 .segs{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
 .segs i{height:8px;border-radius:4px;background:rgba(255,255,255,.24);position:relative;overflow:hidden}
-.segs i::after{content:"";position:absolute;inset:0;background:#fff;border-radius:inherit;transform:scaleX(0);transform-origin:left;transition:transform .5s var(--ease);transition-delay:calc(var(--k) * 90ms + 300ms)}
+.segs i::after{content:"";position:absolute;inset:0;background:#fff;border-radius:inherit;transform:scaleX(0);transform-origin:left;transition:transform .5s var(--ease);transition-delay:calc(var(--k) * 90ms + 200ms)}
 .segs i.on::after{transform:scaleX(1)}
-.segs i.now::after{animation:glow 2.4s ease-in-out infinite 1.2s}
-@keyframes glow{50%{opacity:.7}}
 .prog small{display:flex;justify-content:space-between;margin-top:8px;font-size:13px;opacity:.85}
 
+/* шапка вкладок */
+.ph{display:flex;align-items:flex-start;gap:12px;padding:calc(22px + env(safe-area-inset-top)) 20px 4px}
+.ph h1{margin:0;font-size:28px;line-height:1.05;color:var(--mgts-navy)}
+.ph p{margin:6px 0 0;font-size:14px;color:var(--mgts-muted)}
+.ph .who{background:#fff;color:var(--mgts-navy);box-shadow:var(--shadow);flex:none}
+@media (min-width:900px){.ph{padding:8px 4px 4px}}
+
+/* ---------- гид «Куб» ---------- */
+.guide{position:relative;z-index:3;margin:-40px 16px 0;background:#fff;border-radius:var(--r);padding:16px;box-shadow:var(--shadow);display:grid;grid-template-columns:52px 1fr;gap:12px;align-items:start}
+.ava{width:52px;height:52px;border-radius:50%;background:radial-gradient(circle at 50% 40%,#fff 0,#EAF4FC 60%,#D6E9F8 100%);display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(0,138,224,.12)}
+.ava img{width:40px;height:40px;animation:breathe 4s ease-in-out infinite}
+.ava.sm{width:30px;height:30px}.ava.sm img{width:23px;height:23px}
+@keyframes breathe{50%{transform:scale(1.04)}}
+.say small{display:block;font-size:12px;color:var(--mgts-muted);font-weight:500;margin-bottom:2px}
+.say p{margin:0;font-size:15.5px;line-height:1.4;color:var(--mgts-navy)}
+.gact{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+.gact .btn{flex:1 1 auto}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:14px;background:var(--mgts-bg-soft);color:var(--mgts-navy);font-weight:500;font-size:15px;text-decoration:none;transition:transform .18s var(--ease),background .2s}
+.btn:active{transform:scale(.97)}
+.btn.pri{background:var(--mgts-blue);color:#fff}
+.btn.wide{width:100%}
+
 /* ---------- главная кнопка ---------- */
-.cta{position:relative;z-index:3;margin:-40px 16px 0;background:#fff;border-radius:var(--r);padding:14px;box-shadow:var(--shadow)}
+.cta{margin:12px 16px 0;background:#fff;border-radius:var(--r);padding:14px;box-shadow:var(--shadow)}
 .go{display:flex;align-items:center;gap:12px;min-height:60px;padding:0 10px 0 20px;border-radius:16px;background:var(--mgts-orange);color:#fff;text-decoration:none;font-weight:700;font-size:17px;transition:transform .18s var(--ease),filter .2s}
 .go:active{transform:scale(.97);filter:brightness(.95)}
 .go span{flex:1}
@@ -61,6 +113,7 @@ a{color:inherit}
 .state i{width:8px;height:8px;border-radius:50%;background:var(--st-green);flex:none}
 .state.wait i{background:var(--mgts-orange);box-shadow:0 0 0 0 rgba(255,118,84,.5);animation:ping 2s infinite}
 @keyframes ping{70%{box-shadow:0 0 0 8px rgba(255,118,84,0)}100%{box-shadow:0 0 0 0 rgba(255,118,84,0)}}
+@media (min-width:900px){.guide,.cta,section,.demo{margin-left:auto!important;margin-right:auto!important}.guide{margin-top:-40px!important;width:calc(100% - 48px)}}
 
 /* ---------- секции ---------- */
 section{margin:28px 16px 0}
@@ -71,12 +124,11 @@ section{margin:28px 16px 0}
 .avg{display:flex;align-items:flex-end;gap:12px}
 .avg .v{font-family:var(--font-title);font-weight:500;font-size:44px;line-height:.9;color:var(--mgts-navy)}
 .avg .of{font-size:14px;color:var(--mgts-muted);padding-bottom:4px}
-.pill{margin-left:auto;display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 10px;border-radius:14px;font-size:13px;font-weight:500;background:var(--mgts-bg-soft)}
+.pill{margin-left:auto;display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 10px;border-radius:14px;font-size:13px;font-weight:500;background:var(--mgts-bg-soft);white-space:nowrap}
 .pill.up{color:#1E8A50;background:rgba(43,174,102,.12)}
 .pill.down{color:#C2373C;background:rgba(229,72,77,.10)}
 .chartbox{position:relative;height:150px;margin:14px -4px 0}
 .cap{font-size:12px;color:var(--mgts-muted);margin-top:6px}
-
 .moves{display:grid;gap:10px;margin-top:10px}
 .mv{display:flex;align-items:center;gap:14px;background:#fff;border-radius:18px;padding:14px 16px;box-shadow:var(--shadow)}
 .mv .ic{flex:none;width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:15px;font-weight:700}
@@ -89,38 +141,129 @@ section{margin:28px 16px 0}
 .mv .sc{font-family:var(--font-title);font-weight:500;font-size:17px;white-space:nowrap;color:var(--mgts-navy)}
 .mv .sc em{font-style:normal;color:var(--mgts-muted);font-size:14px;padding:0 3px}
 
-/* помощь */
-.help{display:grid;gap:10px}
-.hb{display:flex;align-items:center;gap:14px;width:100%;min-height:64px;padding:12px 14px 12px 12px;background:#fff;border-radius:18px;box-shadow:var(--shadow);text-align:left;transition:transform .18s var(--ease),box-shadow .2s}
+/* строки-кнопки */
+.rows{display:grid;gap:10px}
+.hb{display:flex;align-items:center;gap:14px;width:100%;min-height:64px;padding:12px 14px 12px 12px;background:#fff;border-radius:18px;box-shadow:var(--shadow);text-align:left;text-decoration:none;transition:transform .18s var(--ease)}
 .hb:active{transform:scale(.98)}
 .hb .ic{flex:none;width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:var(--mgts-bg-soft);color:var(--mgts-blue)}
-.hb .t{flex:1}
+.hb .t{flex:1;min-width:0}
 .hb b{display:block;font-weight:500;font-size:16px;line-height:1.2}
 .hb small{display:block;font-size:13px;color:var(--mgts-muted);margin-top:2px}
 .hb .chev{color:var(--mgts-muted)}
 
-/* полезное */
+/* советы */
 .tips{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -16px;padding:2px 16px 14px;scrollbar-width:none}
 .tips::-webkit-scrollbar{display:none}
 .tip{flex:0 0 78%;scroll-snap-align:start;background:#fff;border-radius:var(--r);padding:18px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:8px}
+@media (min-width:900px){.tips{margin:0;padding:2px 0 14px}.tip{flex:1 1 0}}
 .tip .no{font-family:var(--font-title);font-weight:900;font-size:13px;color:var(--mgts-blue);letter-spacing:.06em}
 .tip b{font-family:var(--font-title);font-weight:700;font-size:16px;line-height:1.2;color:var(--mgts-navy)}
 .tip p{margin:0;font-size:14px;line-height:1.45;color:var(--mgts-navy);opacity:.85}
 .why{margin:0 4px 10px;font-size:14px;color:var(--mgts-muted)}
 
-.priv{display:flex;gap:8px;align-items:flex-start;margin:26px 20px 0;font-size:12.5px;line-height:1.4;color:var(--mgts-muted)}
-.priv svg{flex:none;margin-top:1px}
+.priv{display:flex;gap:6px;align-items:center;justify-content:center;margin:26px 16px 0;font-size:12px;color:var(--mgts-muted);white-space:nowrap;overflow:hidden}
+.priv span{overflow:hidden;text-overflow:ellipsis}
+.priv svg{flex:none}
+.priv .l{display:none}
+@media (min-width:900px){.priv .s{display:none}.priv .l{display:inline}}
+
+/* ---------- шаги ---------- */
+.ringcard{display:flex;align-items:center;gap:18px}
+.ring{position:relative;width:96px;height:96px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring circle{fill:none;stroke-width:9}
+.ring .bg{stroke:var(--mgts-bg-soft)}
+.ring .fg{stroke:var(--mgts-blue);stroke-linecap:round;transition:stroke-dashoffset .8s var(--ease)}
+.ring .c{position:absolute;inset:0;display:grid;place-items:center;text-align:center;line-height:1}
+.ring .c b{font-family:var(--font-title);font-weight:500;font-size:24px;color:var(--mgts-navy)}
+.ring .c small{display:block;font-size:12px;color:var(--mgts-muted);margin-top:3px}
+.ringcard p{margin:0;font-size:14px;color:var(--mgts-muted)}
+.ringcard p b{display:block;font-size:17px;color:var(--mgts-navy);font-weight:500;margin-bottom:2px}
+.stg{background:#fff;border-radius:18px;box-shadow:var(--shadow);overflow:hidden}
+.stg + .stg{margin-top:10px}
+.sh{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:0 16px;text-align:left}
+.sh b{flex:1;font-family:var(--font-title);font-weight:700;font-size:16px;color:var(--mgts-navy)}
+.sh .cnt{font-size:13px;color:var(--mgts-muted);font-weight:500}
+.sh .cnt.full{color:#1E8A50}
+.sh .chev{color:var(--mgts-muted);transition:transform .3s var(--ease)}
+.stg.open .sh .chev{transform:rotate(90deg)}
+.fold{display:grid;grid-template-rows:0fr;transition:grid-template-rows .38s var(--ease)}
+.open > .fold{grid-template-rows:1fr}
+.fold > div{overflow:hidden;min-height:0}
+.ck{display:flex;align-items:center;gap:14px;width:100%;min-height:52px;padding:6px 16px;text-align:left;border-top:1px solid #EEF3F9}
+.ck .bx{flex:none;width:26px;height:26px;border-radius:50%;border:2px solid var(--mgts-line);display:grid;place-items:center;transition:background .25s var(--ease),border-color .25s}
+.ck .bx svg{opacity:0;transform:scale(.4);transition:all .3s var(--ease)}
+.ck[aria-checked="true"] .bx{background:var(--mgts-blue);border-color:var(--mgts-blue)}
+.ck[aria-checked="true"] .bx svg{opacity:1;transform:none}
+.ck[aria-checked="true"] .tt{color:var(--mgts-muted)}
+.ck:active .bx{transform:scale(.9)}
+
+.search{position:relative;margin-bottom:12px}
+.search input{width:100%;height:48px;border:1.5px solid var(--mgts-line);border-radius:14px;padding:0 14px 0 42px;font-size:16px;background:#fff;outline:none;transition:border-color .2s}
+.search input:focus{border-color:var(--mgts-blue)}
+.search svg{position:absolute;left:14px;top:14px;color:var(--mgts-muted)}
+.memo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (min-width:900px){.memo{grid-template-columns:repeat(3,1fr)}}
+.mc{background:#fff;border-radius:18px;box-shadow:var(--shadow);text-align:left;display:flex;flex-direction:column;transition:transform .18s var(--ease)}
+.mc.open{grid-column:1/-1}
+.mc > button{display:flex;flex-direction:column;align-items:flex-start;gap:10px;width:100%;min-height:96px;padding:14px;text-align:left}
+.mc.open > button{flex-direction:row;align-items:center;min-height:56px}
+.mc .mi{width:40px;height:40px;border-radius:12px;background:var(--mgts-bg-soft);color:var(--mgts-blue);display:grid;place-items:center;flex:none}
+.mc b{font-weight:500;font-size:15px;line-height:1.25;color:var(--mgts-navy)}
+.mc .fold > div > div{padding:0 16px 16px;font-size:14.5px;line-height:1.5;color:var(--mgts-navy)}
+.mc a{display:inline-flex;align-items:center;gap:6px;margin-top:10px;min-height:44px;color:var(--mgts-blue);font-weight:500;text-decoration:none}
+.nores{grid-column:1/-1;padding:18px;text-align:center;color:var(--mgts-muted);font-size:14px}
+
+/* ---------- команда ---------- */
+.person{display:flex;align-items:center;gap:14px;min-height:64px;padding:10px 16px;border-top:1px solid #EEF3F9}
+.person:first-child{border-top:0}
+.person .av{flex:none;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:var(--mgts-bg-soft);color:var(--mgts-blue);font-family:var(--font-title);font-weight:900;font-size:13px}
+.person small{display:block;font-size:12.5px;color:var(--mgts-muted)}
+.person b{display:block;font-weight:500;line-height:1.25}
+.person a{margin-left:auto;color:var(--mgts-blue)}
+.list{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden}
+.meet{display:flex;gap:14px;align-items:center;padding:14px 16px;border-top:1px solid #EEF3F9}
+.meet:first-child{border-top:0}
+.meet .dt{flex:none;width:52px;text-align:center;line-height:1.05}
+.meet .dt b{display:block;font-family:var(--font-title);font-weight:500;font-size:20px;color:var(--mgts-navy)}
+.meet .dt small{font-size:12px;color:var(--mgts-muted)}
+.meet .t{flex:1;min-width:0}
+.meet .t b{display:block;font-weight:500;line-height:1.25}
+.meet .t small{display:block;font-size:13px;color:var(--mgts-muted)}
+.meet .btn{min-height:44px;min-width:44px;padding:0 12px;font-size:14px;flex:none}
+@media (max-width:419px){.meet .btn .lbl{display:none}}
+.empty-s{padding:20px 18px;text-align:center;color:var(--mgts-muted);font-size:14.5px;line-height:1.45}
+
+/* ---------- обратная связь ---------- */
+.kd{display:flex;gap:12px;padding:16px;border-top:1px solid #EEF3F9}
+.kd:first-child{border-top:0}
+.kd .ki{flex:none;width:36px;height:36px;border-radius:50%;display:grid;place-items:center}
+.kd.kudos .ki{background:rgba(43,174,102,.12);color:#1E8A50}
+.kd.grow .ki{background:rgba(0,138,224,.12);color:var(--mgts-blue)}
+.kd .t{flex:1;min-width:0}
+.kd .meta{font-size:12.5px;color:var(--mgts-muted)}
+.kd p{margin:2px 0 0;font-size:15px;line-height:1.45;color:var(--mgts-navy)}
+.kd.fresh{animation:fresh 1.6s var(--ease)}
+@keyframes fresh{0%{background:rgba(0,138,224,.10)}100%{background:transparent}}
+.rq{display:flex;align-items:center;gap:12px;min-height:60px;padding:12px 16px;border-top:1px solid #EEF3F9}
+.rq:first-child{border-top:0}
+.rq .t{flex:1;min-width:0}
+.rq .t b{display:block;font-weight:500}
+.rq .t small{display:block;font-size:13px;color:var(--mgts-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chipst{flex:none;font-size:12px;font-weight:500;height:26px;display:inline-flex;align-items:center;padding:0 10px;border-radius:13px;background:var(--mgts-bg-soft);color:var(--mgts-navy)}
+.chipst.ok{background:rgba(43,174,102,.12);color:#1E8A50}
 
 /* выбор «Кто ты?» */
-.pick{display:grid;gap:10px}
 .pk{display:flex;align-items:center;gap:14px;min-height:68px;padding:12px 16px;background:#fff;border-radius:18px;box-shadow:var(--shadow);text-decoration:none;transition:transform .18s var(--ease)}
 .pk:active{transform:scale(.98)}
 .pk .av{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--mgts-bg-soft);color:var(--mgts-blue);font-family:var(--font-title);font-weight:900;font-size:14px}
 .pk b{display:block;font-family:var(--font-title);font-weight:700;font-size:17px}
 .pk small{display:block;font-size:13px;color:var(--mgts-muted)}
 .pk .chev{margin-left:auto;color:var(--mgts-muted)}
-.hero.short{padding-bottom:36px}
-.hero.short .hello{max-width:70%}
+.hero.short{padding-bottom:30px;min-height:200px}
+.hero.short .hello{max-width:56%}
+.hero.short h1{white-space:nowrap}
+.hero.short .cube{width:150px;height:150px;top:calc(36px + env(safe-area-inset-top))}
 
 .empty{text-align:center;padding:40px 24px;color:var(--mgts-navy)}
 .empty a{display:inline-flex;margin-top:14px;min-height:48px;align-items:center;padding:0 20px;border-radius:14px;background:var(--mgts-blue);color:#fff;text-decoration:none;font-weight:500}
@@ -129,20 +272,24 @@ section{margin:28px 16px 0}
 /* ---------- нижний лист ---------- */
 .scrim{position:fixed;inset:0;background:rgba(16,44,81,.42);opacity:0;pointer-events:none;transition:opacity .35s var(--ease);z-index:40}
 .scrim.open{opacity:1;pointer-events:auto}
-.sheet{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:480px;background:#fff;border-radius:28px 28px 0 0;padding:10px 20px calc(20px + env(safe-area-inset-bottom));z-index:41;transform:translateY(105%);transition:transform .42s var(--ease);box-shadow:0 -10px 40px -10px rgba(16,44,81,.3);max-height:92vh;overflow:auto}
-.sheet.open{transform:none}
+.sheet{position:fixed;left:0;right:0;bottom:0;margin:0 auto;max-width:480px;background:#fff;border-radius:28px 28px 0 0;padding:10px 20px calc(20px + env(safe-area-inset-bottom));z-index:41;transform:translateY(105%);transition:transform .42s var(--ease);box-shadow:0 -10px 40px -10px rgba(16,44,81,.3);max-height:92vh;overflow:auto;visibility:hidden}
+.sheet.open{transform:none;visibility:visible}
+@media (min-width:900px){.sheet{bottom:24px;border-radius:28px;max-width:520px;transform:translateY(calc(100% + 40px))}.sheet.open{transform:none}}
 .grab{width:40px;height:5px;border-radius:3px;background:var(--mgts-line);margin:0 auto 14px}
 .sheet h3{margin:0 0 4px;font-size:20px;line-height:1.15;color:var(--mgts-navy);padding-right:44px}
 .sheet .sub{font-size:14px;color:var(--mgts-muted);margin:0 0 14px;min-height:20px}
-.x{position:absolute;right:12px;top:14px;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--mgts-muted)}
+.x{position:absolute;right:12px;top:12px;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:var(--mgts-muted);z-index:2}
 .x:active{background:var(--mgts-bg-soft)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
-.chip{min-height:38px;padding:0 14px;border-radius:19px;background:var(--mgts-bg-soft);font-size:14px;color:var(--mgts-navy);transition:background .2s,transform .15s var(--ease)}
+.chip{min-height:40px;padding:0 14px;border-radius:20px;background:var(--mgts-bg-soft);font-size:14px;color:var(--mgts-navy);transition:background .2s,transform .15s var(--ease);white-space:nowrap}
 .chip:active{transform:scale(.96)}
 .chip.on{background:var(--mgts-blue-soft)}
-textarea{width:100%;min-height:118px;resize:none;border:1.5px solid var(--mgts-line);border-radius:16px;padding:14px;font-size:16px;line-height:1.4;outline:none;transition:border-color .2s;background:#fff}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;border-radius:14px;background:var(--mgts-bg-soft);margin-bottom:12px}
+.seg button{min-height:44px;border-radius:11px;font-weight:500;font-size:15px;color:var(--mgts-navy);transition:background .25s var(--ease),color .25s}
+.seg button[aria-checked="true"]{background:#fff;color:var(--mgts-blue);box-shadow:0 1px 3px rgba(19,64,116,.12)}
+textarea{width:100%;min-height:110px;resize:none;border:1.5px solid var(--mgts-line);border-radius:16px;padding:14px;font-size:16px;line-height:1.4;outline:none;transition:border-color .2s;background:#fff}
 textarea:focus{border-color:var(--mgts-blue)}
-textarea::placeholder{color:var(--mgts-muted)}
+textarea::placeholder,input::placeholder{color:var(--mgts-muted)}
 .sw{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;margin-top:8px;text-align:left}
 .sw .t{flex:1}
 .sw b{display:block;font-weight:500}
@@ -154,9 +301,7 @@ textarea::placeholder{color:var(--mgts-muted)}
 .send{width:100%;min-height:56px;margin-top:10px;border-radius:16px;background:var(--mgts-blue);color:#fff;font-weight:700;font-size:17px;transition:opacity .2s,transform .18s var(--ease)}
 .send:active{transform:scale(.98)}
 .send:disabled{opacity:.4;cursor:default;transform:none}
-.done{display:none;text-align:center;padding:18px 0 8px}
-.sheet.ok .form{display:none}
-.sheet.ok .done{display:block}
+.done{text-align:center;padding:18px 0 8px}
 .done svg{width:76px;height:76px}
 .done circle{stroke-dasharray:220;stroke-dashoffset:220;animation:draw .6s var(--ease) forwards}
 .done path{stroke-dasharray:60;stroke-dashoffset:60;animation:draw .4s var(--ease) .45s forwards}
@@ -164,8 +309,37 @@ textarea::placeholder{color:var(--mgts-muted)}
 .done b{display:block;font-family:var(--font-title);font-weight:900;font-size:22px;color:var(--mgts-navy);margin-top:10px}
 .done p{margin:6px 0 0;font-size:14px;color:var(--mgts-muted)}
 
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;background:var(--mgts-navy-2);color:#fff;font-size:14px;padding:12px 18px;border-radius:14px;z-index:50;transition:all .35s var(--ease);pointer-events:none;max-width:calc(100% - 32px);width:max-content}
+/* чат с Кубом */
+.sheet.chat{height:86vh;display:flex;flex-direction:column;overflow:hidden;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+.sheet.chat #shBody{flex:1;min-height:0;display:flex;flex-direction:column}
+.chathead{display:flex;align-items:center;gap:10px;padding-right:44px;margin-bottom:8px}
+.chathead b{font-family:var(--font-title);font-weight:900;font-size:18px;color:var(--mgts-navy)}
+.chathead small{display:block;font-size:12.5px;color:var(--mgts-muted)}
+.msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding:8px 2px 12px;overscroll-behavior:contain}
+.msg{max-width:86%;padding:11px 14px;border-radius:18px;font-size:15px;line-height:1.45;animation:pop .35s var(--ease)}
+@keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}}
+.msg.bot{align-self:flex-start;background:var(--mgts-bg-soft);color:var(--mgts-navy);border-bottom-left-radius:6px}
+.msg.me{align-self:flex-end;background:var(--mgts-blue);color:#fff;border-bottom-right-radius:6px}
+.msg b{display:block;margin-bottom:2px}
+.msg a{color:var(--mgts-blue);font-weight:500}
+.msg .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.msg .acts .btn{background:#fff;min-height:44px}
+.msg .acts .btn.pri{background:var(--mgts-blue)}
+.typing{display:inline-flex;gap:4px;padding:14px}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--mgts-muted);animation:tp 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes tp{50%{opacity:.3;transform:translateY(-2px)}}
+.qq{display:flex;gap:8px;overflow-x:auto;padding:4px 0 10px;scrollbar-width:none;flex:none}
+.qq::-webkit-scrollbar{display:none}
+.ask{display:flex;gap:8px;flex:none}
+.ask input{flex:1;min-width:0;height:50px;border:1.5px solid var(--mgts-line);border-radius:16px;padding:0 14px;font-size:16px;outline:none}
+.ask input:focus{border-color:var(--mgts-blue)}
+.ask button{flex:none;width:50px;height:50px;border-radius:16px;background:var(--mgts-blue);color:#fff;display:grid;place-items:center}
+.ask button:disabled{opacity:.4}
+
+.toast{position:fixed;left:50%;bottom:calc(var(--tabh) + 16px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;background:var(--mgts-navy-2);color:#fff;font-size:14px;padding:12px 18px;border-radius:14px;z-index:50;transition:all .35s var(--ease);pointer-events:none;max-width:calc(100% - 32px);width:max-content}
 .toast.show{opacity:1;transform:translate(-50%,0)}
+@media (min-width:900px){.toast{left:calc(50% + var(--side) / 2);bottom:28px}}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
 @media (prefers-reduced-motion:reduce){
@@ -176,29 +350,14 @@ textarea::placeholder{color:var(--mgts-muted)}
 </style>
 </head>
 <body>
-<div class="wrap" id="app" aria-live="polite"></div>
+<nav class="nav" id="nav" hidden aria-label="Разделы"></nav>
+<main class="wrap" id="app" aria-live="polite"></main>
 
 <div class="scrim" id="scrim"></div>
-<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="shT" aria-hidden="true">
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-hidden="true">
   <div class="grab"></div>
   <button class="x" id="shX" aria-label="Закрыть"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 5l10 10M15 5L5 15"/></svg></button>
-  <div class="form">
-    <h3 id="shT"></h3>
-    <p class="sub" id="shS"></p>
-    <div class="chips" id="shC"></div>
-    <label class="sr" for="shText">Сообщение</label>
-    <textarea id="shText" maxlength="1000"></textarea>
-    <button class="sw" id="shA" role="switch" aria-checked="false">
-      <span class="t"><b>Отправить анонимно</b><small id="shAs">без имени и ID</small></span>
-      <span class="tg" aria-hidden="true"></span>
-    </button>
-    <button class="send" id="shGo" disabled>Отправить</button>
-  </div>
-  <div class="done">
-    <svg viewBox="0 0 76 76" fill="none"><circle cx="38" cy="38" r="34" stroke="#2BAE66" stroke-width="4"/><path d="M24 39l10 10 18-20" stroke="#2BAE66" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <b>Отправлено ✓</b>
-    <p id="shDone"></p>
-  </div>
+  <div id="shBody"></div>
 </div>
 <div class="toast" id="toast" role="status"></div>
 
@@ -213,13 +372,46 @@ const IDS = ['СТ-001','СТ-002','СТ-003','СТ-004','СТ-005'];
 const TOTAL = 6;
 const ID = (qs.get('id') || '').trim().toUpperCase().replace(/^CT/, 'СТ');
 const PERIOD = +qs.get('period') || null;
-const S = {mock: qs.has('mock') ? (+qs.get('mock') || 6) : (STATIC_HOST ? 6 : null), data:null, ov:null, ver:null, chart:null, sheet:null};
+const TABS = [['home','Главная'], ['steps','Шаги'], ['team','Команда'], ['fb','ОС']];
+const S = {mock: qs.has('mock') ? (+qs.get('mock') || 6) : (STATIC_HOST ? 6 : null), data:null, ov:null, ver:null, chart:null,
+           onb:null, kudos:[], fbreq:[], meet:[], open:null, memoOpen:null, memoQ:'', tab:'home'};
 const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Общий стор (shared/store.js). Если он не загрузился — тот же интерфейс поверх тех же ключей localStorage, без сети.
+const RS = window.RadarStore || (() => {
+  console.warn('shared/store.js не загрузился — кабинет работает на локальном хранилище');
+  const g = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch { return d; } };
+  const s = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  const list = (k, id) => g(k, []).filter(x => x && (!id || x.intern_id === id)).sort((a, b) => String(b.at || b.start || '').localeCompare(String(a.at || a.start || '')));
+  const add = (k, r) => { const rec = {id:uid(), at:new Date().toISOString(), ...r}; const a = g(k, []); a.unshift(rec); s(k, a.slice(0, 300)); return rec; };
+  return {
+    memo: async () => g('radar.memo', null) || fetch('data/onboarding.json', {cache:'no-store'}).then(r => r.json()),
+    checklist: id => g('radar.check.' + id, []),
+    toggleCheck(id, item){ const d = new Set(g('radar.check.' + id, [])); d.has(item) ? d.delete(item) : d.add(item); const done = [...d]; s('radar.check.' + id, done); return done; },
+    kudos: async id => list('radar.kudos', id),
+    requestFeedback: async r => add('radar.fbreq', {status:'new', ...r}),
+    feedbackRequests: async id => list('radar.fbreq', id),
+    meetings: async id => list('radar.meetings', id),
+    ics({title, start, minutes = 30, description = '', location = '', attendees = []}){
+      const d = new Date(start), e = new Date(d.getTime() + minutes * 60000);
+      const f = x => x.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+      const es = v => String(v).replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/[,;]/g, m => '\\' + m);
+      return new Blob([['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//MGTS//Radar//RU','METHOD:REQUEST','BEGIN:VEVENT','UID:' + uid() + '@radar.mgts',
+        'DTSTAMP:' + f(new Date()),'DTSTART:' + f(d),'DTEND:' + f(e),'SUMMARY:' + es(title),'DESCRIPTION:' + es(description),'LOCATION:' + es(location),
+        ...attendees.filter(a => /@/.test(a)).map(a => 'ATTENDEE;ROLE=REQ-PARTICIPANT:mailto:' + a),'END:VEVENT','END:VCALENDAR'].join('\r\n')], {type:'text/calendar;charset=utf-8'});
+    },
+    download(blob, name){ const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); },
+    onChange(fn){ addEventListener('storage', e => { if(e.key && e.key.startsWith('radar.')) fn(e.key); }); }
+  };
+})();
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const fmt = v => v == null ? '—' : (Math.round(v * 10) / 10).toString().replace('.', ',');
 const plural = (n, a, b, c) => { const m = n % 10, h = n % 100; return m === 1 && h !== 11 ? a : m >= 2 && m <= 4 && (h < 12 || h > 14) ? b : c; };
+const lsGet = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k)); return v ?? d; } catch { return d; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 
 async function getJSON(url){ const r = await fetch(url, {cache:'no-store'}); if(!r.ok) throw new Error(r.status); return r.json(); }
 function mockDir(){ const want = PERIOD || S.mock || 6; return 'mock/p' + (MOCKS.filter(m => m <= want).pop() || MOCKS[0]); }
@@ -232,19 +424,10 @@ async function load(path, mockFile){
 function clip(d){ if(d && PERIOD) d.periods = (d.periods || []).filter(p => p.period <= PERIOD); return d; }
 function link(id){ const u = new URLSearchParams(qs); id ? u.set('id', id) : u.delete('id'); const s = u.toString(); return location.pathname + (s ? '?' + s : ''); }
 
-// короткие человеческие названия своих показателей
-const SHORT = {
-  'Понятность задач':'Понятность задач',
-  'Поддержка и обратная связь наставника':'Поддержка наставника',
-  'Комфортность нагрузки':'Комфортность нагрузки',
-  'Интерес к задачам':'Интерес к задачам',
-  'Профессиональное развитие':'Своё развитие',
-  'Взаимодействие с командой':'Команда',
-  'Общая удовлетворенность стажировкой':'Стажировка в целом'
-};
+const SHORT = {'Понятность задач':'Понятность задач','Поддержка и обратная связь наставника':'Поддержка наставника','Комфортность нагрузки':'Комфортность нагрузки',
+  'Интерес к задачам':'Интерес к задачам','Профессиональное развитие':'Своё развитие','Взаимодействие с командой':'Команда','Общая удовлетворенность стажировкой':'Стажировка в целом'};
 const short = k => SHORT[k] || k;
 
-// советы: привязаны к просевшему показателю
 const TIPS = {
   'Комфортность нагрузки': {about:'про нагрузку', list:[
     ['Как договориться о приоритетах', 'Выпиши все задачи и спроси наставника: что важно на этой неделе? Остальному — дату позже.'],
@@ -280,30 +463,43 @@ const TIPS = {
     ['Скажи спасибо', 'Отметь коллегу, который помог. Мелочь, а команда запоминает.']]}
 };
 
-const ICON = {
-  chev:'<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5l5 5-5 5"/></svg>',
-  arr:'<svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h12M11 5l5 5-5 5"/></svg>',
-  swap:'<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8l3-3 3 3M8 5v10M15 12l-3 3-3-3M12 15V5"/></svg>',
-  mentor:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h11a2 2 0 012 2v6a2 2 0 01-2 2H9l-4 3v-3H4a2 2 0 01-2-2V7a2 2 0 012-2z"/><path d="M19 9h1a2 2 0 012 2v6a2 2 0 01-2 2h-1v3l-4-3h-3"/></svg>',
-  hr:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3.5 7l8.5 6 8.5-6"/></svg>',
-  anon:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 018 0v2.5"/><circle cx="12" cy="15.5" r="1.4"/></svg>',
-  lock:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 018 0v2.5"/></svg>'
+// линейные иконки 24×24
+const P = {
+  chev:'<path d="M9 6l6 6-6 6"/>', arr:'<path d="M5 12h14M13 6l6 6-6 6"/>', swap:'<path d="M7 9l3-3 3 3M10 6v12M17 15l-3 3-3-3M14 18V6"/>',
+  home:'<path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6h-6v6H5a1 1 0 01-1-1z"/>',
+  steps:'<rect x="4" y="4" width="16" height="16" rx="4"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
+  team:'<circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0111 0"/><circle cx="17" cy="9.5" r="2.5"/><path d="M15.5 14.2A4.5 4.5 0 0121 19"/>',
+  fb:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/>',
+  mentor:'<path d="M4 5h11a2 2 0 012 2v6a2 2 0 01-2 2H9l-4 3v-3H4a2 2 0 01-2-2V7a2 2 0 012-2z"/><path d="M19 9h1a2 2 0 012 2v6a2 2 0 01-2 2h-1v3l-4-3h-3"/>',
+  hr:'<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3.5 7l8.5 6 8.5-6"/>',
+  anon:'<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 018 0v2.5"/><circle cx="12" cy="15.5" r="1.4"/>',
+  lock:'<rect x="5" y="10.5" width="14" height="10" rx="2.5"/><path d="M8 10.5V8a4 4 0 018 0v2.5"/>',
+  search:'<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>', send:'<path d="M4 12l16-8-6 16-2.5-6.5z"/>',
+  check:'<path d="M6 12.5l4 4 8-9"/>', grow:'<path d="M7 17L17 7M9 7h8v8"/>', cal:'<rect x="4" y="5" width="16" height="15" rx="3"/><path d="M4 10h16M9 3v4M15 3v4"/>',
+  flag:'<path d="M5 21V4M5 4h11l-2 4 2 4H5"/>', pin:'<path d="M12 21s7-6.2 7-11.5A7 7 0 005 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  badge:'<rect x="5" y="3" width="14" height="18" rx="3"/><circle cx="12" cy="10" r="2.6"/><path d="M8.5 17a3.8 3.8 0 017 0M10 3v2h4V3"/>',
+  laptop:'<rect x="4" y="5" width="16" height="11" rx="2"/><path d="M2 19h20"/>',
+  tasks:'<path d="M9 6h11M9 12h11M9 18h11"/><path d="M3.5 6l1.2 1.2L7 5M3.5 12l1.2 1.2L7 11M3.5 18l1.2 1.2L7 17"/>',
+  people:'<circle cx="9" cy="9" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0111 0"/><circle cx="17" cy="9.5" r="2.5"/><path d="M15.5 14.2A4.5 4.5 0 0121 19"/>',
+  chat:'<path d="M4 5h16a1 1 0 011 1v10a1 1 0 01-1 1H9l-5 4V6a1 1 0 011-1z"/>',
+  clock:'<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>', pulse:'<path d="M3 12h4l2-5 4 10 2-5h6"/>',
+  star:'<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/>', info:'<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8h.01"/>'
 };
+const ic = (n, s = 22, w = 1.9) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n] || P.info}</svg>`;
 
 const HELP = {
-  mentor:{title:'Обсудить с наставником', sub:'Предложим наставнику встречу. Напиши тему — так он подготовится.',
-          anonSub:'HR передаст наставнику без имени.', ph:'Например: хочу разобрать сроки по проекту',
-          chips:['Нужна короткая встреча','Не понимаю задачу','Много параллельных задач'], anon:false, btn:'Обсудить с наставником', small:'Тема встречи — в пару слов'},
+  mentor:{title:'Обсудить с наставником', sub:'Предложим наставнику встречу. Напиши тему — так он подготовится.', anonSub:'HR передаст наставнику без имени.',
+          ph:'Например: хочу разобрать сроки по проекту', chips:['Нужна короткая встреча','Не понимаю задачу','Много параллельных задач'], anon:false, btn:'Обсудить с наставником', small:'Тема встречи — в пару слов', icon:'mentor'},
   hr:{title:'Написать HR', sub:'Сообщение увидит только HR программы.', anonSub:'Без имени и ID. Увидит только HR программы.',
-      ph:'О чём хочешь поговорить?', chips:['Вопрос про нагрузку','Хочу сменить задачи','Вопрос про оформление'], anon:false, btn:'Написать HR', small:'Вопрос, идея, что угодно'},
-  anonymous:{title:'Анонимно сообщить о проблеме', sub:'Без имени и ID. HR увидит только текст.', anonSub:'Без имени и ID. HR увидит только текст.',
-             idSub:'С твоим ID — HR сможет ответить лично.', ph:'Что происходит? Можно коротко', chips:['Слишком большая нагрузка','Некомфортно в команде','Нет обратной связи'],
-             anon:true, btn:'Анонимно сообщить о проблеме', small:'Имя и ID не передаём'}
+      ph:'О чём хочешь поговорить?', chips:['Вопрос про нагрузку','Хочу сменить задачи','Вопрос про оформление'], anon:false, btn:'Написать HR', small:'Вопрос, идея, что угодно', icon:'hr'},
+  anonymous:{title:'Анонимно сообщить о проблеме', sub:'С твоим ID — HR сможет ответить лично.', anonSub:'Без имени и ID. HR увидит только текст.',
+             ph:'Что происходит? Можно коротко', chips:['Слишком большая нагрузка','Некомфортно в команде','Нет обратной связи'], anon:true, btn:'Анонимно сообщить о проблеме', small:'Имя и ID не передаём', icon:'anon'}
 };
+const privacy = i => `<p class="priv rise" style="--i:${i}" title="Твои ответы видит только HR программы. Наставник видит только общий статус.">${ic('lock', 13, 2)}<span class="s">Ответы видит только HR, наставник — общий статус</span><span class="l">Твои ответы видит только HR программы. Наставник видит только общий статус.</span></p>`;
 
 // ---------- экран выбора «Кто ты?» ----------
 async function renderPick(){
-  setTimeout(() => $('app').classList.add('settled'), 2600);
+  $('app').classList.add('nonav');
   let ov = null; try { ov = await load('/api/overview', 'overview.json'); } catch {}
   const dep = Object.fromEntries((ov?.survey_status || ov?.interns || []).map(s => [s.intern_id, s.department]));
   const ids = (ov?.survey_status || []).map(s => s.intern_id).filter(Boolean);
@@ -311,19 +507,19 @@ async function renderPick(){
   document.title = 'Кто ты? · Радар стажировки';
   $('app').innerHTML = `
     <header class="hero short">
-      <div class="bar rise"><img src="brand/logos/logo1.svg" alt="МГТС"><b>Радар стажировки</b></div>
+      <div class="bar rise" style="display:flex"><img src="brand/logos/logo1.svg" alt="МГТС" style="display:block"><b style="display:block">Радар стажировки</b></div>
       <img class="cube" src="brand/img/cube.png" alt="" aria-hidden="true">
-      <div class="hello rise" style="--i:1"><h1>Кто ты?</h1><div class="m">Выбери свой ID — покажем твои ответы и подсказки</div></div>
+      <div class="hello rise" style="--i:1"><h1>Кто ты?</h1><div class="dept">Выбери свой ID — покажем твои ответы и подсказки</div></div>
     </header>
-    <section><div class="pick">
+    <section><div class="rows">
       ${list.map((id, i) => `<a class="pk rise" style="--i:${i + 2}" href="${esc(link(id))}">
         <span class="av">${esc(id.replace(/\D/g, '').slice(-2))}</span>
         <span><b>${esc(id)}</b><small>${esc(dep[id] || 'Стажёр МГТС')}</small></span>
-        <span class="chev">${ICON.chev}</span></a>`).join('')}
+        <span class="chev">${ic('chev', 18, 2)}</span></a>`).join('')}
     </div></section>
     ${privacy(list.length + 2)}`;
+  settle();
 }
-const privacy = i => `<p class="priv rise" style="--i:${i}">${ICON.lock}<span>Твои ответы видит только HR программы. Наставник видит только общий статус.</span></p>`;
 
 // ---------- расчёты по своим ответам ----------
 function own(d){ return (d.periods || []).filter(p => p.intern && Object.keys(p.intern).length).sort((a, b) => a.period - b.period); }
@@ -334,12 +530,8 @@ function moves(last, prev){
     .map(k => ({k, from:prev.intern[k], to:last.intern[k], d:last.intern[k] - prev.intern[k]}));
 }
 function pickMoves(all){
-  const downs = all.filter(m => m.d < 0).sort((a, b) => a.d - b.d);
-  const ups = all.filter(m => m.d > 0).sort((a, b) => b.d - a.d);
-  if(!downs.length && !ups.length) return [];
-  const out = [...downs.slice(0, ups.length ? 2 : 3)];
-  out.push(...ups.slice(0, 3 - out.length));
-  return out.slice(0, 3);
+  const downs = all.filter(m => m.d < 0).sort((a, b) => a.d - b.d), ups = all.filter(m => m.d > 0).sort((a, b) => b.d - a.d);
+  const out = [...downs.slice(0, ups.length ? 2 : 3)]; out.push(...ups.slice(0, 3 - out.length)); return out.slice(0, 3);
 }
 function tipTopic(last, all){
   const worst = (all || []).filter(m => m.d < 0).sort((a, b) => a.d - b.d || a.to - b.to)[0];
@@ -348,40 +540,78 @@ function tipTopic(last, all){
     if(low) return {key:low[0], why:`Потому что «${short(low[0])}» пока на ${low[1]} из 5`}; }
   return {key:'_ok', why:'Всё ровно — пара идей, как сделать ещё лучше'};
 }
-
-// ---------- экран стажёра ----------
-function render(quiet){
+// общий контекст для вкладок
+function ctx(){
   const d = S.data, mine = own(d), last = mine.at(-1), prev = mine.at(-2);
   const maxP = Math.max(0, ...(d.periods || []).map(p => p.period));
   const cur = PERIOD || S.ov?.current_period || maxP || 1;
   const st = S.ov?.survey_status?.find(s => s.intern_id === d.intern_id)?.periods?.[cur]?.intern;
   const sent = st ?? mine.some(p => p.period === cur);
+  const all = moves(last, prev);
+  return {d, mine, last, prev, cur, sent, all};
+}
+
+// ---------- онбординг: памятка, чек-лист, команда ----------
+const memoList = () => (Array.isArray(S.onb) ? S.onb : S.onb?.memo || []).filter(m => m && m.title);
+const checkList = () => S.onb?.checklist || [];
+function stages(){
+  const order = [], by = {};
+  checkList().forEach(it => { const s = it.stage || 'Этапы'; if(!by[s]){ by[s] = []; order.push(s); } by[s].push(it); });
+  return order.map(s => ({name:s, items:by[s]}));
+}
+function currentStage(done){ const st = stages(); return (st.find(s => s.items.some(it => !done.includes(it.id))) || st.at(-1))?.name; }
+
+// ---------- фраза Куба по контексту ----------
+function guideLine(c){
+  const done = RS.checklist(ID), left = checkList().length - checkList().filter(it => done.includes(it.id)).length;
+  const load = (c.all || []).find(m => m.k === 'Комфортность нагрузки' && m.d < 0) || (c.last && c.last.intern['Комфортность нагрузки'] <= 2 ? {} : null);
+  const worst = (c.all || []).filter(m => m.d <= -1).sort((a, b) => a.d - b.d)[0];
+  if(!c.sent) return {t:'Пульс-опрос ждёт тебя, 2 минуты. Ответы видит только HR программы.', act:['Пройти опрос', 'pulse']};
+  if(load) return {t:`Нагрузка просела — это частая история на ${c.cur}-м месяце. Скажи наставнику, что важнее, а что подождёт.`, act:['Обсудить с наставником', 'help:mentor']};
+  if(worst) return {t:`«${short(worst.k)}» просела. Это не приговор: принеси это на ближайшую встречу 1:1 с наставником.`, act:['Обсудить с наставником', 'help:mentor']};
+  if(c.cur <= 1 && done.length < 3) return {t:'Первая неделя — нормально, что всё непонятно. Отметь 3 пункта в «Шагах», и станет проще.', act:['Открыть шаги', 'tab:steps']};
+  if(c.cur === 2 || c.cur === 3) return {t:'Скоро промежуточная встреча — вот что спросят: результат задач и твой рост. Загляни в памятку.', act:['Как попасть в штат', 'ask:offer']};
+  if(c.cur >= 5 && c.cur <= TOTAL) return {t:'Впереди финальная встреча. Собери 3–4 задачи, которыми гордишься, — это лучший аргумент.', act:['Как попасть в штат', 'ask:offer']};
+  if(left > 0 && c.cur <= 3) return {t:`В «Шагах» осталось ${left} ${plural(left, 'пункт', 'пункта', 'пунктов')}. Отмечай по ходу — HR видит прогресс и подскажет, если что-то застряло.`, act:['Открыть шаги', 'tab:steps']};
+  return {t:'Всё идёт ровно. Если появится вопрос — спроси меня: отвечу по памятке или передам HR.', act:null};
+}
+
+// ---------- вкладки ----------
+function vHome(){
+  const c = ctx(), {d, mine, last, prev, cur, sent, all} = c;
   const left = Math.max(0, TOTAL - cur);
   const monthLine = cur <= TOTAL ? `Месяц <b>${cur}</b> из ${TOTAL}` : `Месяц <b>${cur}</b> · сверх программы`;
   const leftLine = left === 0 ? 'финишная прямая' : left === 1 ? 'остался 1 месяц' : `ещё ${left} ${plural(left, 'месяц', 'месяца', 'месяцев')}`;
   const form = window.RADAR_FORMS?.intern || '#';
-  const all = moves(last, prev), mv = all ? pickMoves(all) : null;
+  const mv = all ? pickMoves(all) : null;
   const a = last ? avgOf(last) : null, pa = prev ? avgOf(prev) : null, da = a != null && pa != null ? Math.round((a - pa) * 10) / 10 : null;
-  const tp = tipTopic(last, all), tips = TIPS[tp.key];
+  const tp = tipTopic(last, all), tips = TIPS[tp.key], g = guideLine(c);
   let i = 0; const n = () => `style="--i:${i++}"`;
-
-  document.title = `Моя стажировка · ${d.intern_id}`;
-  $('app').classList.toggle('quiet', !!quiet);
-  $('app').innerHTML = `
+  S.pulseHref = form;
+  return `
     <header class="hero">
       <div class="bar rise" ${n()}><img src="brand/logos/logo1.svg" alt="МГТС"><b>Радар стажировки</b>
-        <a class="who" href="${esc(link(null))}" aria-label="Сменить стажёра">${esc(d.intern_id)} ${ICON.swap}</a></div>
+        <a class="who" href="${esc(link(null))}" aria-label="Сменить стажёра">${esc(d.intern_id)} ${ic('swap', 14, 2)}</a></div>
       <img class="cube" src="brand/img/cube.png" alt="" aria-hidden="true">
       <div class="hello rise" ${n()}><h1>Привет!</h1><div class="m">${monthLine}</div>${d.department ? `<div class="dept">${esc(d.department)}</div>` : ''}</div>
       <div class="prog rise" ${n()} role="progressbar" aria-valuemin="0" aria-valuemax="${TOTAL}" aria-valuenow="${Math.min(cur, TOTAL)}" aria-label="Прогресс стажировки">
-        <div class="segs">${Array.from({length:TOTAL}, (_, k) => `<i style="--k:${k}" class="${k < cur ? 'on' : ''} ${k === cur - 1 ? 'now' : ''}"></i>`).join('')}</div>
+        <div class="segs">${Array.from({length:TOTAL}, (_, k) => `<i style="--k:${k}" class="${k < cur ? 'on' : ''}"></i>`).join('')}</div>
         <small><span>старт</span><span>${leftLine}</span></small>
       </div>
     </header>
 
+    <div class="guide rise" ${n()}>
+      <span class="ava"><img src="brand/img/cube.png" alt=""></span>
+      <div class="say"><small>Куб · гид по стажировке</small><p>${esc(g.t)}</p></div>
+      <div class="gact">
+        <button class="btn pri" data-act="chat">Спросить Куба</button>
+        ${g.act ? `<button class="btn" data-act="${esc(g.act[1])}">${esc(g.act[0])}</button>` : ''}
+      </div>
+    </div>
+
     <div class="cta rise" ${n()}>
       <a class="go" id="go" href="${esc(form)}" ${form !== '#' ? 'target="_blank" rel="noopener"' : ''}>
-        <span>Пройти пульс-опрос <small>· 2 мин</small></span><b class="arr">${ICON.arr}</b></a>
+        <span>Пройти пульс-опрос <small>· 2 мин</small></span><b class="arr">${ic('arr', 20, 2.2)}</b></a>
       <div class="state ${sent ? '' : 'wait'}"><i></i>${sent ? `За Месяц ${cur} ответ отправлен ✓` : `Ждём твой ответ за Месяц ${cur}`}</div>
     </div>
     ${S.mock ? `<div class="demo rise" ${n()}>Демо-данные · без связи с сервером ответы сохраняются на телефоне</div>` : ''}
@@ -407,9 +637,9 @@ function render(quiet){
 
     <section>
       <div class="h rise" ${n()}><h2>Нужна помощь?</h2></div>
-      <div class="help">
-        ${Object.entries(HELP).map(([t, h]) => `<button class="hb rise" ${n()} data-help="${t}">
-          <span class="ic">${ICON[t === 'anonymous' ? 'anon' : t]}</span><span class="t"><b>${h.btn}</b><small>${h.small}</small></span><span class="chev">${ICON.chev}</span></button>`).join('')}
+      <div class="rows">
+        ${Object.entries(HELP).map(([t, h]) => `<button class="hb rise" ${n()} data-act="help:${t}">
+          <span class="ic">${ic(h.icon)}</span><span class="t"><b>${h.btn}</b><small>${h.small}</small></span><span class="chev">${ic('chev', 18, 2)}</span></button>`).join('')}
       </div>
     </section>
 
@@ -421,30 +651,205 @@ function render(quiet){
       </div>
     </section>
     ${privacy(i++)}`;
+}
 
-  $('go').onclick = e => { if(form === '#'){ e.preventDefault(); toast('Ссылку на форму скоро добавит HR'); } };
-  document.querySelectorAll('[data-help]').forEach(b => b.onclick = () => openSheet(b.dataset.help));
-  if(last) drawChart(mine, cur, quiet);
+function ph(title, sub, i = 0){
+  return `<header class="ph rise" style="--i:${i}"><div style="flex:1"><h1>${esc(title)}</h1>${sub ? `<p>${esc(sub)}</p>` : ''}</div>
+    <a class="who" href="${esc(link(null))}" aria-label="Сменить стажёра">${esc(ID)} ${ic('swap', 14, 2)}</a></header>`;
+}
+
+function vSteps(){
+  const done = RS.checklist(ID), st = stages(), total = checkList().length;
+  const cnt = checkList().filter(it => done.includes(it.id)).length;
+  if(!S.open) S.open = new Set([currentStage(done)]);
+  const C = 2 * Math.PI * 42, off = total ? C * (1 - cnt / total) : C;
+  const cs = currentStage(done);
+  const q = S.memoQ.trim().toLowerCase();
+  const memo = memoList().filter(m => !q || (m.title + ' ' + m.text).toLowerCase().includes(q));
+  let i = 1; const n = () => `style="--i:${i++}"`;
+  return `${ph('Первые шаги', 'Отмечай по ходу — HR видит прогресс и поможет, если что-то застряло')}
+    <section>
+      <div class="card ringcard rise" ${n()}>
+        <div class="ring" role="img" aria-label="Выполнено ${cnt} из ${total}">
+          <svg width="96" height="96" viewBox="0 0 96 96"><circle class="bg" cx="48" cy="48" r="42"/><circle class="fg" id="ringfg" cx="48" cy="48" r="42" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(S.ringAnim ? C : off).toFixed(1)}"/></svg>
+          <span class="c"><span><b id="ringn">${cnt}</b><small>из ${total}</small></span></span>
+        </div>
+        <p><b>${cnt === total && total ? 'Всё пройдено' : 'Сейчас: ' + esc(cs || '—')}</b>${cnt === total && total ? 'Красиво. Дальше — задачи и рост.' : 'Не обязательно всё сразу — по пункту в день уже хорошо.'}</p>
+      </div>
+    </section>
+    <section>
+      ${st.map(s => { const dn = s.items.filter(it => done.includes(it.id)).length; const open = S.open.has(s.name);
+        return `<div class="stg rise ${open ? 'open' : ''}" ${n()} data-stage="${esc(s.name)}">
+          <button class="sh" aria-expanded="${open}"><b>${esc(s.name)}</b><span class="cnt ${dn === s.items.length ? 'full' : ''}">${dn}/${s.items.length}</span><span class="chev">${ic('chev', 18, 2)}</span></button>
+          <div class="fold"><div>${s.items.map(it => `<button class="ck" role="checkbox" aria-checked="${done.includes(it.id)}" data-item="${esc(it.id)}">
+            <span class="bx"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">${P.check}</svg></span>
+            <span class="tt">${esc(it.title)}</span></button>`).join('')}</div></div></div>`; }).join('') || '<div class="card empty-s">Чек-лист пока пуст — HR скоро его добавит.</div>'}
+    </section>
+    <section>
+      <div class="h rise" ${n()}><h2>Памятка</h2><span>тапни, чтобы раскрыть</span></div>
+      <div class="search rise" ${n()}>${ic('search', 20, 2)}<label class="sr" for="mq">Поиск по памятке</label>
+        <input id="mq" type="search" placeholder="Пропуск, задачи, больничный…" value="${esc(S.memoQ)}" autocomplete="off"></div>
+      <div class="memo rise" ${n()} id="memo">${memoHTML(memo)}</div>
+    </section>`;
+}
+function memoHTML(memo){
+  if(!memo.length) return `<div class="nores">Ничего не нашли. Спроси Куба — он передаст вопрос HR.</div>`;
+  return memo.map(m => { const open = S.memoOpen === m.id;
+    return `<div class="mc ${open ? 'open' : ''}" data-memo="${esc(m.id)}"><button aria-expanded="${open}"><span class="mi">${ic(m.icon)}</span><b>${esc(m.title)}</b></button>
+      <div class="fold"><div><div>${esc(m.text)}${m.link ? `<br><a href="${esc(m.link)}" target="_blank" rel="noopener">${esc(m.link_label || 'Подробнее')} ${ic('arr', 16, 2)}</a>` : ''}</div></div></div></div>`; }).join('');
+}
+
+const fmtDay = d => d.toLocaleDateString('ru', {day:'numeric', month:'short'}).replace('.', '');
+function when(iso){
+  const d = new Date(iso); if(isNaN(d)) return '';
+  const t = new Date(), y = new Date(); y.setDate(t.getDate() - 1);
+  return d.toDateString() === t.toDateString() ? 'сегодня' : d.toDateString() === y.toDateString() ? 'вчера' : fmtDay(d);
+}
+function place(m){ return m.location || m.place || (/^https?:/.test(m.link || '') ? 'МТС Линк' : m.link) || ''; }
+
+function vTeam(){
+  const dep = S.data?.department, info = S.onb?.departments?.[dep], hr = S.onb?.program?.hr;
+  const team = info?.team || [];
+  let i = 1; const n = () => `style="--i:${i++}"`;
+  const up = S.meet.filter(m => !m.start || new Date(m.start).getTime() > Date.now() - 2 * 3600e3)
+                   .sort((a, b) => String(a.start).localeCompare(String(b.start)));
+  return `${ph('Моя команда', dep || '')}
+    <section>
+      <div class="list rise" ${n()}>
+        ${team.map(p => { const isHr = /HR/.test(p.role);
+          return `<div class="person"><span class="av">${esc(isHr ? 'HR' : String(p.role || '?').trim()[0].toUpperCase())}</span>
+          <span class="t"><small>${esc(p.role)}</small><b>${esc(isHr && hr?.contact ? hr.contact : p.who)}</b>${isHr && hr?.hours ? `<small>${esc(hr.hours)}</small>` : ''}</span>
+          ${isHr && hr?.contact ? `<a class="btn" href="mailto:${esc(hr.contact)}" aria-label="Написать HR">${ic('hr', 20)}</a>` : ''}</div>`; }).join('') || '<div class="empty-s">Состав команды HR добавит позже.</div>'}
+        ${info?.chat ? `<div class="person"><span class="av">${ic('chat', 20)}</span><span class="t"><small>Чат команды</small><b>${esc(info.chat)}</b><small>добавит наставник в первый день</small></span></div>` : ''}
+      </div>
+    </section>
+    <section>
+      <div class="h rise" ${n()}><h2>Встречи</h2></div>
+      <div class="list rise" ${n()}>
+        ${up.length ? up.map(m => { const d = new Date(m.start), ok = !isNaN(d);
+          return `<div class="meet"><span class="dt">${ok ? `<b>${d.getDate()}</b><small>${d.toLocaleDateString('ru', {month:'short'}).replace('.', '')}</small>` : ic('cal')}</span>
+          <span class="t"><b>${esc(m.title || 'Встреча')}</b><small>${ok ? esc(d.toLocaleDateString('ru', {weekday:'short'}) + ' ' + d.toLocaleTimeString('ru', {hour:'2-digit', minute:'2-digit'})) : ''}${place(m) ? ' · ' + esc(place(m)) : ''}</small></span>
+          ${ok ? `<button class="btn" data-ics="${esc(m.id)}" aria-label="Добавить в календарь">${ic('cal', 18)}<span class="lbl">В календарь</span></button>` : ''}</div>`; }).join('')
+        : '<div class="empty-s">Встреч пока нет. Когда HR назначит знакомство с командой или 1:1, они появятся здесь.</div>'}
+      </div>
+    </section>`;
+}
+
+function vFb(){
+  let i = 1; const n = () => `style="--i:${i++}"`;
+  const ST = {new:'Отправлен', sent:'Отправлен', seen:'Прочитан', done:'Ответили', answered:'Ответили', closed:'Закрыт'};
+  return `${ph('Обратная связь', 'Похвала и зоны роста от наставника, HR и команды')}
+    <section>
+      <button class="btn pri wide rise" ${n()} data-act="fbreq" style="min-height:56px;font-size:16px">${ic('chat', 20)} Попросить обратную связь</button>
+    </section>
+    <section>
+      <div class="h rise" ${n()}><h2>Лента</h2>${S.kudos.length ? `<span>${S.kudos.length} ${plural(S.kudos.length, 'запись', 'записи', 'записей')}</span>` : ''}</div>
+      <div class="list rise" ${n()}>
+        ${S.kudos.length ? S.kudos.map(k => { const grow = k.kind === 'grow';
+          return `<div class="kd ${grow ? 'grow' : 'kudos'} ${S.fresh?.has(k.id) ? 'fresh' : ''}"><span class="ki" aria-label="${grow ? 'Зона роста' : 'Похвала'}">${ic(grow ? 'grow' : 'check', 18, 2.4)}</span>
+            <span class="t"><span class="meta">${esc([k.role, k.from && k.from !== k.role ? k.from : ''].filter(Boolean).join(' · ') || 'Команда')} · ${esc(when(k.at))}</span><p>${esc(k.text)}</p></span></div>`; }).join('')
+        : '<div class="empty-s">Пока тихо. Попроси ОС — это нормально и ценится.</div>'}
+      </div>
+    </section>
+    ${S.fbreq.length ? `<section>
+      <div class="h rise" ${n()}><h2>Мои запросы</h2></div>
+      <div class="list rise" ${n()}>${S.fbreq.map(r => `<div class="rq"><span class="t"><b>${esc(r.to || '—')}</b><small>${esc(r.text || 'без темы')} · ${esc(when(r.at))}</small></span>
+        <span class="chipst ${/done|answered/.test(r.status) ? 'ok' : ''}">${esc(ST[r.status] || r.status || 'Отправлен')}</span></div>`).join('')}</div>
+    </section>` : ''}`;
+}
+
+// ---------- рендер ----------
+function settle(){ const a = $('app'); a.classList.remove('settled'); clearTimeout(S.settleT); S.settleT = setTimeout(() => a.classList.add('settled'), 2600); }
+function renderNav(){
+  const nav = $('nav'); nav.hidden = false;
+  const seen = lsGet('radar.kudos-seen.' + ID, ''), fresh = S.kudos.some(k => String(k.at || '') > seen);
+  nav.innerHTML = `<div class="nav-in">
+    <div class="brandrow"><img src="brand/logos/logo1.svg" alt="МГТС"><b>Радар стажировки<small>${esc(ID)} · кабинет стажёра</small></b></div>
+    ${TABS.map(([k, t]) => `<a class="tab" href="#${k}" ${S.tab === k ? 'aria-current="page"' : ''}><span class="ti">${ic(k, 22, S.tab === k ? 2.2 : 1.9)}${k === 'fb' && fresh && S.tab !== 'fb' ? '<i class="dot" aria-label="новое"></i>' : ''}</span><span>${t}</span></a>`).join('')}
+    <div class="navfoot">${ic('lock', 12, 2)} Ответы видит только HR программы</div></div>`;
+}
+function render(quiet){
+  const app = $('app');
+  if(S.chart){ S.chart.destroy(); S.chart = null; }
+  app.classList.toggle('quiet', !!quiet);
+  if(S.tab === 'fb' && S.kudos.length) lsSet('radar.kudos-seen.' + ID, S.kudos.map(k => String(k.at || '')).sort().at(-1));
+  renderNav();
+  S.ringAnim = !quiet && S.tab === 'steps' && !RM;
+  app.innerHTML = S.tab === 'steps' ? vSteps() : S.tab === 'team' ? vTeam() : S.tab === 'fb' ? vFb() : vHome();
+  document.title = `${TABS.find(t => t[0] === S.tab)[1]} · ${ID} · Радар стажировки`;
+  mount();
+  if(!quiet) settle();
+}
+function mount(){
+  const app = $('app');
+  app.querySelectorAll('[data-act]').forEach(b => b.onclick = e => act(b.dataset.act, e));
+  if(S.tab === 'home'){
+    $('go').onclick = e => { if(S.pulseHref === '#'){ e.preventDefault(); toast('Ссылку на форму скоро добавит HR'); } };
+    const c = ctx(); if(c.last) drawChart(c.mine, c.cur, app.classList.contains('quiet'));
+  }
+  if(S.tab === 'steps'){
+    if(S.ringAnim) requestAnimationFrame(() => requestAnimationFrame(() => updRing()));
+    app.querySelectorAll('.stg .sh').forEach(b => b.onclick = () => {
+      const box = b.closest('.stg'), name = box.dataset.stage, open = !box.classList.contains('open');
+      box.classList.toggle('open', open); b.setAttribute('aria-expanded', open); open ? S.open.add(name) : S.open.delete(name);
+    });
+    app.querySelectorAll('.ck').forEach(b => b.onclick = () => {
+      const done = RS.toggleCheck(ID, b.dataset.item), on = done.includes(b.dataset.item);
+      b.setAttribute('aria-checked', on);
+      const box = b.closest('.stg'), its = [...box.querySelectorAll('.ck')], dn = its.filter(x => x.getAttribute('aria-checked') === 'true').length;
+      const cnt = box.querySelector('.cnt'); cnt.textContent = `${dn}/${its.length}`; cnt.classList.toggle('full', dn === its.length);
+      updRing();
+      if(on && navigator.vibrate) try { navigator.vibrate(8); } catch {}
+    });
+    const mq = $('mq');
+    mq.oninput = () => { S.memoQ = mq.value; const q = mq.value.trim().toLowerCase();
+      $('memo').innerHTML = memoHTML(memoList().filter(m => !q || (m.title + ' ' + m.text).toLowerCase().includes(q))); bindMemo(); };
+    bindMemo();
+  }
+  if(S.tab === 'team') app.querySelectorAll('[data-ics]').forEach(b => b.onclick = () => {
+    const m = S.meet.find(x => x.id === b.dataset.ics); if(!m) return;
+    RS.download(RS.ics({title:m.title || 'Встреча', start:m.start, minutes:m.minutes || 30, description:(m.people || []).join(', ') + (m.link ? '\n' + m.link : ''), location:place(m), attendees:m.people || []}), 'vstrecha.ics');
+    toast('Файл встречи скачан — открой его, чтобы добавить в календарь');
+  });
+}
+function updRing(){
+  const done = RS.checklist(ID), total = checkList().length, cnt = checkList().filter(it => done.includes(it.id)).length;
+  const C = 2 * Math.PI * 42, fg = $('ringfg'); if(!fg) return;
+  fg.setAttribute('stroke-dashoffset', (total ? C * (1 - cnt / total) : C).toFixed(1));
+  $('ringn').textContent = cnt;
+}
+function bindMemo(){
+  $('memo').querySelectorAll('.mc > button').forEach(b => b.onclick = () => {
+    const card = b.parentElement, id = card.dataset.memo, open = !card.classList.contains('open');
+    $('memo').querySelectorAll('.mc.open').forEach(x => { x.classList.remove('open'); x.firstElementChild.setAttribute('aria-expanded', 'false'); });
+    if(open){ card.classList.add('open'); b.setAttribute('aria-expanded', 'true'); S.memoOpen = id; setTimeout(() => card.scrollIntoView({block:'nearest', behavior:RM ? 'auto' : 'smooth'}), 60); }
+    else S.memoOpen = null;
+  });
+}
+function act(a, e){
+  if(a === 'chat') return openChat();
+  if(a === 'fbreq') return openFbReq();
+  if(a === 'pulse') return $('go')?.click();
+  if(a.startsWith('help:')) return openHelp(a.slice(5));
+  if(a.startsWith('tab:')) return void (location.hash = a.slice(4));
+  if(a.startsWith('ask:')){ openChat(); const m = memoList().find(x => x.id === a.slice(4)); if(m) setTimeout(() => ask(m.title, m), 250); }
 }
 
 function drawChart(mine, cur, quiet){
-  if(!window.Chart) return;
+  if(!window.Chart || !$('ch')) return;
   const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
   const n = Math.max(TOTAL, cur, mine.at(-1)?.period || 0);
   const by = Object.fromEntries(mine.map(p => [p.period, avgOf(p)]));
   const data = Array.from({length:n}, (_, k) => by[k + 1] ?? null);
-  const lastIdx = mine.at(-1).period - 1;
-  const blue = css('--mgts-blue') || '#008AE0';
-  if(S.chart) S.chart.destroy();
-  const ctx = $('ch').getContext('2d');
-  const g = ctx.createLinearGradient(0, 0, 0, 150); g.addColorStop(0, 'rgba(0,138,224,.20)'); g.addColorStop(1, 'rgba(0,138,224,0)');
-  S.chart = new Chart(ctx, {
+  const lastIdx = mine.at(-1).period - 1, blue = css('--mgts-blue') || '#008AE0';
+  const ctx2 = $('ch').getContext('2d');
+  const g = ctx2.createLinearGradient(0, 0, 0, 150); g.addColorStop(0, 'rgba(0,138,224,.20)'); g.addColorStop(1, 'rgba(0,138,224,0)');
+  S.chart = new Chart(ctx2, {
     type:'line',
     data:{labels:data.map((_, k) => 'М' + (k + 1)), datasets:[{data, borderColor:blue, backgroundColor:g, fill:true, tension:.35, borderWidth:2.5,
       pointRadius:data.map((_, k) => k === lastIdx ? 6 : 3.5), pointHoverRadius:7,
       pointBackgroundColor:data.map((_, k) => k === lastIdx ? blue : '#fff'), pointBorderColor:blue, pointBorderWidth:2}]},
-    options:{responsive:true, maintainAspectRatio:false,
-      animation:(RM || quiet) ? false : {duration:900, easing:'easeOutQuart'},
+    options:{responsive:true, maintainAspectRatio:false, animation:(RM || quiet) ? false : {duration:900, easing:'easeOutQuart'},
       layout:{padding:{top:8, right:8, left:2}},
       plugins:{legend:{display:false}, tooltip:{displayColors:false, backgroundColor:css('--mgts-navy-2') || '#102C51', padding:10, cornerRadius:10,
         callbacks:{title:it => 'Месяц ' + (it[0].dataIndex + 1), label:it => fmt(it.parsed.y) + ' из 5'}}},
@@ -453,71 +858,166 @@ function drawChart(mine, cur, quiet){
   });
 }
 
-// ---------- нижний лист помощи ----------
-function openSheet(type){
-  const h = HELP[type]; S.sheet = {type, anon:h.anon};
-  const sh = $('sheet'); sh.classList.remove('ok');
-  $('shT').textContent = h.title; $('shText').value = ''; $('shText').placeholder = h.ph;
-  $('shC').innerHTML = h.chips.map(c => `<button class="chip" type="button">${esc(c)}</button>`).join('');
-  $('shC').querySelectorAll('.chip').forEach(c => c.onclick = () => {
-    const t = $('shText'); const v = t.value.trim();
-    t.value = v ? (v.includes(c.textContent) ? v : v + '. ' + c.textContent) : c.textContent; c.classList.add('on'); sync(); t.focus();
-  });
-  setAnon(h.anon); sync();
-  sh.setAttribute('aria-hidden', 'false'); sh.classList.add('open'); $('scrim').classList.add('open');
+// ---------- нижний лист ----------
+function openSheet(html, cls = ''){
+  const sh = $('sheet'); clearTimeout(S.closeT);
+  sh.className = 'sheet ' + cls; $('shBody').innerHTML = html; sh.style.transform = '';
+  sh.setAttribute('aria-hidden', 'false'); void sh.offsetWidth; sh.classList.add('open'); $('scrim').classList.add('open');
   document.body.style.overflow = 'hidden';
-  S.lastFocus = document.activeElement;
+  if(!S.lastFocus) S.lastFocus = document.activeElement;
   setTimeout(() => $('shX').focus({preventScroll:true}), 60);
 }
 function closeSheet(){
   const sh = $('sheet'); if(!sh.classList.contains('open')) return;
   sh.classList.remove('open'); $('scrim').classList.remove('open'); sh.setAttribute('aria-hidden', 'true');
   sh.style.transform = ''; document.body.style.overflow = ''; clearTimeout(S.closeT);
-  S.lastFocus?.focus?.({preventScroll:true});
+  S.lastFocus?.focus?.({preventScroll:true}); S.lastFocus = null;
 }
-function setAnon(v){
-  S.sheet.anon = v; const h = HELP[S.sheet.type];
-  $('shA').setAttribute('aria-checked', String(v));
-  $('shS').textContent = v ? h.anonSub : (h.idSub || h.sub);
-  $('shAs').textContent = v ? 'имя и ID не передаём' : 'сейчас — с твоим ID';
+function doneHTML(text){
+  return `<div class="done"><svg viewBox="0 0 76 76" fill="none"><circle cx="38" cy="38" r="34" stroke="#2BAE66" stroke-width="4"/><path d="M24 39l10 10 18-20" stroke="#2BAE66" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <b>Отправлено ✓</b><p>${esc(text)}</p></div>`;
 }
-function sync(){ $('shGo').disabled = $('shText').value.trim().length < 2; }
+function showDone(text){ $('shBody').innerHTML = doneHTML(text); $('sheet').classList.remove('chat'); S.closeT = setTimeout(() => { closeSheet(); toast('Отправлено ✓'); }, 1900); }
 
-async function send(){
-  const btn = $('shGo'); btn.disabled = true; btn.textContent = 'Отправляем…';
-  const body = {intern_id: S.sheet.anon ? null : (S.data?.intern_id || ID || null), type:S.sheet.type, text:$('shText').value.trim(), anonymous:S.sheet.anon};
-  let where = 'server';
+// обращение стажёра: API, иначе localStorage 'radar.intern-requests' (у каждой записи есть id)
+async function postRequest(body){
   try {
     if(S.mock) throw new Error('mock');
     const r = await fetch(API + '/api/intern-requests', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
     if(!r.ok) throw new Error(r.status);
+    return 'server';
   } catch(e){
-    where = 'local';
-    try { const k = 'radar.intern-requests', all = JSON.parse(localStorage.getItem(k) || '[]');
-      all.push({...body, at:new Date().toISOString()}); localStorage.setItem(k, JSON.stringify(all.slice(-50))); } catch {}
+    const k = 'radar.intern-requests', all = lsGet(k, []);
+    all.push({id:Date.now().toString(36) + Math.random().toString(36).slice(2, 5), ...body, at:new Date().toISOString()});
+    lsSet(k, all.slice(-50)); return 'local';
   }
-  btn.textContent = 'Отправить';
-  $('shDone').textContent = (S.sheet.type === 'mentor' ? 'Наставник получит запрос на встречу.' : 'Сообщение ушло HR программы.')
-    + (where === 'local' ? ' (Демо: сохранили на этом устройстве.)' : '');
-  $('sheet').classList.add('ok');
-  S.closeT = setTimeout(() => { closeSheet(); toast('Отправлено ✓'); }, 1900);
 }
 
-$('shA').onclick = () => setAnon(!S.sheet.anon);
-$('shText').oninput = sync;
-$('shGo').onclick = send;
+function openHelp(type){
+  const h = HELP[type]; if(!h) return;
+  let anon = h.anon;
+  openSheet(`<h3 id="shT">${esc(h.title)}</h3><p class="sub" id="shS"></p>
+    <div class="chips">${h.chips.map(c => `<button class="chip" type="button">${esc(c)}</button>`).join('')}</div>
+    <label class="sr" for="shText">Сообщение</label><textarea id="shText" maxlength="1000" placeholder="${esc(h.ph)}"></textarea>
+    <button class="sw" id="shA" role="switch" aria-checked="false"><span class="t"><b>Отправить анонимно</b><small id="shAs"></small></span><span class="tg" aria-hidden="true"></span></button>
+    <button class="send" id="shGo" disabled>Отправить</button>`);
+  $('sheet').setAttribute('aria-labelledby', 'shT');
+  const t = $('shText'), go = $('shGo');
+  const sync = () => { go.disabled = t.value.trim().length < 2; };
+  const setAnon = v => { anon = v; $('shA').setAttribute('aria-checked', String(v)); $('shS').textContent = v ? h.anonSub : h.sub; $('shAs').textContent = v ? 'имя и ID не передаём' : 'сейчас — с твоим ID'; };
+  setAnon(anon);
+  $('shBody').querySelectorAll('.chip').forEach(c => c.onclick = () => { const v = t.value.trim();
+    t.value = v ? (v.includes(c.textContent) ? v : v + '. ' + c.textContent) : c.textContent; c.classList.add('on'); sync(); t.focus(); });
+  t.oninput = sync; $('shA').onclick = () => setAnon(!anon);
+  go.onclick = async () => {
+    go.disabled = true; go.textContent = 'Отправляем…';
+    const where = await postRequest({intern_id: anon ? null : (S.data?.intern_id || ID || null), type, text:t.value.trim(), anonymous:anon});
+    showDone((type === 'mentor' ? 'Наставник получит запрос на встречу.' : 'Сообщение ушло HR программы.') + (where === 'local' ? ' (Демо: сохранили на этом устройстве.)' : ''));
+  };
+}
+
+function openFbReq(){
+  let to = 'Наставник';
+  openSheet(`<h3 id="shT">Попросить обратную связь</h3><p class="sub">Короткий вопрос — быстрый ответ. Это нормально и ценится.</p>
+    <div class="seg" role="radiogroup" aria-label="Кому">${['Наставник', 'HR', 'Команда'].map(x => `<button role="radio" aria-checked="${x === to}" data-to="${x}">${x}</button>`).join('')}</div>
+    <div class="chips">${['По последней задаче', 'Что мне улучшить', 'Как я в команде'].map(c => `<button class="chip" type="button">${c}</button>`).join('')}</div>
+    <label class="sr" for="fbText">О чём</label><textarea id="fbText" maxlength="600" placeholder="О чём? Например: как тебе мой отчёт по проекту"></textarea>
+    <button class="send" id="fbGo" disabled>Попросить</button>`);
+  $('sheet').setAttribute('aria-labelledby', 'shT');
+  const t = $('fbText'), go = $('fbGo'), sync = () => { go.disabled = t.value.trim().length < 2; };
+  $('shBody').querySelectorAll('[data-to]').forEach(b => b.onclick = () => { to = b.dataset.to; $('shBody').querySelectorAll('[data-to]').forEach(x => x.setAttribute('aria-checked', x === b)); });
+  $('shBody').querySelectorAll('.chip').forEach(c => c.onclick = () => { t.value = c.textContent; sync(); t.focus(); });
+  t.oninput = sync;
+  go.onclick = async () => {
+    go.disabled = true; go.textContent = 'Отправляем…';
+    try { await RS.requestFeedback({intern_id:ID, to, text:t.value.trim()}); } catch {}
+    await loadLists(); if(S.tab === 'fb') render(true);
+    showDone(`${to === 'Команда' ? 'Команда получит' : to + ' получит'} запрос. Статус — в «Моих запросах».`);
+  };
+}
+
+// ---------- чат с Кубом ----------
+const QUICK = [['Где получить пропуск?', 'pass'], ['Как получить задачи?', 'tasks'], ['Кому писать, если заболел?', 'absent'], ['Как попасть в штат?', 'offer'], ['Мне тревожно / не справляюсь', '_calm']];
+const KEYS = {
+  pass:['пропуск','ресепшн','бюро','охран','вход'], tasks:['задач','трекер','план','поручен','работ'], absent:['болел','болею','больнич','заболел','опазд','опозд','врач','температур'],
+  offer:['штат','оффер','офер','остать','трудоустр','промежуточ','финальн','взять'], address:['адрес','офис','метро','добрат','где наход','карт'],
+  access:['ноутбук','пароль','доступ','почт','компьютер','ит','vpn','впн','сломал'], people:['коллег','команд','контакт','познаком','найти'],
+  whom:['кому','писать','обратит','спросить','вопрос'], pulse:['опрос','пульс','анкет','оценк'], day1:['первый день','перв','начать','прийти','приходить']
+};
+const CALM = ['тревож','страш','не справ','выгор','устал','плохо','стресс','паник','боюсь','не тяну','не вывож','депресс','плачу','тяжело'];
+function findMemo(q){
+  const s = q.toLowerCase().replace(/ё/g, 'е'), memo = memoList();
+  let best = null, score = 0;
+  memo.forEach(m => {
+    let sc = (KEYS[m.id] || []).reduce((a, k) => a + (s.includes(k) ? 3 : 0), 0);
+    const words = s.split(/[^a-zа-я0-9]+/).filter(w => w.length >= 4).map(w => w.slice(0, 5));
+    const hay = (m.title + ' ' + m.text).toLowerCase().replace(/ё/g, 'е');
+    sc += words.reduce((a, w) => a + (hay.includes(w) ? 1 : 0), 0);
+    if(sc > score){ score = sc; best = m; }
+  });
+  return score >= 2 ? best : null;
+}
+function openChat(){
+  openSheet(`<div class="chathead"><span class="ava"><img src="brand/img/cube.png" alt=""></span><span><b id="shT">Куб</b><small>Отвечаю по памятке. Чего не знаю — передам HR</small></span></div>
+    <div class="msgs" id="msgs"></div>
+    <div class="qq" id="qq">${QUICK.map(([t, k]) => `<button class="chip" data-q="${k}">${esc(t)}</button>`).join('')}</div>
+    <form class="ask" id="askf"><label class="sr" for="askq">Вопрос Кубу</label><input id="askq" placeholder="Спроси что угодно" autocomplete="off" enterkeyhint="send">
+      <button id="askgo" type="submit" aria-label="Отправить" disabled>${ic('send', 20, 2)}</button></form>`, 'chat');
+  $('sheet').setAttribute('aria-labelledby', 'shT');
+  if(!S.chatHist?.length){ S.chatHist = []; bot(`Привет! Я Куб, гид по стажировке. Выбери вопрос ниже или напиши свой.`); }
+  else S.chatHist.forEach(h => addMsg(h.who, h.html, false));
+  $('qq').querySelectorAll('[data-q]').forEach(b => b.onclick = () => {
+    const k = b.dataset.q; ask(b.textContent, k === '_calm' ? '_calm' : memoList().find(m => m.id === k) || null);
+  });
+  const inp = $('askq'); inp.oninput = () => { $('askgo').disabled = !inp.value.trim(); };
+  $('askf').onsubmit = e => { e.preventDefault(); const q = inp.value.trim(); if(!q) return; inp.value = ''; $('askgo').disabled = true; ask(q); };
+}
+function addMsg(who, html, save = true){
+  const box = $('msgs'); if(!box) return;
+  const el = document.createElement('div'); el.className = 'msg ' + who; el.innerHTML = html; box.appendChild(el);
+  bindMsg(el); box.scrollTop = box.scrollHeight;
+  if(save) S.chatHist.push({who, html});
+}
+function bindMsg(el){
+  el.querySelectorAll('[data-help]').forEach(b => b.onclick = () => openHelp(b.dataset.help));
+  el.querySelectorAll('[data-relay]').forEach(b => b.onclick = async () => {
+    b.disabled = true; const where = await postRequest({intern_id:ID || null, type:'question', text:b.dataset.relay, anonymous:false});
+    bot(`Передал ✓ HR ответит лично.${where === 'local' ? ' (Демо: вопрос сохранён на этом устройстве.)' : ''}`);
+  });
+}
+function bot(html){
+  const box = $('msgs'); if(!box) return;
+  if(RM || !S.chatHist.length){ addMsg('bot', html); return; }
+  // ответы по очереди, даже если спросили два раза подряд
+  S.botQ = (S.botQ || Promise.resolve()).then(() => new Promise(res => {
+    const bx = $('msgs'); if(!bx) return res();
+    const ty = document.createElement('div'); ty.className = 'msg bot typing'; ty.innerHTML = '<i></i><i></i><i></i>'; bx.appendChild(ty); bx.scrollTop = bx.scrollHeight;
+    setTimeout(() => { ty.remove(); addMsg('bot', html); res(); }, 550);
+  }));
+}
+function ask(q, hit){
+  addMsg('me', esc(q));
+  const s = q.toLowerCase();
+  if(hit === '_calm' || (hit === undefined && CALM.some(k => s.includes(k)))){
+    return bot(`Спасибо, что сказал. Такое бывает почти у всех на стажировке, особенно когда задач становится больше, — это не значит, что ты не справляешься.
+      Лучше всего помогает разговор: HR программы как раз для этого. Если не хочется называть себя — можно анонимно.
+      <div class="acts"><button class="btn pri" data-help="hr">Написать HR</button><button class="btn" data-help="anonymous">Анонимно</button></div>`);
+  }
+  const m = hit === undefined ? findMemo(q) : hit;
+  if(m) return bot(`<b>${esc(m.title)}</b>${esc(m.text)}${m.link ? `<br><a href="${esc(m.link)}" target="_blank" rel="noopener">${esc(m.link_label || 'Подробнее')}</a>` : ''}`);
+  bot(`В памятке такого нет. Передам вопрос HR — ответят лично.<div class="acts"><button class="btn pri" data-relay="${esc(q)}">Передать HR</button></div>`);
+}
+
 $('shX').onclick = closeSheet;
 $('scrim').onclick = closeSheet;
 addEventListener('keydown', e => { if(e.key === 'Escape') closeSheet(); });
-// свайп листа вниз
 (() => { const sh = $('sheet'); let y0 = null, dy = 0;
-  sh.addEventListener('touchstart', e => { if(sh.scrollTop > 0 || e.target.tagName === 'TEXTAREA') return; y0 = e.touches[0].clientY; dy = 0; sh.style.transition = 'none'; }, {passive:true});
+  sh.addEventListener('touchstart', e => { if(sh.scrollTop > 0 || e.target.closest('textarea,input,.msgs,.qq,.chips')) return; y0 = e.touches[0].clientY; dy = 0; sh.style.transition = 'none'; }, {passive:true});
   sh.addEventListener('touchmove', e => { if(y0 == null) return; dy = Math.max(0, e.touches[0].clientY - y0); sh.style.transform = `translateY(${dy}px)`; }, {passive:true});
   sh.addEventListener('touchend', () => { if(y0 == null) return; sh.style.transition = ''; y0 = null; if(dy > 90) closeSheet(); else sh.style.transform = ''; });
 })();
-
 let toastT;
-function toast(t){ const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2400); }
+function toast(t){ const el = $('toast'); el.textContent = t; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2600); }
 
 // ---------- загрузка ----------
 async function loadAll(){
@@ -525,23 +1025,43 @@ async function loadAll(){
   let ov = null; try { ov = await load('/api/overview', 'overview.json'); } catch {}
   S.data = d; S.ov = ov;
 }
+async function loadOnb(){ try { S.onb = await RS.memo(); } catch { S.onb = S.onb || {}; } }
+async function loadLists(){
+  const safe = p => Promise.resolve().then(p).catch(() => []);
+  const [k, f, m] = await Promise.all([safe(() => RS.kudos(ID)), safe(() => RS.feedbackRequests(ID)), safe(() => RS.meetings(ID))]);
+  S.kudos = k || []; S.fbreq = f || []; S.meet = m || [];
+}
 async function poll(){
   if(S.mock || document.hidden) return;
   try {
     const v = await getJSON(API + '/api/version');
-    if(S.ver != null && v.version !== S.ver){ await loadAll(); render(true); if(v.last_event?.intern_id === ID) toast('Твои данные обновились'); }
+    if(S.ver != null && v.version !== S.ver){ await loadAll(); if(S.tab === 'home') render(true); if(v.last_event?.intern_id === ID) toast('Твои данные обновились'); }
     S.ver = v.version;
   } catch {}
 }
+function tabFromHash(){ const h = location.hash.slice(1); return TABS.some(t => t[0] === h) ? h : 'home'; }
 (async function init(){
   if(!ID){ renderPick(); return; }
-  try { await loadAll(); }
+  try { await Promise.all([loadAll(), loadOnb(), loadLists()]); }
   catch(e){
+    $('app').classList.add('nonav');
     $('app').innerHTML = `<div class="empty"><h2>Не нашли ${esc(ID)}</h2><p>Проверь ID или выбери себя из списка.</p><a href="${esc(link(null))}">Кто ты?</a></div>`;
     return;
   }
+  S.tab = tabFromHash();
   render(false);
-  setTimeout(() => $('app').classList.add('settled'), 2600); // страховка, если анимации заморожены (фоновая вкладка)
+  addEventListener('hashchange', () => { S.tab = tabFromHash(); closeSheet(); render(false); scrollTo({top:0}); });
+  // HR поменял что-то в соседней вкладке → перерисовать
+  RS.onChange(async key => {
+    const before = new Set(S.kudos.map(k => k.id));
+    if(/memo/.test(key)) await loadOnb();
+    await loadLists();
+    const nw = S.kudos.filter(k => !before.has(k.id));
+    S.fresh = new Set(nw.map(k => k.id));
+    if(!$('sheet').classList.contains('open')) render(true); else renderNav();
+    if(nw.length) toast(nw[0].kind === 'grow' ? `Новая обратная связь от ${nw[0].role || 'команды'}` : `Тебя похвалили: ${nw[0].role || 'команда'} ✓`);
+    else if(/meetings/.test(key)) toast('Новая встреча в «Команде»');
+  });
   if(!S.mock){ poll(); setInterval(poll, 4000); }
 })();
 </script>
