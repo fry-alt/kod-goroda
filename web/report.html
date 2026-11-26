@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Отчёты · Радар стажировки · МГТС</title>
+<link rel="icon" href="brand/logos/logo1.png">
+<link rel="stylesheet" href="brand/brand.css">
+<script src="vendor/chart.umd.min.js"></script>
+<script src="config.js" onerror=""></script>
+<style>
+*{box-sizing:border-box}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{margin:0;background:var(--mgts-bg-soft);font-size:17px;line-height:1.45}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+.mockbar{background:var(--mgts-orange);color:#fff;text-align:center;font-size:15px;padding:6px}
+
+/* ---------- верх ---------- */
+.top{background:#fff;border-bottom:1px solid var(--mgts-line)}
+.top-in{max-width:1600px;margin:0 auto;padding:14px 28px;display:flex;align-items:center;gap:20px}
+.brand{display:flex;align-items:center;gap:14px}
+.brand img{height:44px;border-radius:6px}
+.brand h1{margin:0;font-size:24px;line-height:1}
+.brand small{display:block;font-family:var(--font-text);font-weight:400;font-size:15px;color:var(--mgts-muted);margin-top:5px}
+.back{margin-left:auto;display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--mgts-blue);font-weight:500;
+  border:2px solid var(--mgts-blue-soft);border-radius:12px;padding:9px 16px;font-size:16px}
+.back:hover{border-color:var(--mgts-blue)}
+
+/* ---------- раскладка ---------- */
+.wrap{max-width:1600px;margin:0 auto;padding:24px 28px 60px;display:grid;grid-template-columns:380px 1fr;gap:28px;align-items:start}
+.side{position:sticky;top:20px;display:flex;flex-direction:column;gap:18px;max-height:calc(100vh - 40px);overflow:auto;padding-bottom:4px}
+.box{background:#fff;border-radius:20px;padding:20px 20px 22px}
+.box h2{font-size:19px;margin:0 0 14px;display:flex;align-items:center;gap:10px}
+.box h2 .n{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--mgts-blue);color:#fff;font-size:15px}
+
+.tpls{display:flex;flex-direction:column;gap:10px}
+.tpl{display:block;border:2px solid var(--mgts-line);border-radius:16px;padding:13px 16px;cursor:pointer;transition:.15s;background:#fff}
+.tpl:hover{border-color:var(--mgts-blue-soft)}
+.tpl input{position:absolute;opacity:0;pointer-events:none}
+.tpl b{display:block;font-family:var(--font-title);font-weight:700;font-size:17px;color:var(--mgts-navy)}
+.tpl span{display:block;font-size:15px;color:var(--mgts-muted);margin-top:2px}
+.tpl.on{border-color:var(--mgts-blue);background:#F2F9FE}
+.tpl.on b{color:var(--mgts-blue)}
+.tpl:focus-within{outline:3px solid var(--mgts-blue-soft);outline-offset:2px}
+.tpl select{display:none;width:100%;margin-top:10px;padding:10px 12px;border:2px solid var(--mgts-blue-soft);border-radius:12px;background:#fff;font-size:16px}
+.tpl.on select{display:block}
+
+.months{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.months button{border:2px solid var(--mgts-line);background:#fff;border-radius:12px;padding:10px 0;font-family:var(--font-title);font-weight:500;font-size:18px;color:var(--mgts-navy)}
+.months button small{display:block;font-family:var(--font-text);font-size:12px;color:var(--mgts-muted);font-weight:400}
+.months button.on{background:var(--mgts-blue);border-color:var(--mgts-blue);color:#fff}
+.months button.on small{color:#DCEFFC}
+.months button:disabled{opacity:.35;cursor:default}
+.hint{font-size:14px;color:var(--mgts-muted);margin:10px 0 0}
+
+.fmts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fmt{display:flex;align-items:center;gap:12px;text-align:left;border:2px solid var(--mgts-line);background:#fff;border-radius:16px;padding:12px 12px}
+.fmt:hover{border-color:var(--mgts-blue)}
+.fmt:disabled{opacity:.5;cursor:progress}
+.fmt i{flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:10px;color:#fff;font-style:normal;font-family:var(--font-title);font-weight:700;font-size:12px;letter-spacing:.02em}
+.fmt b{display:block;font-size:16px;font-weight:700;color:var(--mgts-navy)}
+.fmt span{display:block;font-size:13px;color:var(--mgts-muted);line-height:1.25}
+.i-pdf{background:var(--mgts-navy)}.i-xls{background:#1D7A47}.i-ppt{background:var(--mgts-orange)}.i-csv{background:var(--mgts-blue)}
+.opt{display:flex;gap:8px;align-items:flex-start;font-size:14px;color:var(--mgts-muted);margin-top:12px}
+.opt input{margin-top:3px;width:16px;height:16px}
+.msg{min-height:22px;font-size:15px;margin-top:12px;color:var(--mgts-navy)}
+.msg.err{color:#B4232A}.msg.ok{color:#1C7A47}
+
+/* ---------- предпросмотр: лист A4 ---------- */
+.preview{min-width:0;display:flex;flex-direction:column;align-items:center;gap:10px}
+.preview .cap{align-self:stretch;display:flex;justify-content:space-between;font-size:15px;color:var(--mgts-muted)}
+.sheet{width:210mm;max-width:100%;min-height:297mm;background:#fff;box-shadow:0 6px 30px rgba(19,64,116,.10);border-radius:6px;
+  padding:13mm 12mm 12mm;font-size:13.5px;line-height:1.45;color:var(--mgts-navy);transition:opacity .2s}
+.sheet.busy{opacity:.45}
+
+.dh{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;padding-bottom:14px;border-bottom:3px solid var(--mgts-blue)}
+.dh img{width:54px;height:54px;border-radius:6px}
+.dh .k{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--mgts-muted)}
+.dh h1{margin:2px 0 0;font-size:26px;line-height:1.1}
+.dh .f{font-size:14px;margin-top:4px}
+.dh .meta{text-align:right;font-size:12.5px;color:var(--mgts-muted)}
+.dh .meta b{display:block;font-family:var(--font-title);font-weight:700;font-size:17px;color:var(--mgts-navy);margin-bottom:2px}
+
+.sec{margin-top:18px;break-inside:avoid}
+.sec>h2{font-size:17px;margin:0 0 10px;display:flex;align-items:baseline;gap:10px}
+.sec>h2 small{font-family:var(--font-text);font-weight:400;font-size:12.5px;color:var(--mgts-muted)}
+
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:16px}
+.kpi{background:var(--mgts-bg-soft);border-radius:12px;padding:10px 12px}
+.kpi .v{font-family:var(--font-title);font-weight:500;font-size:28px;line-height:1.1}
+.kpi .l{font-size:12px;color:var(--mgts-muted);display:flex;align-items:center;gap:6px}
+.kpi.red .v{color:var(--st-red)}.kpi.yellow .v{color:#C98100}.kpi.green .v{color:var(--st-green)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;flex:none}
+.d-red{background:var(--st-red)}.d-yellow{background:var(--st-yellow)}.d-green{background:var(--st-green)}.d-grey{background:#C5D3E2}
+
+.charts{display:grid;grid-template-columns:1fr 1.5fr;gap:10px}
+.chart{border:1px solid var(--mgts-line);border-radius:12px;padding:10px 12px 8px;break-inside:avoid}
+.chart.wide{grid-column:1 / -1}
+.chart h3{font-family:var(--font-text);font-weight:700;font-size:13px;color:var(--mgts-navy);margin:0 0 6px}
+.chart .cv{position:relative;height:190px}
+.chart.wide .cv{height:200px}
+.chart img.pimg{display:none;width:100%;height:auto}
+
+.summary{background:#F2F9FE;border-left:4px solid var(--mgts-blue);border-radius:0 10px 10px 0;padding:10px 14px;font-size:14px}
+
+table.t{border-collapse:collapse;width:100%;font-size:12.5px}
+.t th{background:var(--mgts-blue);color:#fff;font-weight:700;text-align:left;padding:7px 6px;font-size:11.5px;line-height:1.2;vertical-align:bottom}
+.t th.r{white-space:normal}
+.t.fixed{table-layout:fixed}
+.t.fixed td,.t.fixed th{padding-left:5px;padding-right:5px}
+.t.fixed .r{font-size:12px}
+.t.fixed .pill{font-size:11px;padding:2px 7px}
+.t.fixed td{font-size:12px;hyphens:auto;overflow-wrap:break-word}
+.t.fixed td.id{font-size:12px}
+.t.fixed th{font-size:11px}
+.t td.reason{overflow-wrap:anywhere}
+.t th:first-child{border-radius:8px 0 0 0}.t th:last-child{border-radius:0 8px 0 0}
+.t td{padding:7px 6px;border-bottom:1px solid var(--mgts-line);vertical-align:top}
+.t tr{break-inside:avoid}
+.t .r{text-align:right;white-space:nowrap;font-family:var(--font-title);font-weight:500}
+.t td.id{font-family:var(--font-title);font-weight:700;white-space:nowrap}
+.t td.id small{display:block;font-family:var(--font-text);font-weight:400;color:var(--mgts-muted)}
+.t .cur{background:#F2F9FE}
+.t .low{color:#B4232A;font-weight:700}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:20px;padding:2px 9px;font-size:12px;font-weight:700;white-space:nowrap}
+.p-red{background:#FDE7E8;color:#B4232A}.p-yellow{background:#FFF2D9;color:#8A5A00}.p-green{background:#E2F6EB;color:#1C7A47}.p-grey{background:#EEF2F6;color:var(--mgts-muted)}
+
+.sigs{display:flex;flex-direction:column;gap:8px}
+.sig{border:1px solid var(--mgts-line);border-left:5px solid var(--st-yellow);border-radius:0 10px 10px 0;padding:9px 12px;break-inside:avoid}
+.sig.red{border-left-color:var(--st-red)}
+.sig .h{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.sig .h b{font-size:14px}
+.sig .who{font-family:var(--font-title);font-weight:700;font-size:13px}
+.sig .why{margin:3px 0 0;font-size:13px}
+.sig .ev{margin:6px 0 0;padding:0;list-style:none;font-size:12.5px;color:#3A5A80}
+.sig .ev li{margin:2px 0}
+.sig .ev em{font-style:normal;font-weight:700;color:#B4232A}
+.sig q{display:block;margin:5px 0 0;padding:5px 10px;background:var(--mgts-bg-soft);border-radius:8px;font-size:12.5px;quotes:none}
+.sig q small{display:block;color:var(--mgts-muted);font-size:11.5px}
+
+.acts{margin:0;padding:0;list-style:none;counter-reset:a}
+.acts li{counter-increment:a;display:grid;grid-template-columns:26px 1fr;gap:8px;padding:6px 0;border-bottom:1px solid var(--mgts-line);break-inside:avoid}
+.acts li::before{content:counter(a);display:grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--mgts-orange);color:#fff;font-weight:700;font-size:12px}
+.acts li small{color:var(--mgts-muted)}
+.cms{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cm{background:var(--mgts-bg-soft);border-radius:10px;padding:9px 12px;font-size:12.5px}
+.cm b{display:block;font-size:12px;color:var(--mgts-muted);font-weight:500}
+.cm p{margin:3px 0 7px}
+.empty{padding:14px;border:1px dashed var(--mgts-line);border-radius:10px;color:var(--mgts-muted);text-align:center}
+.df{margin-top:20px;padding-top:10px;border-top:1px solid var(--mgts-line);font-size:11.5px;color:var(--mgts-muted);display:flex;justify-content:space-between;gap:16px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--mgts-navy-2);color:#fff;padding:12px 20px;border-radius:14px;font-size:16px;display:none;z-index:50}
+
+@media (max-width:1100px){
+  .wrap{grid-template-columns:1fr;padding:16px}
+  .side{position:static;max-height:none}
+  .top-in{padding:12px 16px}
+  .sheet{min-height:0;padding:16px}
+}
+@media (max-width:640px){
+  .brand small{display:none}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .charts,.cms{grid-template-columns:1fr}
+  .dh{grid-template-columns:auto 1fr}.dh .meta{grid-column:1 / -1;text-align:left}
+  .t{display:block;overflow-x:auto}
+}
+
+/* ---------- печать: A4 ---------- */
+@page{size:A4 portrait;margin:12mm 12mm 16mm;
+  @bottom-right{content:"Стр. " counter(page) " из " counter(pages);font-family:MTSText,Arial,sans-serif;font-size:8.5pt;color:#829CB5}
+  @bottom-left{content:"МГТС · Радар стажировки";font-family:MTSText,Arial,sans-serif;font-size:8.5pt;color:#829CB5}}
+@media print{
+  html,body{background:#fff}
+  .top,.side,.mockbar,.preview .cap,.toast{display:none!important}
+  .wrap{display:block;padding:0;max-width:none}
+  .preview{display:block}
+  .sheet{width:auto;min-height:0;box-shadow:none;border-radius:0;padding:0;opacity:1!important}
+  .chart canvas{display:none!important}
+  .chart img.pimg{display:block}
+  .chart .cv{height:auto!important}
+  .sec>h2{break-after:avoid}
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+}
+</style>
+</head><body>
+<div id="mockbar" class="mockbar" hidden></div>
+<header class="top"><div class="top-in">
+  <div class="brand"><img src="brand/logos/logo1.svg" alt="МГТС">
+    <h1>Отчёты<small>Радар стажировки · выгрузка для HR</small></h1></div>
+  <a class="back" href="./" id="back">← Дашборд</a>
+</div></header>
+
+<div class="wrap">
+  <aside class="side" aria-label="Конструктор отчёта">
+    <section class="box">
+      <h2><span class="n">1</span>Что выгрузить</h2>
+      <div class="tpls" id="tpls">
+        <label class="tpl" data-tpl="program"><input type="radio" name="tpl" value="program">
+          <b>Сводка по программе</b><span>Все стажёры, статусы, динамика, общие выводы</span></label>
+        <label class="tpl" data-tpl="dept"><input type="radio" name="tpl" value="dept">
+          <b>По подразделению</b><span>Стажёры одного блока</span>
+          <select id="dept" aria-label="Подразделение"></select></label>
+        <label class="tpl" data-tpl="status"><input type="radio" name="tpl" value="status">
+          <b>По статусу</b><span>Только критичные и зона внимания</span></label>
+        <label class="tpl" data-tpl="intern"><input type="radio" name="tpl" value="intern">
+          <b>Карточка стажёра</b><span>Для встречи 1:1: оценки, сигналы, комментарии</span>
+          <select id="intern" aria-label="Стажёр"></select></label>
+      </div>
+    </section>
+
+    <section class="box">
+      <h2><span class="n">2</span>Срез на месяц</h2>
+      <div class="months" id="months"></div>
+      <p class="hint" id="monthsHint">Отчёт покажет картину так, как она выглядела на конец выбранного месяца.</p>
+    </section>
+
+    <section class="box">
+      <h2><span class="n">3</span>Скачать</h2>
+      <div class="fmts">
+        <button class="fmt" data-fmt="pdf" aria-label="Скачать: PDF, печать A4"><i class="i-pdf">PDF</i><div><b>PDF</b><span>Печать A4</span></div></button>
+        <button class="fmt" data-fmt="xlsx" aria-label="Скачать: Excel"><i class="i-xls">XLSX</i><div><b>Excel</b><span>4 листа, графики</span></div></button>
+        <button class="fmt" data-fmt="pptx" aria-label="Скачать: PowerPoint"><i class="i-ppt">PPTX</i><div><b>PowerPoint</b><span>5 слайдов 16:9</span></div></button>
+        <button class="fmt" data-fmt="csv" aria-label="Скачать: CSV для 1С и Huntflow"><i class="i-csv">CSV</i><div><b>CSV</b><span>Для 1С, Huntflow</span></div></button>
+      </div>
+      <label class="opt"><input type="checkbox" id="arial">В PowerPoint только Arial (если на компьютере нет шрифтов МТС)</label>
+      <div class="msg" id="msg" role="status" aria-live="polite"></div>
+    </section>
+  </aside>
+
+  <main class="preview">
+    <div class="cap"><span>Предпросмотр</span><span id="capInfo"></span></div>
+    <article class="sheet busy" id="sheet"><div class="empty">Загружаем данные…</div></article>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="report.js"></script>
+</body></html>
