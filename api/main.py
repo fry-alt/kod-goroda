@@ -31,6 +31,7 @@ from feedback.schemas import FeedbackItem, Insights, ItemAnalysis, Role
 from . import poller, service
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s: %(message)s", datefmt="%H:%M:%S")
+logging.getLogger("httpx").setLevel(logging.WARNING)  # опрос таблиц раз в 5 с не должен засорять лог
 log = logging.getLogger("api")
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "")
 
