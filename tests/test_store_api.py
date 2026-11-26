@@ -227,3 +227,54 @@ def test_cabinet_endpoints_share_data_and_bump_version(client):
     assert v["version"] > v0 and v["last_event"]["intern_id"] is None  # без тоста «Новый ответ» на дашборде
     assert c.post("/api/kudos", content="[1]", headers={"Content-Type": "application/json"}).status_code == 400
     assert c.post("/api/kudos", content="x" * 70_000).status_code == 413
+
+
+def test_google_replay_and_late_webhook_keep_newest_answer(client, monkeypatch):
+    import httpx
+
+    from api import poller
+
+    c, store = client
+    answers = {
+        store.INTERN_ID: "СТ-002",
+        store.PERIOD_RAW: "Месяц 6",
+        **dict.fromkeys(store.INTERN_SCORES, 4),
+        store.INTERN_TEXTS[0]: "Новый ответ",
+        "Отметка времени": "2026-11-26T08:01:00Z",
+    }
+    first = c.post("/api/webhook/intern?source=google", json={"answers": answers})
+    assert first.status_code == 200
+    assert first.json()["changed"]
+    version = first.json()["version"]
+
+    header = ["Отметка времени", store.INTERN_ID, store.PERIOD_RAW, *store.INTERN_SCORES, store.INTERN_TEXTS[0]]
+    sheet = ",".join(header) + "\n26.11.2026 11:00:00,СТ-002,Месяц 6,4,4,4,4,4,4,4,Старый ответ"
+    sheet += "\n26.11.2026 11:01:00,СТ-002,Месяц 6,4,4,4,4,4,4,4,Новый ответ"
+    monkeypatch.setenv("SHEET_CSV_INTERN", "http://sheet.test/intern.csv")
+    with httpx.Client(transport=httpx.MockTransport(lambda req: httpx.Response(200, text=sheet))) as http:
+        assert poller.poll_once(http) == 0
+        assert poller.poll_once(http) == 0
+
+    answers["Отметка времени"] = "2026-11-26T08:00:00Z"
+    answers[store.INTERN_TEXTS[0]] = "Старый ответ"
+    late = c.post("/api/webhook/intern?source=google", json={"answers": answers})
+    assert late.status_code == 200 and not late.json()["changed"]
+    assert late.json()["version"] == version
+    hist = store.load_history()
+    current = hist.interns[(hist.interns[store.INTERN_ID] == "СТ-002") & (hist.interns["period"] == 6)]
+    assert current.iloc[0][store.INTERN_TEXTS[0]] == "Новый ответ"
+
+
+@pytest.mark.parametrize("intern,mentor", [("СТ-999", "Н-002"), ("СТ-002", "Н-003")])
+def test_webhook_rejects_invalid_roster_without_changing_history(client, intern, mentor):
+    c, store = client
+    version = store.get_version()["version"]
+    answers = {
+        store.INTERN_ID: intern,
+        store.MENTOR_ID: mentor,
+        store.PERIOD_RAW: "Месяц 6",
+        **dict.fromkeys(store.MENTOR_SCORES, 1),
+    }
+    response = c.post("/api/webhook/mentor", json={"answers": answers})
+    assert response.status_code == 422
+    assert store.get_version()["version"] == version

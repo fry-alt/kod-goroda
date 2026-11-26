@@ -6,12 +6,35 @@
 """
 from __future__ import annotations
 
+import datetime as dt
 import logging
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 from feedback import ingest, store
 
 log = logging.getLogger("api")
+
+
+STAMP = "Отметка времени"
+STAMP_FORMATS = ("%d.%m.%Y %H:%M:%S", "%d.%m.%Y %H:%M", "%m/%d/%Y %H:%M:%S")
+FORM_TIMEZONE = ZoneInfo("Europe/Moscow")
+
+
+def parse_submission_time(value) -> dt.datetime | None:
+    raw = str(value).strip()
+    try:
+        stamp = dt.datetime.fromisoformat(raw.replace("Z", "+00:00"))
+    except ValueError:
+        for fmt in STAMP_FORMATS:
+            try:
+                stamp = dt.datetime.strptime(raw, fmt)
+                break
+            except ValueError:
+                continue
+        else:
+            return None
+    return (stamp if stamp.tzinfo else stamp.replace(tzinfo=FORM_TIMEZONE)).astimezone(dt.timezone.utc)
 
 
 def ingest_answer(form: Optional[str], answers: dict, via: str) -> dict:
@@ -20,17 +43,25 @@ def ingest_answer(form: Optional[str], answers: dict, via: str) -> dict:
         raise ValueError(f"неизвестная форма {form!r}: нужна intern или mentor")
     row = ingest.parse_form_answer(form, answers)
     intern_id = row.get(store.INTERN_ID)
-    if intern_id:  # подставляем подразделение и наставника из истории, если форма их не спросила
-        known = {p["intern_id"]: p for p in store.roster(store.load_history())}.get(intern_id)
-        if known:
-            # ID стажёра — источник правды: подразделение берём из истории, даже если в форме выбрали другое
-            if known["department"] and row.get(store.DEPT) not in (None, known["department"]):
-                log.warning("%s: в форме подразделение «%s», в истории «%s» — оставляем из истории",
-                            intern_id, row[store.DEPT], known["department"])
-            row[store.DEPT] = known["department"] or row.get(store.DEPT)
-            if form == "mentor":
-                row.setdefault(store.MENTOR_ID, known["mentor_id"])
-    res = store.upsert(form, row, source=via)
+    if not intern_id:
+        raise ValueError("не указан ID стажера")
+    known = next((person for person in store.roster(store.load_history())
+                  if person["intern_id"] == intern_id), None)
+    if known is None:
+        raise ValueError(f"неизвестный ID стажера: {intern_id}")
+    if known["department"]:
+        row[store.DEPT] = known["department"]
+    if form == "mentor":
+        expected = known["mentor_id"]
+        if not expected or row.get(store.MENTOR_ID) not in (None, expected):
+            raise ValueError(f"неверная пара стажера и наставника для {intern_id}")
+        row[store.MENTOR_ID] = expected
+
+    stamp = parse_submission_time(answers.get(STAMP))
+    if stamp is None and (via == "google" or STAMP in answers):
+        raise ValueError("нет корректной отметки времени отправки")
+    submitted_at = stamp.isoformat(timespec="seconds") if stamp else None
+    res = store.upsert(form, row, source=via, submitted_at=submitted_at)
     log.info("ответ %s: %s, Месяц %s, %s", via, res["intern_id"], res["period"],
              "записан" if res["changed"] else "без изменений")
     return res

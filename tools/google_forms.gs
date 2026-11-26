@@ -13,8 +13,8 @@
 const WEBHOOK_URL = '';     // например https://xxxx.trycloudflare.com
 const WEBHOOK_SECRET = '';  // тот же, что WEBHOOK_SECRET в .env
 
-const INTERNS = ['СТ-001', 'СТ-002', 'СТ-003', 'СТ-004', 'СТ-005', 'СТ-006'];
-const MENTORS = ['Н-001', 'Н-002', 'Н-003', 'Н-004', 'Н-005', 'Н-006'];
+const INTERNS = ['СТ-001', 'СТ-002', 'СТ-003', 'СТ-004', 'СТ-005'];
+const MENTORS = ['Н-001', 'Н-002', 'Н-003', 'Н-004', 'Н-005'];
 const DEPTS = ['Технический блок', 'Коммерческий блок', 'Административный блок', 'HR-блок', 'IT'];
 const PERIODS = ['Месяц 1', 'Месяц 2', 'Месяц 3', 'Месяц 4', 'Месяц 5', 'Месяц 6', 'Месяц 7'];
 
@@ -56,6 +56,7 @@ const MENTOR_TEXT = [
 
 function createForms() {
   const ss = SpreadsheetApp.create('Код города — ответы на анкеты');
+  ss.setSpreadsheetTimeZone('Europe/Moscow');
 
   const fi = FormApp.create('Пульс-опрос стажера');
   fi.setDescription('Ежемесячный пульс-опрос стажировки МГТС. Оцените, насколько вы согласны с каждым утверждением: ' +
@@ -117,7 +118,7 @@ function onInternSubmit(e) { send_('intern', e); }
 function onMentorSubmit(e) { send_('mentor', e); }
 
 function send_(form, e) {
-  // время отправки (UTC, ISO) — бэк его не разбирает в оценки, оно нужно для data/webhook_log.jsonl
+  // Время отправки в UTC нужно для упорядочивания ответов из вебхука и CSV.
   const answers = { 'Отметка времени': e.response.getTimestamp().toISOString() };
   e.response.getItemResponses().forEach(r => { answers[r.getItem().getTitle()] = r.getResponse(); });
   const res = UrlFetchApp.fetch(WEBHOOK_URL + '/api/webhook/' + form + '?source=google', {

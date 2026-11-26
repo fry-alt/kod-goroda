@@ -153,7 +153,7 @@ def get_version(con: Optional[sqlite3.Connection] = None) -> dict:
 # ---------- запись ----------
 
 def upsert(form: str, row: dict, source: str = "form", con: Optional[sqlite3.Connection] = None,
-           bump: bool = True) -> dict:
+           bump: bool = True, submitted_at: Optional[str] = None) -> dict:
     """Записать один ответ. row — dict с колонками как в xlsx (лишние ключи игнорируются).
 
     Возвращает {"changed": bool, "intern_id", "period", "form"}. Версия растёт, только если данные изменились,
@@ -182,11 +182,22 @@ def upsert(form: str, row: dict, source: str = "form", con: Optional[sqlite3.Con
                 values[c] = str(values[c]).strip()
 
         with _lock:
+            con.execute("BEGIN IMMEDIATE")
+            cursor_key = f"submitted_at:{form}:{values[INTERN_ID]}:{period}"
+            previous_stamp = _meta_get(con, cursor_key)
+            unchanged = {"changed": False, "intern_id": values[INTERN_ID], "period": period, "form": form}
+            if submitted_at and previous_stamp and submitted_at <= previous_stamp:
+                con.commit()
+                return unchanged
+
             old = con.execute(f"SELECT * FROM {spec['table']} WHERE {_q(INTERN_ID)}=? AND period=?",
                               (values[INTERN_ID], period)).fetchone()
             same = old is not None and all(old[c] == values[c] for c in spec["cols"])
+            if submitted_at:
+                _meta_set(con, cursor_key, submitted_at)
             if same:
-                return {"changed": False, "intern_id": values[INTERN_ID], "period": period, "form": form}
+                con.commit()
+                return unchanged
             now = dt.datetime.now().isoformat(timespec="seconds")
             cols = spec["cols"] + SERVICE_COLS
             data = [values[c] for c in spec["cols"]] + [period, source, now]
