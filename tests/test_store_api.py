@@ -136,3 +136,30 @@ def test_signal_review_roundtrip(client):
     assert c.post(f"/api/signals/{quote(sig['id'], safe='')}/review", json={"status": "none"}).status_code == 200
     assert {s["id"]: s for s in c.get("/api/interns/СТ-004", params={"period": 4}).json()["signals"]}[sig["id"]]["review"] is None
     assert c.post("/api/signals/bad/review", json={"status": "confirmed"}).status_code == 422
+
+
+def test_chat_offline_returns_null_and_context(client, monkeypatch):
+    from api import chat
+    c, _ = client
+    monkeypatch.setattr(chat.pipeline, "get_provider", lambda: None)
+    r = c.post("/api/chat", json={"question": "Почему СТ-004 красный?", "period": 4, "history": []}).json()
+    assert r["answer"] is None and "карточка СТ-004" in r["sources"]
+
+
+def test_chat_with_llm_gets_card_and_docs(client, monkeypatch):
+    from api import chat
+    c, _ = client
+    seen = {}
+
+    class Fake:
+        name = "fake"
+
+        def complete(self, system, user, schema, kind):
+            seen["user"] = user
+            return schema(answer="СТ-004: нагрузка 2 в Месяце 4.", sources=["карточка СТ-004"])
+
+    monkeypatch.setattr(chat.pipeline, "get_provider", lambda: Fake())
+    r = c.post("/api/chat", json={"question": "что с ст-4 и какая шкала у наставника?", "period": 4}).json()
+    assert r["answer"].startswith("СТ-004") and r["engine"] == "fake"
+    assert '<intern id="СТ-004">' in seen["user"] and "Комфортность нагрузки" in seen["user"]
+    assert "<doc" in seen["user"]

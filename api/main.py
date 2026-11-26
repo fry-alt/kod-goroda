@@ -28,7 +28,7 @@ from feedback import ingest, pipeline, store
 from feedback.config import ROOT, settings
 from feedback.schemas import FeedbackItem, Insights, ItemAnalysis, Role
 
-from . import poller, service
+from . import chat, poller, service
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s: %(message)s", datefmt="%H:%M:%S")
 logging.getLogger("httpx").setLevel(logging.WARNING)  # опрос таблиц раз в 5 с не должен засорять лог
@@ -84,6 +84,12 @@ def api_review(signal_id: str, body: ReviewIn):
     except ValueError as e:
         raise HTTPException(422, str(e))
     return {**res, **store.get_version()}
+
+
+@app.post("/api/chat")
+def api_chat(body: chat.ChatIn):
+    """Чат «Спросить Радар». answer=null — у бэка нет LLM, фронт отвечает сам по данным."""
+    return chat.answer(body)
 
 
 @app.get("/api/version")
