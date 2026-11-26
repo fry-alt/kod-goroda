@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Радар стажировки · МГТС</title>
+<link rel="icon" href="brand/logos/logo1.png">
+<link rel="stylesheet" href="brand/brand.css">
+<script src="vendor/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:var(--mgts-bg-soft);font-size:15px;line-height:1.45}
+button{font:inherit;cursor:pointer}
+.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--mgts-line)}
+.top-in{max-width:1440px;margin:0 auto;padding:14px 28px;display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:14px}
+.brand img{height:40px}
+.brand h1{margin:0;font-size:22px;line-height:1}
+.brand small{display:block;font-family:var(--font-text);font-weight:400;font-size:13px;color:var(--mgts-muted);margin-top:4px}
+.periods{display:flex;gap:4px;background:var(--mgts-bg-soft);padding:4px;border-radius:12px;margin-left:auto}
+.periods button{border:0;background:none;padding:7px 12px;border-radius:9px;color:var(--mgts-navy);font-weight:500;font-size:14px}
+.periods button.on{background:var(--mgts-blue);color:#fff}
+.periods .lab{align-self:center;color:var(--mgts-muted);font-size:13px;padding:0 6px}
+.live{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mgts-muted)}
+.live i{width:9px;height:9px;border-radius:50%;background:var(--st-green);box-shadow:0 0 0 0 rgba(43,174,102,.6);animation:pulse 2s infinite}
+.live.off i{background:var(--mgts-muted);animation:none}
+@keyframes pulse{70%{box-shadow:0 0 0 9px rgba(43,174,102,0)}100%{box-shadow:0 0 0 0 rgba(43,174,102,0)}}
+main{max-width:1440px;margin:0 auto;padding:24px 28px 60px}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:22px}
+.kpi{background:#fff;border-radius:18px;padding:18px 22px}
+.kpi .v{font-family:var(--font-title);font-weight:500;font-size:34px;line-height:1.1;color:var(--mgts-navy)}
+.kpi .l{font-size:13px;color:var(--mgts-muted)}
+.kpi.red .v{color:var(--st-red)}.kpi.yellow .v{color:#C98100}.kpi.green .v{color:var(--st-green)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
+.themes{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.panel{background:#fff;border-radius:20px;padding:22px 24px;margin-bottom:22px}
+.panel h2{font-size:20px;margin:0 0 14px;display:flex;align-items:center;gap:10px}
+.panel h2 .hint{font-family:var(--font-text);font-weight:400;font-size:13px;color:var(--mgts-muted);margin-left:auto}
+.mut{color:var(--mgts-muted)}
+/* светофор */
+.who{display:flex;flex-direction:column;gap:10px}
+.icard{display:grid;grid-template-columns:14px 1fr auto;gap:12px;align-items:center;text-align:left;border:2px solid transparent;
+  background:var(--mgts-bg-soft);border-radius:16px;padding:14px 16px;color:var(--mgts-navy);transition:.15s}
+.icard:hover{border-color:var(--mgts-blue-soft)}
+.icard.sel{border-color:var(--mgts-blue);background:#fff}
+.icard.flash{animation:flash 1.6s 3}
+@keyframes flash{50%{background:#FFE7E0}}
+.icard b{font-family:var(--font-title);font-weight:700;font-size:16px}
+.icard .why{font-size:13px;color:var(--mgts-muted);margin-top:2px}
+.icard .sc{font-family:var(--font-title);font-weight:500;font-size:15px;text-align:right;white-space:nowrap}
+.icard .sc small{display:block;font-family:var(--font-text);font-weight:400;font-size:11px;color:var(--mgts-muted)}
+.dot{width:14px;height:14px;border-radius:50%}
+.st-red{background:var(--st-red)}.st-yellow{background:var(--st-yellow)}.st-green{background:var(--st-green)}.st-grey{background:#C5D3E2}
+.badge{display:inline-flex;align-items:center;gap:6px;border-radius:30px;padding:3px 12px;font-size:13px;font-weight:500}
+.b-red{background:#FDE7E8;color:#B4232A}.b-yellow{background:#FFF2D9;color:#8A5A00}.b-green{background:#E2F6EB;color:#1C7A47}.b-blue{background:#E3F2FC;color:var(--mgts-blue)}.b-grey{background:#EEF2F6;color:var(--mgts-muted)}
+/* матрица */
+table{border-collapse:collapse;width:100%}
+.mx th,.mx td{padding:7px 6px;text-align:center;font-size:13px;border-bottom:1px solid var(--mgts-line)}
+.mx th{color:var(--mgts-muted);font-weight:500}
+.mx td:first-child,.mx th:first-child{text-align:left}
+.cell{display:inline-flex;gap:3px}
+.cell span{width:22px;height:22px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.ok{background:#E2F6EB;color:#1C7A47}.miss{background:#FDE7E8;color:#B4232A}.wait{background:#EEF2F6;color:var(--mgts-muted)}
+.mx .cur{background:#F5FAFE}
+/* темы, лента */
+.theme{border-radius:14px;background:#FFF4F0;padding:14px 16px;margin-bottom:10px}
+.theme b{color:var(--mgts-navy)}
+.theme q{display:block;color:var(--mgts-muted);font-size:13px;margin-top:6px}
+.feed{max-height:220px;overflow:auto;font-size:13px}
+.feed div{padding:7px 0;border-bottom:1px solid var(--mgts-line)}
+.feed time{color:var(--mgts-muted);margin-right:8px;font-variant-numeric:tabular-nums}
+/* карточка */
+.chead{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.chead h2{font-size:30px;margin:0}
+.chead .meta{color:var(--mgts-muted);font-size:14px;margin-top:4px}
+.summary{background:var(--mgts-bg-soft);border-radius:16px;padding:16px 18px;margin:16px 0}
+.summary ul{margin:8px 0 0;padding-left:20px}
+.tabs{display:flex;gap:6px;margin:4px 0 10px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--mgts-line);background:#fff;border-radius:20px;padding:5px 14px;font-size:13px;color:var(--mgts-navy)}
+.tabs button.on{background:var(--mgts-navy);border-color:var(--mgts-navy);color:#fff}
+.chartbox{height:320px;position:relative}
+.sig{border:1px solid var(--mgts-line);border-radius:16px;padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:.15s}
+.sig:hover,.sig.on{border-color:var(--mgts-blue);box-shadow:0 4px 18px rgba(0,138,224,.12)}
+.sig .t{display:flex;gap:10px;align-items:center;font-weight:700}
+.sig .w{margin:6px 0 8px;font-size:14px}
+.ev{display:flex;flex-wrap:wrap;gap:6px}
+.ev span{background:var(--mgts-bg-soft);border-radius:8px;padding:3px 9px;font-size:12.5px}
+.ev q{font-style:italic}
+.rev{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.rev button{border:1px solid var(--mgts-line);background:#fff;border-radius:10px;padding:4px 10px;font-size:12.5px;color:var(--mgts-navy)}
+.rev button.on.c{background:var(--st-green);border-color:var(--st-green);color:#fff}
+.rev button.on.f{background:var(--mgts-muted);border-color:var(--mgts-muted);color:#fff}
+.rev button.on.w{background:var(--mgts-blue);border-color:var(--mgts-blue);color:#fff}
+.pairs td,.pairs th{padding:6px 6px;font-size:13px;border-bottom:1px solid var(--mgts-line);text-align:center}
+.pairs td:first-child,.pairs th:first-child{text-align:left}
+.gap2{background:#FDE7E8;border-radius:6px}.gap1{background:#FFF2D9;border-radius:6px}
+.cm{display:grid;grid-template-columns:130px 1fr 1fr;gap:10px;padding:10px 0;border-bottom:1px solid var(--mgts-line);font-size:13.5px}
+.cm.hl{background:#FFF4F0;border-radius:10px}
+.cm .p{font-family:var(--font-title);font-weight:500;color:var(--mgts-blue)}
+.cm h4{margin:0 0 3px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--mgts-muted);font-weight:500}
+.chips{display:flex;gap:4px;flex-wrap:wrap;margin-top:5px}
+.two{display:grid;grid-template-columns:1.25fr 1fr;gap:28px}
+.toast{position:fixed;right:24px;bottom:24px;z-index:50;background:var(--mgts-navy);color:#fff;border-radius:16px;padding:16px 20px;
+  max-width:420px;box-shadow:0 10px 30px rgba(16,44,81,.35);transform:translateY(140%);transition:.35s}
+.toast.show{transform:none}
+.toast b{color:#fff}
+.note{font-size:12px;color:var(--mgts-muted)}
+.mockbar{background:var(--mgts-orange);color:#fff;text-align:center;font-size:13px;padding:4px}
+@media (max-width:1100px){.grid2,.two{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+</style></head>
+<body>
+<div id="mockbar" class="mockbar" hidden></div>
+<header class="top"><div class="top-in">
+  <div class="brand"><img src="brand/logos/logo1.svg" alt="МГТС">
+    <h1>Радар стажировки<small>сигналы по анкетам стажёров и наставников</small></h1></div>
+  <div class="periods" id="periods"></div>
+  <div class="live" id="live"><i></i><span>подключение…</span></div>
+</div></header>
+
+<main>
+  <section class="kpis" id="kpis"></section>
+  <div class="grid2">
+    <section class="panel"><h2>Кому нужно внимание <span class="hint">сначала критичные · нажмите для деталей</span></h2><div class="who" id="who"></div></section>
+    <div>
+      <section class="panel"><h2>Кто заполнил анкеты <span class="hint">С — стажёр, Н — наставник</span></h2><div id="matrix"></div></section>
+      <section class="panel"><h2>Лента событий <span class="hint">ответы из форм в реальном времени</span></h2><div class="feed" id="feed"><div class="mut">пока новых ответов нет</div></div></section>
+    </div>
+  </div>
+  <section class="panel" id="themesBox" hidden><h2>Темы программы <span class="hint">повторяется у нескольких стажёров</span></h2><div id="themes" class="themes"></div></section>
+  <section class="panel" id="card"><div class="mut">Выберите стажёра</div></section>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+const S = {ov:null, period:null, sel:null, card:null, ver:null, mock:null, chart:null, mode:'avg', focus:null,
+           onlyConfirmed:false, feed:[]};
+const qs = new URLSearchParams(location.search);
+const MOCKS = [2,3,4,6];
+const ST = {red:'Критичный сигнал', yellow:'Зона внимания', green:'Положительная динамика', grey:'Нет данных'};
+const ORDER = {red:0, yellow:1, grey:2, green:3};
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt = v => v == null ? '—' : String(v).replace('.', ',');
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+// ---------- данные: API, при недоступности — моки ----------
+async function getJSON(url){ const r = await fetch(url, {cache:'no-store'}); if(!r.ok) throw new Error(r.status); return r.json(); }
+function mockDir(p){ const want = p || 6; return 'mock/p' + (MOCKS.filter(m => m <= want).pop() || MOCKS[0]); }
+async function loadOverview(){
+  if(S.mock) return getJSON(`${mockDir(S.period)}/overview.json`);
+  try { return await getJSON('/api/overview' + (S.period ? `?period=${S.period}` : '')); }
+  catch(e){ S.mock = 'auto'; banner(); return getJSON(`${mockDir(S.period)}/overview.json`); }
+}
+async function loadIntern(id){
+  if(S.mock) return getJSON(`${mockDir(S.period)}/intern_${id}.json`);
+  return getJSON(`/api/interns/${encodeURIComponent(id)}` + (S.period ? `?period=${S.period}` : ''));
+}
+function banner(){ const b = $('mockbar'); b.hidden = !S.mock;
+  b.textContent = S.mock === 'auto' ? 'Сервер недоступен — показаны сохранённые данные (демо-режим)' : `Демо-режим: данные-моки, срез на Месяц ${S.period || 6}`; }
+
+// ---------- решения HR по сигналам ----------
+const RKEY = 'radar.reviews';
+function reviews(){ try { return JSON.parse(localStorage.getItem(RKEY) || '{}'); } catch { return {}; } }
+function reviewOf(sig){ return sig.review?.status || reviews()[sig.id] || null; }
+async function setReview(id, status){
+  const all = reviews(); all[id] = all[id] === status ? null : status;
+  try { localStorage.setItem(RKEY, JSON.stringify(all)); } catch {}
+  if(!S.mock) fetch(`/api/signals/${encodeURIComponent(id)}/review`, {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({status: all[id] || 'none'})}).catch(()=>{});
+  renderCard();
+}
+
+// ---------- обзор ----------
+function renderPeriods(){
+  const ps = S.ov.periods || [];
+  const cur = S.period || S.ov.current_period;
+  $('periods').innerHTML = '<span class="lab">Срез на</span>' + ps.map(p =>
+    `<button class="${p===cur?'on':''}" data-p="${p}">Месяц ${p}</button>`).join('');
+  $('periods').querySelectorAll('button').forEach(b => b.onclick = () => {
+    const p = +b.dataset.p; S.period = (p === Math.max(...ps) && !S.mock) ? null : p; refresh();
+  });
+}
+function renderKpis(){
+  const k = S.ov.kpi || {}, cur = S.period || S.ov.current_period;
+  $('kpis').innerHTML = `
+    <div class="kpi"><div class="v">${esc(k.responded_interns)}</div><div class="l">стажёров ответили · Месяц ${cur}</div></div>
+    <div class="kpi"><div class="v">${esc(k.responded_mentors)}</div><div class="l">наставников ответили · Месяц ${cur}</div></div>
+    <div class="kpi red"><div class="v">${k.red ?? 0}</div><div class="l">критичный сигнал</div></div>
+    <div class="kpi yellow"><div class="v">${k.yellow ?? 0}</div><div class="l">зона внимания</div></div>
+    <div class="kpi green"><div class="v">${k.green ?? 0}</div><div class="l">положительная динамика</div></div>`;
+}
+function renderWho(flashId){
+  const list = [...(S.ov.interns || [])].sort((a,b) => (ORDER[a.status]??9) - (ORDER[b.status]??9) || (b.signals||0) - (a.signals||0));
+  $('who').innerHTML = list.map(i => `
+    <button class="icard ${i.intern_id===S.sel?'sel':''} ${i.intern_id===flashId?'flash':''}" data-id="${esc(i.intern_id)}">
+      <span class="dot st-${i.status||'grey'}" title="${ST[i.status]||''}"></span>
+      <span><b>${esc(i.intern_id)}</b> <span class="mut">· ${esc(i.department)}</span>
+        <div class="why">${i.signals ? `<b style="font-size:13px;color:var(--mgts-navy)">${i.signals} сигн.</b> · ` : ''}${esc(i.reason || ST[i.status] || '')}</div></span>
+      <span class="sc">${fmt(i.intern_avg)} / ${fmt(i.mentor_avg)}<small>стажёр / наставник</small></span>
+    </button>`).join('');
+  $('who').querySelectorAll('.icard').forEach(b => b.onclick = () => openIntern(b.dataset.id));
+}
+function renderMatrix(){
+  const ps = S.ov.periods || [], cur = S.period || S.ov.current_period, last = Math.max(...ps);
+  const rows = S.ov.survey_status || [];
+  const mark = (ok, p) => ok ? '<span class="ok" title="заполнено">✓</span>'
+    : (p === last ? '<span class="wait" title="опрос идёт">…</span>' : '<span class="miss" title="пропуск">✕</span>');
+  $('matrix').innerHTML = `<table class="mx"><tr><th>Стажёр · наставник</th>${ps.map(p => `<th class="${p===cur?'cur':''}">М${p}</th>`).join('')}</tr>
+    ${rows.map(r => `<tr><td><b>${esc(r.intern_id)}</b> <span class="mut">· ${esc(r.mentor_id)}</span></td>${ps.map(p => {
+      const c = (r.periods||{})[p] || {}; return `<td class="${p===cur?'cur':''}"><span class="cell">${mark(c.intern,p)}${mark(c.mentor,p)}</span></td>`;
+    }).join('')}</tr>`).join('')}</table>
+    <div class="note" style="margin-top:8px">✓ заполнено · ✕ пропуск · … опрос текущего месяца ещё идёт</div>`;
+}
+function renderThemes(){
+  const t = S.ov.themes || [];
+  $('themesBox').hidden = !t.length;
+  $('themes').innerHTML = t.map(x => `<div class="theme"><b>${esc(x.topic)}</b>
+    <div class="note">у ${(x.interns||[]).length} стажёров: ${(x.interns||[]).map(esc).join(', ')}${x.periods?.length ? ' · месяцы ' + x.periods.join(', ') : ''}</div>
+    ${(x.quotes||[]).slice(0,2).map(q => `<q>${esc(q)}</q>`).join('')}</div>`).join('');
+}
+
+// ---------- карточка стажёра ----------
+async function openIntern(id){ S.sel = id; S.focus = null; renderWho(); S.card = await loadIntern(id); renderCard();
+  if(innerWidth < 1100) $('card').scrollIntoView({behavior:'smooth'}); }
+function sigList(){ const s = S.card?.signals || []; return S.onlyConfirmed ? s.filter(x => reviewOf(x) === 'confirmed') : s; }
+function renderCard(){
+  const c = S.card; if(!c){ return; }
+  const sigs = sigList();
+  const focusPeriods = new Set((S.focus?.evidence || []).map(e => e.period));
+  $('card').innerHTML = `
+    <div class="chead">
+      <div><h2>${esc(c.intern_id)}</h2><div class="meta">${esc(c.department)} · наставник ${esc(c.mentor_id)} · периодов: ${(c.periods||[]).length}</div></div>
+      <span class="badge b-${c.status||'grey'}" style="margin-left:auto"><span class="dot st-${c.status||'grey'}" style="width:10px;height:10px"></span>${ST[c.status]||''}</span>
+    </div>
+    <div class="summary"><b>Резюме для HR.</b> ${esc(c.summary || '—')}
+      ${(c.actions||[]).length ? `<ul>${c.actions.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : ''}</div>
+    <div class="two">
+      <div>
+        <h3 style="font-size:17px;margin:0 0 6px">Динамика: стажёр и наставник</h3>
+        <div class="tabs" id="modes">
+          <button data-m="avg" class="${S.mode==='avg'?'on':''}">Средний балл</button>
+          <button data-m="norm" class="${S.mode==='norm'?'on':''}" title="отклонение от личной нормы (у каждого своя «валюта» баллов)">От личной нормы</button>
+          ${(c.pairs||[]).map((p,i) => `<button data-m="pair${i}" class="${S.mode==='pair'+i?'on':''}" title="${esc(p.intern)} ↔ ${esc(p.mentor)}">${esc(short(p.intern))}</button>`).join('')}
+        </div>
+        <div class="chartbox"><canvas id="ch"></canvas></div>
+        <div class="note" id="chnote"></div>
+      </div>
+      <div>
+        <h3 style="font-size:17px;margin:0 0 10px;display:flex;align-items:center">Сигналы и основания
+          <label class="note" style="margin-left:auto;font-weight:400"><input type="checkbox" id="onlyc" ${S.onlyConfirmed?'checked':''}> только подтверждённые HR</label></h3>
+        ${sigs.length ? sigs.map(s => sigHtml(s)).join('') : `<div class="mut" style="padding:14px 0">${S.onlyConfirmed ? 'Нет подтверждённых сигналов' : 'Сигналов нет — динамика в норме'}</div>`}
+      </div>
+    </div>
+    ${(c.pairs||[]).length ? `<h3 style="font-size:17px;margin:22px 0 8px">Стажёр ↔ наставник по парам показателей</h3>
+      <table class="pairs"><tr><th>Стажёр ↔ наставник</th>${c.periods.map(p => `<th>М${p.period}</th>`).join('')}</tr>
+      ${c.pairs.map(p => `<tr><td>${esc(p.intern)} <span class="mut">↔ ${esc(p.mentor)}</span></td>${p.by_period.map(([a,b]) => {
+        const g = (a!=null && b!=null) ? Math.abs(a-b) : 0; return `<td class="${g>=2?'gap2':g>=1?'gap1':''}">${a ?? '—'} / ${b ?? '—'}</td>`; }).join('')}</tr>`).join('')}
+      </table>` : ''}
+    <h3 style="font-size:17px;margin:22px 0 4px">Комментарии и разметка ИИ</h3>
+    ${[...(c.periods||[])].reverse().map(p => commentRow(p, focusPeriods.has(p.period))).join('')}`;
+  $('modes').querySelectorAll('button').forEach(b => b.onclick = () => { S.mode = b.dataset.m; renderCard(); });
+  $('onlyc').onchange = e => { S.onlyConfirmed = e.target.checked; renderCard(); };
+  $('card').querySelectorAll('.sig').forEach(el => el.onclick = e => {
+    if(e.target.closest('.rev')) return;
+    const s = (c.signals||[]).find(x => x.id === el.dataset.id); S.focus = S.focus?.id === s.id ? null : s; renderCard();
+  });
+  $('card').querySelectorAll('.rev button').forEach(b => b.onclick = () => setReview(b.dataset.id, b.dataset.s));
+  drawChart();
+}
+function short(s){ return String(s).split(' ')[0]; }
+function sigHtml(s){
+  const r = reviewOf(s), on = S.focus?.id === s.id;
+  const ev = (s.evidence||[]).slice(0,8).map(e => e.quote
+      ? `<span>М${e.period} · ${esc(e.source)}: <q>«${esc(e.quote)}»</q></span>`
+      : `<span>М${e.period} · ${esc(e.field)}: <b>${esc(e.value)}</b></span>`).join('');
+  return `<div class="sig ${on?'on':''}" data-id="${esc(s.id)}">
+    <div class="t"><span class="dot st-${s.level}" style="width:11px;height:11px"></span>${esc(s.title)}
+      ${r ? `<span class="badge ${r==='confirmed'?'b-green':r==='in_work'?'b-blue':'b-grey'}" style="margin-left:auto">${{confirmed:'подтверждено HR',false_alarm:'ложная тревога',in_work:'в работе'}[r]}</span>` : ''}</div>
+    <div class="w">${esc(s.why)}</div>
+    ${ev ? `<div class="ev">${ev}</div>` : ''}
+    <div class="rev">
+      <button class="c ${r==='confirmed'?'on':''}" data-id="${esc(s.id)}" data-s="confirmed">✓ Подтвердить</button>
+      <button class="w ${r==='in_work'?'on':''}" data-id="${esc(s.id)}" data-s="in_work">В работе</button>
+      <button class="f ${r==='false_alarm'?'on':''}" data-id="${esc(s.id)}" data-s="false_alarm">Ложная тревога</button>
+      <span class="note" style="align-self:center">${on ? 'основания подсвечены на графике и в комментариях' : 'нажмите, чтобы увидеть основания'}</span>
+    </div></div>`;
+}
+function commentRow(p, hl){
+  const block = (who, obj) => Object.entries(obj||{}).filter(([,v]) => v && v !== 'nan').map(([k,v]) => `<div style="margin-bottom:6px"><h4>${who}: ${esc(k)}</h4>${esc(v)}</div>`).join('');
+  const a = p.comment_analysis || {};
+  return `<div class="cm ${hl?'hl':''}"><div class="p">М${p.period}
+      <div class="chips">${a.risk ? '<span class="badge b-red">риск</span>' : ''}${a.tone && a.tone!=='—' ? `<span class="badge b-grey">${esc(a.tone)}</span>` : ''}</div></div>
+    <div>${block('стажёр', p.comments?.intern) || '<span class="mut">нет анкеты</span>'}
+      <div class="chips">${(a.topics||[]).map(t => `<span class="badge b-blue">${esc(t)}</span>`).join('')}</div></div>
+    <div>${block('наставник', p.comments?.mentor) || '<span class="mut">нет анкеты</span>'}</div></div>`;
+}
+function drawChart(){
+  const c = S.card, P = c.periods || [], labels = P.map(p => 'М' + p.period);
+  let a, b, la = 'Стажёр', lb = 'Наставник', yMin = 1, yMax = 5, note = 'Средний балл по анкете (1–5).';
+  if(S.mode === 'norm'){
+    const base = (k) => { const v = P.slice(0, 3).map(p => p[k]).filter(x => x != null); return v.length ? v.reduce((s,x)=>s+x,0)/v.length : null; };
+    const bi = base('intern_avg'), bm = base('mentor_avg');
+    a = P.map(p => p.intern_avg != null && bi != null ? +(p.intern_avg - bi).toFixed(2) : null);
+    b = P.map(p => p.mentor_avg != null && bm != null ? +(p.mentor_avg - bm).toFixed(2) : null);
+    yMin = -2.5; yMax = 2.5; note = 'Отклонение от личной нормы (среднее первых 3 месяцев). У каждого своя «валюта» баллов: 4 у строгого — не то же, что 4 у щедрого.';
+  } else if(S.mode.startsWith('pair')){
+    const pr = c.pairs[+S.mode.slice(4)]; a = pr.by_period.map(x => x[0]); b = pr.by_period.map(x => x[1]);
+    la = pr.intern; lb = pr.mentor; note = `Одна шкала 1–5: «${pr.intern}» (стажёр) ↔ «${pr.mentor}» (наставник).`;
+  } else { a = P.map(p => p.intern_avg); b = P.map(p => p.mentor_avg); }
+  const fp = new Set((S.focus?.evidence || []).map(e => e.period));
+  const rad = P.map(p => fp.has(p.period) ? 9 : 4), col = P.map(p => fp.has(p.period) ? css('--mgts-orange') : null);
+  $('chnote').textContent = note;
+  if(S.chart) S.chart.destroy();
+  if(!window.Chart) { $('chnote').textContent = 'Chart.js не загрузился'; return; }
+  S.chart = new Chart($('ch'), {type:'line', data:{labels, datasets:[
+    {label:la, data:a, borderColor:css('--mgts-blue'), backgroundColor:col.map(x => x || css('--mgts-blue')), pointRadius:rad, borderWidth:3, tension:.3, spanGaps:true},
+    {label:lb, data:b, borderColor:css('--mgts-navy'), backgroundColor:col.map(x => x || css('--mgts-navy')), pointRadius:rad, borderWidth:2, borderDash:[6,4], tension:.3, spanGaps:true},
+  ]}, options:{responsive:true, maintainAspectRatio:false, animation:{duration:300},
+    plugins:{legend:{position:'bottom', labels:{font:{family:'MTSText'}, color:css('--mgts-navy'), boxWidth:14}},
+             tooltip:{callbacks:{label:x => `${x.dataset.label}: ${fmt(x.formattedValue)}`}}},
+    scales:{y:{min:yMin, max:yMax, grid:{color:css('--mgts-line')}, ticks:{color:css('--mgts-muted')}},
+            x:{grid:{display:false}, ticks:{color:css('--mgts-muted')}}}}});
+}
+
+// ---------- живое обновление ----------
+function toast(html){ const t = $('toast'); t.innerHTML = html; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 6000); }
+function setLive(ok, txt){ $('live').className = 'live' + (ok ? '' : ' off'); $('live').querySelector('span').textContent = txt; }
+function renderFeed(){
+  $('feed').innerHTML = S.feed.length ? S.feed.map(f => `<div><time>${esc(f.at)}</time><b>${esc(f.intern_id||'')}</b> · Месяц ${esc(f.period??'—')} · ${esc(f.what)}${f.change ? ` · <b>${f.change}</b>` : ''}</div>`).join('')
+    : '<div class="mut">пока новых ответов нет</div>';
+}
+async function refresh(flashId){
+  const prev = Object.fromEntries((S.ov?.interns || []).map(i => [i.intern_id, i.status]));
+  S.ov = await loadOverview();
+  renderPeriods(); renderKpis(); renderWho(flashId); renderMatrix(); renderThemes(); banner();
+  if(!S.sel){ const first = [...S.ov.interns].sort((a,b) => (ORDER[a.status]??9)-(ORDER[b.status]??9))[0]; if(first) S.sel = first.intern_id; }
+  if(S.sel){ S.card = await loadIntern(S.sel).catch(() => null); renderWho(flashId); renderCard(); }
+  return prev;
+}
+async function poll(){
+  if(S.mock){ setLive(false, 'демо-режим'); return; }
+  try {
+    const v = await getJSON('/api/version');
+    setLive(true, 'онлайн · ' + (v.last_event?.at || ''));
+    if(S.ver != null && v.version !== S.ver){
+      const e = v.last_event || {}, id = e.intern_id;
+      const prev = await refresh(id);
+      const now = (S.ov.interns || []).find(i => i.intern_id === id);
+      const ch = now && prev[id] && prev[id] !== now.status ? `${ST[prev[id]]} → ${ST[now.status]}` : '';
+      const what = e.source === 'mentor' || e.source === 'наставник' ? 'анкета наставника' : e.source === 'intern' || e.source === 'стажёр' ? 'анкета стажёра' : 'новый ответ';
+      S.feed.unshift({at: e.at || new Date().toLocaleTimeString('ru', {hour:'2-digit', minute:'2-digit'}), intern_id:id, period:e.period, what: `${what}${e.via ? ' (' + e.via + ')' : ''}`, change: ch});
+      S.feed = S.feed.slice(0, 30); renderFeed();
+      if(id){ S.sel = id; S.card = await loadIntern(id); renderWho(id); renderCard(); }
+      toast(`<b>Новый ответ из формы</b><br>${esc(id || '')} · Месяц ${esc(e.period ?? '')}${ch ? `<br>Статус: <b>${ch}</b>` : '<br>история обновлена, анализ пересчитан'}`);
+    }
+    S.ver = v.version;
+  } catch(e){ setLive(false, 'нет связи с сервером'); }
+}
+
+(async function init(){
+  if(qs.has('mock')){ S.mock = 'param'; S.period = +qs.get('mock') || 6; }
+  await refresh();
+  await poll(); setInterval(poll, 3000);
+})();
+</script>
+</body></html>
