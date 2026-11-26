@@ -28,7 +28,7 @@ from feedback import ingest, pipeline, store
 from feedback.config import ROOT, settings
 from feedback.schemas import FeedbackItem, Insights, ItemAnalysis, Role
 
-from . import cabinet, chat, poller, service
+from . import cabinet, chat, intern_chat, poller, service
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s: %(message)s", datefmt="%H:%M:%S")
 logging.getLogger("httpx").setLevel(logging.WARNING)  # опрос таблиц раз в 5 с не должен засорять лог
@@ -90,6 +90,12 @@ def api_review(signal_id: str, body: ReviewIn):
 def api_chat(body: chat.ChatIn):
     """Чат «Спросить Радар». answer=null — у бэка нет LLM, фронт отвечает сам по данным."""
     return chat.answer(body)
+
+
+@app.post("/api/intern-chat")
+def api_intern_chat(body: intern_chat.InternChatIn):
+    """Куб в кабинете стажёра: LLM переформулирует найденные фронтом фрагменты памятки. answer=null — без LLM."""
+    return intern_chat.answer(body)
 
 
 @app.get("/api/version")
