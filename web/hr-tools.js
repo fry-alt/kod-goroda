@@ -457,7 +457,7 @@
               ${R.length ? `<div class="ht-chips">${R.map(r => `<button class="ht-pt ${c.esc(r.i.status)}" data-open="${c.esc(r.i.intern_id)}"
                 title="${c.esc(r.i.intern_id)}: наставник ${c.esc(fmt1(r.i.mentor_avg))}, стажёр ${c.esc(fmt1(r.i.intern_avg))}${r.i.status === 'red' ? ' — сейчас Критично' : ''}"><i class="ht-dot ${c.esc(r.i.status)}"></i>${c.esc(r.i.intern_id)}</button>`).join('')}</div>` : ''}</div>`; }).join('')).join('')}</div>
           <div></div><div class="ht-xlab">Результат (наставник) →</div>
-          <div></div><div class="ht-xb"><span>ниже ${fmt1(B1)}</span><span>${fmt1(B1)}–${fmt1(B2)}</span><span>${fmt1(B2)} и выше</span></div></div></div>
+          <div></div><div class="ht-xb"><span>ниже ${fmt1(B1)}</span><span>${fmt1(B1)}–${fmt1(B2)}</span><span>от ${fmt1(B2)}</span></div></div></div>
       <div class="ht-panel"><h3 class="ht-h">Готовность к офферу</h3><p class="ht-sub">Подсказка системы по оценкам и сигналам</p>
         <div class="ht-kpis"><div class="ht-kpi"><b>${offer}</b><span>готовить оффер</span></div><div class="ht-kpi ${keep ? 'ht-warn' : ''}"><b>${keep}</b><span>нужна встреча</span></div></div>
         <div class="ht-scroll"><table class="ht-table" style="min-width:440px"><thead><tr><th>Стажёр</th><th>Клетка</th><th>Статус</th><th>Рекомендация</th></tr></thead><tbody>
