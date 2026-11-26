@@ -190,3 +190,40 @@ def test_reset_ignores_rehearsal_rows_in_sheet(client, monkeypatch):
     assert st2.loc[2, "source"] == "history" and st2.loc[2, "Понятность задач"] != 1
     assert st2.loc[7, "Понятность задач"] == 2
     assert store.get_version()["version"] == v0 + 1
+
+
+def test_cabinet_endpoints_share_data_and_bump_version(client):
+    """Ручки из web/shared/store.js: стажёр и HR с разных устройств видят одни данные."""
+    c, store = client
+    v0 = c.get("/api/version").json()["version"]
+
+    req = {"id": "r1", "intern_id": "СТ-002", "type": "load", "text": "Слишком много задач", "anon": False}
+    assert c.post("/api/intern-requests", json=req).json()["id"] == "r1"
+    assert c.post("/api/intern-requests", json={**req, "status": "done"}).status_code == 200  # тот же id — замена
+    got = c.get("/api/intern-requests").json()
+    assert len(got) == 1 and got[0]["status"] == "done" and got[0]["at"]
+
+    c.post("/api/kudos", json={"intern_id": "СТ-002", "role": "HR", "kind": "kudos", "text": "Молодец"})
+    c.post("/api/kudos", json={"intern_id": "СТ-003", "role": "HR", "kind": "grow", "text": "Чаще спрашивай"})
+    assert [k["text"] for k in c.get("/api/kudos", params={"intern_id": "СТ-002"}).json()] == ["Молодец"]
+    assert len(c.get("/api/kudos").json()) == 2
+
+    c.post("/api/checklist/СТ-002", json={"done": ["pass", "laptop"]})
+    assert c.get("/api/checklist/СТ-002").json()["done"] == ["pass", "laptop"]
+    assert c.get("/api/checklist/СТ-005").json()["done"] == []
+
+    memo = c.get("/api/onboarding").json()
+    assert "memo" in memo
+    c.put("/api/onboarding", json={**memo, "edited": True})
+    assert c.get("/api/onboarding").json()["edited"] is True
+
+    assert c.post("/api/huntflow/sync", json={"intern_id": "СТ-002", "period": 6}).json()["demo"] is True
+    assert c.post("/api/remind", json={"who": "СТ-004", "period": 6}).json()["ok"] is True
+    for kind in ("feedback-requests", "meetings"):
+        assert c.post(f"/api/{kind}", json={"intern_id": "СТ-001", "text": "x"}).status_code == 200
+        assert len(c.get(f"/api/{kind}").json()) == 1
+
+    v = c.get("/api/version").json()
+    assert v["version"] > v0 and v["last_event"]["intern_id"] is None  # без тоста «Новый ответ» на дашборде
+    assert c.post("/api/kudos", content="[1]", headers={"Content-Type": "application/json"}).status_code == 400
+    assert c.post("/api/kudos", content="x" * 70_000).status_code == 413
