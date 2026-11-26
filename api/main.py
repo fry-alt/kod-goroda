@@ -1,17 +1,111 @@
-"""REST API. Запуск: uvicorn api.main:app --reload"""
+"""REST API. Запуск: uvicorn api.main:app --port 8000   (дашборд — http://localhost:8000/)
+
+Контракт — в CLAUDE.md:
+  GET  /api/overview?period=N        общая картина
+  GET  /api/interns/{id}?period=N    карточка стажёра
+  GET  /api/version                  версия данных + последнее событие (фронт опрашивает раз в 3 с)
+  POST /api/webhook/{intern|mentor}  ответ из формы (Apps Script onFormSubmit)
+  POST /api/import                   загрузка xlsx кейса (один или оба файла)
+"""
 from __future__ import annotations
 
+import logging
+import os
+import threading
+from contextlib import asynccontextmanager
 from typing import Optional
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+import pandas as pd
+from fastapi import FastAPI, File, Header, HTTPException, Query, Request, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from feedback import ingest, pipeline
-from feedback.config import settings
+from feedback import ingest, pipeline, store
+from feedback.config import ROOT, settings
 from feedback.schemas import FeedbackItem, Insights, ItemAnalysis, Role
 
-app = FastAPI(title="Код города — анализ обратной связи", version="0.1.0")
+from . import poller, service
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s: %(message)s", datefmt="%H:%M:%S")
+log = logging.getLogger("api")
+WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "")
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    log.info("история: %s", store.seed())
+    log.info("анализ: %s", service.ANALYSIS)
+    stop = threading.Event()
+    poller.start(stop)
+    yield
+    stop.set()
+
+
+app = FastAPI(title="Код города — обратная связь стажёров", version="0.2.0", lifespan=lifespan)
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "engine": settings.engine(), "label": settings.engine_label(),
+            "analysis": service.ANALYSIS, "polling": list(poller.sources()), **store.get_version()}
+
+
+# ---------- контракт для фронта ----------
+
+@app.get("/api/overview")
+def api_overview(period: Optional[int] = Query(None, ge=1)):
+    return service.overview(period)
+
+
+@app.get("/api/interns/{intern_id}")
+def api_intern(intern_id: str, period: Optional[int] = Query(None, ge=1)):
+    try:
+        return service.intern(intern_id, period)
+    except KeyError:
+        raise HTTPException(404, f"нет стажёра {intern_id}")
+
+
+@app.get("/api/version")
+def api_version():
+    return store.get_version()
+
+
+# ---------- приём ответов ----------
+
+@app.post("/api/webhook/{form}")
+async def api_webhook(form: str, request: Request, x_webhook_secret: Optional[str] = Header(None),
+                      secret: Optional[str] = Query(None)):
+    if WEBHOOK_SECRET and WEBHOOK_SECRET not in (x_webhook_secret, secret):
+        raise HTTPException(401, "неверный секрет вебхука")
+    if form not in ("intern", "mentor", "auto"):
+        raise HTTPException(404, "форма должна быть intern или mentor")
+    body = await request.json()
+    answers = body.get("answers", body) if isinstance(body, dict) else None
+    if not isinstance(answers, dict):
+        raise HTTPException(400, "ожидаю JSON-объект {вопрос: ответ} или {answers: {...}}")
+    try:
+        res = service.ingest_answer(None if form == "auto" else form, answers, via="webhook")
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    return {**res, **store.get_version()}
+
+
+@app.post("/api/import")
+async def api_import(files: list[UploadFile] = File(...)):
+    out = {}
+    for f in files:
+        try:
+            df = pd.read_excel(await f.read())
+            form = store.detect_form(df)
+            out[f.filename] = {"form": form, "changed": store.import_frame(form, df, source="import")}
+        except Exception as e:  # noqa: BLE001 — показываем, что не так с файлом
+            raise HTTPException(400, f"{f.filename}: {e}")
+    return {"files": out, **store.get_version()}
+
+
+# ---------- старые эндпоинты заготовки (свободный текст) ----------
 
 class TextIn(BaseModel):
     text: str
@@ -24,11 +118,6 @@ class ReportOut(BaseModel):
     stats: dict
     insights: Insights
     items: list[dict]
-
-
-@app.get("/health")
-def health():
-    return {"status": "ok", "engine": settings.engine(), "label": settings.engine_label()}
 
 
 @app.post("/analyze", response_model=ItemAnalysis)
@@ -47,12 +136,17 @@ def analyze_one(body: TextIn):
 async def report(file: UploadFile = File(...)):
     try:
         items = ingest.load(await file.read(), filename=file.filename)
-    except Exception as e:  # noqa: BLE001 — показываем пользователю, что не так с файлом
+    except Exception as e:  # noqa: BLE001
         raise HTTPException(400, f"Не удалось прочитать файл: {e}")
     if not items:
         raise HTTPException(400, "В файле нет отзывов")
     res = pipeline.run(items)
     out = res.df.copy()
     out["date"] = out["date"].astype(str)
-    return ReportOut(engine=res.engine, stats=res.stats, insights=res.insights,
-                     items=out.to_dict("records"))
+    return ReportOut(engine=res.engine, stats=res.stats, insights=res.insights, items=out.to_dict("records"))
+
+
+# ---------- фронт Артёма (web/) по корню; монтируем последним ----------
+WEB = ROOT / "web"
+if WEB.exists():
+    app.mount("/", StaticFiles(directory=WEB, html=True), name="web")

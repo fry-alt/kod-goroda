@@ -126,3 +126,58 @@ def to_items(df: pd.DataFrame, mapping: Optional[dict[str, str]] = None) -> list
 
 def load(source: Source, filename: Optional[str] = None, mapping: Optional[dict[str, str]] = None) -> list[FeedbackItem]:
     return to_items(read_table(source, filename), mapping)
+
+
+# ======================================================================================
+# Кейс МГТС: ответы из форм (вебхук Apps Script / CSV таблицы ответов) → строка истории.
+# Вопрос в форме называется «<Название показателя> — <утверждение>» или просто «<Название показателя>»,
+# поэтому колонку находим по точному совпадению или по началу заголовка.
+# ======================================================================================
+
+from . import store as _store  # noqa: E402
+
+_TIMESTAMP_HEADERS = {"отметка времени", "timestamp", "время", "дата"}
+
+
+def _clean(value):
+    if isinstance(value, list):  # e.namedValues в Apps Script отдаёт списки
+        value = value[0] if value else None
+    if value is None:
+        return None
+    if isinstance(value, float) and pd.isna(value):
+        return None
+    s = str(value).strip()
+    return s or None
+
+
+def match_column(title: str, columns: list[str]) -> Optional[str]:
+    t = _norm(title).strip(" ?:*")
+    by_len = sorted(columns, key=len, reverse=True)  # «Взаимодействие с наставником и командой» раньше «… с командой»
+    for c in by_len:
+        if t == _norm(c):
+            return c
+    for c in by_len:
+        n = _norm(c)
+        if t.startswith(n) and (len(t) == len(n) or not t[len(n)].isalnum()):
+            return c
+    return None
+
+
+def parse_form_answer(form: str, answers: dict) -> dict:
+    """{заголовок вопроса: ответ} → {колонка xlsx: значение}. Неизвестные поля игнорируются."""
+    cols = _store.FORMS[form]["cols"]
+    row: dict = {}
+    for title, value in answers.items():
+        if _norm(title) in _TIMESTAMP_HEADERS:
+            continue
+        col = match_column(str(title), cols)
+        if col and _clean(value) is not None:
+            row[col] = _clean(value)
+    for key in (_store.INTERN_ID, _store.MENTOR_ID):
+        if row.get(key):
+            row[key] = row[key].upper().replace("CT-", "СТ-").replace("H-", "Н-")  # латиница → кириллица
+    return row
+
+
+def guess_form(answers: dict) -> str:
+    return "mentor" if any(match_column(str(t), [_store.MENTOR_ID]) for t in answers) else "intern"
