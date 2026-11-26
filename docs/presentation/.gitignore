@@ -1,3 +1,6 @@
 node_modules/
 out/*
 !out/deck.pdf
+!out/*.pptx
+video/raw/
+video/demo_1080.mp4

@@ -44,149 +44,164 @@ p,li{font-size:26px;line-height:1.38}
 .arr{width:48px;display:flex;align-items:center;justify-content:center;color:var(--b);font-size:40px;font-weight:700}
 .step.hot{background:var(--b);color:#fff}.step.hot b,.step.hot h3,.step.hot p{color:#fff}
 table{border-collapse:collapse;width:100%;font-size:24px}
-td,th{padding:16px 18px;border-bottom:2px solid var(--line);text-align:left;vertical-align:top}
+td,th{padding:12px 16px;border-bottom:2px solid var(--line);text-align:left;vertical-align:top}
 th{font-weight:500;color:var(--mut);font-size:21px}
 td:last-child,th:last-child{white-space:nowrap}
 .video{width:1280px;height:720px;border-radius:24px;background:var(--n2);overflow:hidden;display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px}
 .video video,.video img{width:100%;height:100%;object-fit:cover}
 .link{font-family:MTSExtended;font-weight:500;font-size:30px;color:var(--b);word-break:break-all}
 .todo{outline:4px dashed var(--o);outline-offset:6px}
+.fc{background:var(--soft);border-radius:26px;overflow:hidden;display:flex;flex-direction:column}
+.fc .im{height:190px;background:#E9F1FA;overflow:hidden}
+.fc .im img{width:100%;height:100%;object-fit:cover;object-position:top left;display:block}
+.fc .tx{padding:16px 22px 18px}
+.fc h3{font-size:25px;margin-bottom:6px}.fc p{font-size:20px;line-height:1.32}
+.ph{width:300px;height:620px;border-radius:44px;background:#0E2340;padding:12px;box-shadow:0 30px 60px rgba(19,64,116,.25)}
+.ph img{width:100%;height:100%;object-fit:cover;object-position:top;border-radius:34px;display:block}
+.qr{width:200px;height:200px;border-radius:18px;background:#fff;padding:8px}
+.qr img{width:100%;height:100%}
+.lk{display:flex;gap:26px;align-items:center}
+.lk .t{font-size:22px;opacity:.85}.lk .u{font-family:MTSExtended;font-weight:500;font-size:25px;word-break:break-all}
+.tag{display:inline-block;background:var(--o);color:#fff;border-radius:30px;padding:4px 16px;font-size:18px;font-weight:700;vertical-align:middle;margin-left:10px}
 </style></head><body>
 
 <!-- 1. Обложка -->
 <section class="s dark" style="padding:150px 120px">
   <img class="bg" src="img/cover.png" alt="">
-  <h1 style="font-size:96px;max-width:1100px">Радар<span class="l">стажировки</span></h1>
-  <p style="font-size:34px;max-width:900px;margin-top:40px">ИИ-ассистент HR: анкеты стажёров и наставников приходят сами,
-    система показывает, кому нужна помощь, почему и что сделать</p>
-  <p style="position:absolute;left:120px;bottom:90px;font-size:24px">«Код города» · МГТС · трек «ИИ в бизнес-процессах» · 26.11.2026<br>
-    Андрей — техлид · Савелий — аналитика · Артём — продукт и интерфейс</p>
+  <h1 style="font-size:100px;max-width:1100px">Радар<span class="l">стажировки</span></h1>
+  <p style="font-size:36px;max-width:950px;margin-top:40px">Помощник HR на базе ИИ. Анкеты стажёров и наставников приходят сами,
+    а система подсказывает, кому нужна помощь, почему и что сделать</p>
+  <p style="position:absolute;left:120px;bottom:90px;font-size:24px">«Код города» · МГТС · кейс «ИИ в бизнес-процессах» · 26.11.2026<br>
+    Андрей — техлид и интеграции · Савелий — аналитика и ИИ · Артём — продукт и интерфейс</p>
 </section>
 
-<!-- 2. Как мы поняли задачу -->
+<!-- 2. Проблема → решение -->
 <section class="s">
   <img class="obj" src="img/cube.png" style="right:-300px;top:330px;width:1000px;opacity:.95" alt="">
-  <h2>Как мы поняли задачу<br><span class="l">HR узнаёт о проблеме, когда стажёр уже ушёл</span></h2>
+  <h2>HR узнаёт о проблеме<br><span class="l">когда стажёр уже решил уйти</span></h2>
   <div class="grid" style="grid-template-columns:repeat(3,420px)">
-    <div class="card"><h3>Мало данных</h3><p>5 пар «стажёр — наставник», 6 опросов. Обучать модель не на чем: нужны прозрачные правила.</p></div>
-    <div class="card"><h3>Разные взгляды</h3><p>Стажёр оценивает свой опыт, наставник — его работу. Ценность в <b>расхождении</b> этих оценок.</p></div>
-    <div class="card"><h3>Главное в тексте</h3><p>«Нагрузка слишком высокая» звучит в комментарии раньше, чем падает средний балл.</p></div>
+    <div class="card"><h3>Ручная работа</h3><p>Каждый месяц выгрузить анкеты, свести в Excel, перечитать комментарии.</p></div>
+    <div class="card"><h3>Тревога в тексте</h3><p>«Нагрузка слишком высокая» звучит в комментарии раньше, чем падают оценки.</p></div>
+    <div class="card"><h3>Два взгляда</h3><p>Стажёр и наставник часто видят ситуацию по-разному, и это важный сигнал.</p></div>
   </div>
-  <p style="margin-top:56px;max-width:1300px"><b>Наша цель:</b> каждый новый ответ из формы за секунды попадает в историю стажёра.
-    HR получает сигнал <span class="or"><b>с основаниями</b></span> (какие оценки, какая цитата) и готовое действие.</p>
+  <p style="margin-top:56px;max-width:1250px;font-size:30px"><b>Радар</b> делает это сам: новый ответ попадает в историю стажёра за секунды,
+    HR видит <span class="or"><b>кому</b></span> нужна помощь, <span class="or"><b>почему</b></span> (оценки и цитаты) и <span class="or"><b>что сделать</b></span>.</p>
   <img class="logo" src="../../web/brand/logos/logo1.svg" alt="МГТС"><div class="pg">2</div>
 </section>
 
-<!-- 3. Решение: цепочка -->
+<!-- 3. Как это работает -->
 <section class="s">
-  <h2>Решение: от ответа в форме<br><span class="l">до обновлённого дашборда без ручных шагов</span></h2>
+  <h2>Как это работает<br><span class="l">от анкеты до дашборда сам</span></h2>
   <div class="flow">
-    <div class="step"><b>1</b><h3>Анкета</h3><p>Две Google Forms по структуре кейса: стажёр и наставник</p></div><div class="arr">→</div>
-    <div class="step"><b>2</b><h3>Передача</h3><p>API таблицы ответов каждые 5 с + вебхук Apps Script</p></div><div class="arr">→</div>
-    <div class="step"><b>3</b><h3>Привязка</h3><p>ID стажёра + контрольный период; повтор заменяет старый ответ</p></div><div class="arr">→</div>
-    <div class="step"><b>4</b><h3>История</h3><p>6 месяцев из xlsx кейса + все новые ответы</p></div><div class="arr">→</div>
-    <div class="step hot"><b>5</b><h3>Анализ</h3><p>Правила по оценкам + ИИ по комментариям</p></div><div class="arr">→</div>
-    <div class="step"><b>6</b><h3>Дашборд</h3><p>Обновляется сам: светофор, карточка, действия</p></div>
+    <div class="step"><b>1</b><h3>Анкета</h3><p>Стажёр и наставник раз в месяц заполняют Google Forms</p></div><div class="arr">→</div>
+    <div class="step"><b>2</b><h3>Приходит сама</h3><p>Ответ попадает в систему автоматически, без выгрузок</p></div><div class="arr">→</div>
+    <div class="step"><b>3</b><h3>Привязка</h3><p>К нужному стажёру и месяцу, в общую историю</p></div><div class="arr">→</div>
+    <div class="step hot"><b>4</b><h3>Анализ</h3><p>Оценки — правила, комментарии — ИИ</p></div><div class="arr">→</div>
+    <div class="step"><b>5</b><h3>Сигнал</h3><p>Светофор, причины, что делать HR</p></div><div class="arr">→</div>
+    <div class="step"><b>6</b><h3>Дашборд</h3><p>Обновляется сам за ~5 секунд</p></div>
   </div>
-  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:56px">
-    <div><h3>Оценки → правила</h3><p>Сравниваем человека с его же нормой (у каждого своя «валюта» баллов), ищем падение,
-      расхождение стажёр ↔ наставник и пропуск опроса.</p></div>
-    <div><h3>Комментарии → ИИ</h3><p>YandexGPT размечает тему, тон, риск и находит цитату-основание.
-      Без сети работает офлайн-словарь, поэтому демо не зависит от интернета.</p></div>
+  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:56px;max-width:1600px">
+    <div><h3>Сравниваем человека с ним самим</h3><p>У каждого своя «норма» оценок. Тревога — когда человек просел относительно себя, а не относительно других.</p></div>
+    <div><h3>Каждый вывод с основаниями</h3><p>Под сигналом всегда видно, на каких оценках и каких цитатах он построен. Решение принимает HR.</p></div>
   </div>
   <img class="logo" src="../../web/brand/logos/logo1.svg" alt="МГТС"><div class="pg">3</div>
 </section>
 
-<!-- 4. Демо (скринкаст) -->
-<section class="s" style="padding-top:90px">
-  <h2 style="margin-bottom:34px">Демо: <span class="l">новый ответ → дашборд обновился сам</span></h2>
-  <div style="display:flex;gap:48px;align-items:flex-start">
-    <div class="video todo" id="demo"><video src="demo.mp4" poster="shots/demo_poster.png" muted autoplay loop playsinline
-      onerror="this.parentNode.textContent='скринкаст 30–40 с: docs/presentation/demo.mp4'"></video></div>
-    <div style="width:420px">
-      <p class="mut" style="font-size:22px;margin-bottom:18px">Что происходит на видео</p>
-      <p style="font-size:24px;margin-bottom:18px"><b>1.</b> Стажёр СТ-002 заполняет форму за «Месяц 7»: нагрузка 2, тревожный комментарий</p>
-      <p style="font-size:24px;margin-bottom:18px"><b>2.</b> Через ~5 с ответ в системе: привязан к СТ-002 и периоду</p>
-      <p style="font-size:24px;margin-bottom:18px"><b>3.</b> Анализ пересчитан, светофор стал <span class="or"><b>красным</b></span></p>
-      <p style="font-size:24px"><b>4.</b> Карточка: сигнал, на чём основан, что делать HR</p>
-    </div>
+<!-- 4. Демо -->
+<section class="s" style="padding-top:80px">
+  <h2 style="margin-bottom:30px">Демо: <span class="l">новый ответ → дашборд обновился сам</span></h2>
+  <div class="video" id="demo" style="position:absolute;left:120px;top:210px;width:1200px;height:675px"><img src="shots/demo_poster.jpg" alt="Кадр из скринкаста" onerror="this.replaceWith('скринкаст: demo.mp4')"></div>
+  <div style="position:absolute;left:1380px;top:210px;width:420px">
+    <p style="font-size:24px;margin-bottom:16px"><b>1.</b> Месяц 6, все стажёры в норме</p>
+    <p style="font-size:24px;margin-bottom:16px"><b>2.</b> СТ-002 заново проходит опрос: нагрузка 2 из 5, тревожный комментарий</p>
+    <p style="font-size:24px;margin-bottom:16px"><b>3.</b> Через ~5 с он <span class="or"><b>красный</b></span>, без перезагрузки</p>
+    <p style="font-size:24px;margin-bottom:26px"><b>4.</b> Карточка: причина, оценки, цитаты, действие</p>
+    <div class="lk"><div class="qr" style="width:150px;height:150px;box-shadow:0 0 0 2px var(--line)"><img src="qr/video.png" alt="QR видео"></div><p class="mut" style="font-size:19px">Видео по ссылке:<br>kod.201-34-157-90.sslip.io<br>/media/demo.mp4</p></div>
   </div>
   <img class="logo" src="../../web/brand/logos/logo1.svg" alt="МГТС"><div class="pg">4</div>
 </section>
 
-<!-- 5. Что видит HR -->
-<section class="s">
-  <h2>Что видит HR<br><span class="l">кто требует внимания и почему — за 10 секунд</span></h2>
-  <div class="grid" style="grid-template-columns:1fr 1fr">
-    <div class="card todo" style="height:560px;padding:0;overflow:hidden"><img src="shots/overview.png" alt="Обзор" style="width:100%;height:100%;object-fit:cover;object-position:top left" onerror="this.replaceWith('скриншот обзора: shots/overview.png')"></div>
-    <div class="card todo" style="height:560px;padding:0;overflow:hidden"><img src="shots/card.png" alt="Карточка" style="width:100%;height:100%;object-fit:cover;object-position:top left" onerror="this.replaceWith('скриншот карточки: shots/card.png')"></div>
-  </div>
-  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:28px">
-    <p style="font-size:23px"><b>Обзор:</b> светофор по стажёрам, кто заполнил анкеты (стажёры и наставники), переключатель «на Месяц N»</p>
-    <p style="font-size:23px"><b>Карточка:</b> динамика стажёр vs наставник, сигналы с основаниями, итог и действия. <b>Чат «Спросить Радар»:</b> «почему СТ-004 в зоне риска?» — ответ с основаниями</p>
+<!-- 5. Фичи для HR -->
+<section class="s" style="padding-top:80px">
+  <h2 style="margin-bottom:30px">Что получает HR<br><span class="l">кто требует внимания и почему</span></h2>
+  <div class="grid" style="grid-template-columns:repeat(3,1fr);gap:26px">
+    <div class="fc"><div class="im"><img src="shots/hr_heat.jpg" alt=""></div><div class="tx"><h3>Светофор по месяцам</h3><p>Все стажёры и все 6 опросов на одном экране: кто в норме, кто нет и кто не заполнил анкету</p></div></div>
+    <div class="fc"><div class="im"><img src="shots/hr_card.jpg" alt=""></div><div class="tx"><h3>Карточка с причинами</h3><p>Вывод одной фразой, оценки стажёра и наставника, цитаты, график по 6 месяцам</p></div></div>
+    <div class="fc"><div class="im"><img src="shots/hr_chat.jpg" alt="" style="object-position:center top"></div><div class="tx"><h3>Чат «Спросить Радар»<span class="tag">ИИ</span></h3><p>«Кто требует внимания?» — ответ по данным с основаниями</p></div></div>
+    <div class="fc"><div class="im"><img src="shots/hr_report.jpg" alt=""></div><div class="tx"><h3>Отчёты в один клик</h3><p>Программа, подразделение, статус, стажёр — PDF, Excel, PowerPoint, CSV</p></div></div>
+    <div class="fc"><div class="im"><img src="shots/hr_talent.jpg" alt=""></div><div class="tx"><h3>Кадровый резерв 9-box</h3><p>Кого готовить к офферу, а с кем сначала встретиться</p></div></div>
+    <div class="fc"><div class="im"><img src="shots/hr_huntflow.jpg" alt="" style="object-position:center top"></div><div class="tx"><h3>Действие сразу</h3><p>Обратная связь, встреча 1:1, видеозвонок, комментарий в Huntflow</p></div></div>
   </div>
   <img class="logo" src="../../web/brand/logos/logo1.svg" alt="МГТС"><div class="pg">5</div>
 </section>
 
-<!-- 6. Проверка на данных кейса -->
-<section class="s">
-  <h2>Проверили на истории кейса<br><span class="l">система поймала бы каждый эпизод в тот же месяц</span></h2>
-  <table style="width:1680px">
-    <tr><th>Стажёр</th><th>Что было</th><th>Основание</th><th>Сигнал</th></tr>
-    <tr><td><b>СТ-004</b><br><span class="mut">HR-блок</span></td><td>перегрузка, мес. 4</td><td>«Комфортность нагрузки» 2 при норме 4,7; «нагрузка слишком высокая»; наставник подтверждает: «нужно снизить нагрузку»</td><td><span class="dot" style="background:var(--r)"></span>мес. 4</td></tr>
-    <tr><td><b>СТ-005</b><br><span class="mut">IT</span></td><td>непонимание задач, мес. 1–3</td><td>«Понятность задач» 2, наставник: «понимание задач» 4 — разрыв 2 балла</td><td><span class="dot" style="background:var(--r)"></span>мес. 2</td></tr>
-    <tr><td><b>СТ-003</b><br><span class="mut">Административный</span></td><td>нет поддержки, мес. 2–3</td><td>«Поддержка наставника» 2, «понятность» 2, общая удовлетворённость 2</td><td><span class="dot" style="background:var(--y)"></span>мес. 2</td></tr>
-    <tr><td><b>СТ-001, СТ-002</b></td><td>стабильно хорошо</td><td>без ложных тревог во всех 6 периодах</td><td><span class="dot" style="background:var(--g)"></span>—</td></tr>
-  </table>
-  
+<!-- 6. Фичи для стажёра -->
+<section class="s" style="padding-top:80px">
+  <h2 style="margin-bottom:34px">Кабинет стажёра<br><span class="l">помогаем с первого дня</span></h2>
+  <div style="display:flex;gap:34px;align-items:flex-start">
+    <div class="ph"><img src="shots/in_home.jpg" alt=""></div>
+    <div class="ph"><img src="shots/in_cube.jpg" alt=""></div>
+    <div class="ph"><img src="shots/in_steps.jpg" alt=""></div>
+    <div style="flex:1;padding-left:20px">
+      <div style="margin-bottom:26px"><h3>Куб — гид по стажировке<span class="tag">ИИ</span></h3><p style="font-size:23px">Отвечает на вопросы по базе знаний программы: пропуск, задачи, график, путь в штат</p></div>
+      <div style="margin-bottom:26px"><h3>Пульс-опрос за 2 минуты</h3><p style="font-size:23px">С телефона, ответ сразу уходит HR</p></div>
+      <div style="margin-bottom:26px"><h3>Шаги адаптации и «мой месяц»</h3><p style="font-size:23px">Чек-лист первых недель и динамика своих оценок</p></div>
+      <div><h3>Помощь без неловкости</h3><p style="font-size:23px">Обсудить с наставником, написать HR, анонимное сообщение, звонок</p></div>
+    </div>
+  </div>
   <img class="logo" src="../../web/brand/logos/logo1.svg" alt="МГТС"><div class="pg">6</div>
 </section>
 
-<!-- 7. Архитектура и ИИ -->
-<section class="s">
-  <h2>Архитектура и ИИ-технологии<br><span class="l">работает и в закрытом контуре</span></h2>
-  <div class="grid" style="grid-template-columns:repeat(3,1fr)">
-    <div class="card"><h3>Интеграция</h3><p>Google Forms → Google Sheets → API (опрос раз в 5 с) и вебхук Apps Script → FastAPI.
-      Можно заменить на Яндекс Формы: меняется только адаптер.</p></div>
-    <div class="card"><h3>Анализ</h3><p>Python, pandas: личная норма, динамика, разрывы пар, пропуски. Каждый вывод хранит свои основания.</p></div>
-    <div class="card"><h3>ИИ</h3><p><b>YandexGPT 5.1</b> (Yandex AI Studio): тема, тон, риск, цитата, резюме, действия для HR.
-      Запасной вариант — офлайн-правила без внешней модели.</p></div>
-  </div>
-  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:40px">
-    <div><h3>Данные о людях</h3><p>Только ID (СТ-00X, Н-00X), без ФИО. В модель уходит текст комментария без персональных данных.
-      Решение о человеке принимает HR: система лишь подсвечивает.</p></div>
-    <div><h3>Инструменты разработки</h3><p>Claude Code — ассистент при написании кода и документации. Весь код в репозитории, тесты — pytest.</p></div>
+<!-- 7. Проверили на истории -->
+<section class="s" style="padding-top:80px">
+  <h2 style="margin-bottom:30px">Проверили на данных кейса<br><span class="l">система поймала бы каждый эпизод в тот же месяц</span></h2>
+  <table style="width:1680px;font-size:22px">
+    <tr><th>Стажёр</th><th>Что было</th><th>На чём основан сигнал</th><th>Сигнал</th></tr>
+    <tr><td><b>СТ-004</b><br><span class="mut">HR-блок</span></td><td>перегрузка, месяц 4</td><td>«Комфортность нагрузки» упала до 2; «нагрузка слишком высокая»; наставник подтверждает</td><td><span class="dot" style="background:var(--r)"></span>месяц 4</td></tr>
+    <tr><td><b>СТ-005</b><br><span class="mut">IT</span></td><td>непонимание задач, месяцы 1–3</td><td>стажёр ставит «понятность задач» 2, наставник — 4: видят по-разному</td><td><span class="dot" style="background:var(--r)"></span>месяц 2</td></tr>
+    <tr><td><b>СТ-003</b><br><span class="mut">Административный</span></td><td>мало поддержки, месяцы 2–3</td><td>«поддержка наставника» 2 и «понятность задач» 2</td><td><span class="dot" style="background:var(--y)"></span>месяц 2</td></tr>
+    <tr><td><b>Вся программа</b></td><td>повторяющаяся тема</td><td>у нескольких стажёров: «не хватает регулярной обратной связи» — вывод для HR про программу</td><td><span class="dot" style="background:var(--y)"></span>—</td></tr>
+  </table>
+  <div class="grid" style="grid-template-columns:repeat(3,420px);margin-top:28px">
+    <div><div class="num">~5 с</div><p>от анкеты до дашборда</p></div>
+    <div><div class="num">0</div><p>ручных выгрузок в Excel</p></div>
+    <div><div class="num" style="color:var(--o)">3 из 3</div><p>эпизода пойманы вовремя</p></div>
   </div>
   <img class="logo" src="../../web/brand/logos/logo1.svg" alt="МГТС"><div class="pg">7</div>
 </section>
 
-<!-- 8. Эффект и шаги -->
+<!-- 8. ИИ, надёжность, дальше -->
 <section class="s">
-  <img class="obj" src="img/cube2.png" style="right:-120px;top:160px;width:760px;opacity:.95" alt="">
-  <h2>Что это даёт МГТС<br><span class="l">и что дальше</span></h2>
-  <div class="grid" style="grid-template-columns:repeat(3,380px);margin-bottom:56px">
-    <div><div class="num">~5 с</div><p>от отправки анкеты до обновления дашборда</p></div>
-    <div><div class="num">0</div><p>ручных выгрузок: HR не сводит Excel каждый месяц</p></div>
-    <div><div class="num or" style="color:var(--o)">3 из 3</div><p>эпизода истории пойманы в тот же месяц</p></div>
+  <img class="obj" src="img/cube2.png" style="right:-140px;top:200px;width:700px;opacity:.95" alt="">
+  <h2>Надёжно и просто внедрить<br><span class="l">и что дальше</span></h2>
+  <div class="grid" style="grid-template-columns:repeat(3,400px);gap:30px">
+    <div class="card"><h3>ИИ под контролем</h3><p>YandexGPT разбирает комментарии. Без сети работают правила, демо не зависит от интернета.</p></div>
+    <div class="card"><h3>Данные защищены</h3><p>Только ID стажёров, без ФИО. Решение о человеке всегда за HR.</p></div>
+    <div class="card"><h3>Работает уже сейчас</h3><p>Живой сервер, формы, API, автодеплой. Формы легко заменить на Яндекс Формы.</p></div>
   </div>
-  <div style="max-width:1150px">
+  <div style="max-width:1150px;margin-top:50px">
     <h3>Следующие шаги</h3>
-    <p>• Уведомление HR и наставнику в корпоративный мессенджер при красном сигнале<br>
-       • Отметка «HR подтвердил / ложная тревога» — на ней калибруем пороги<br>
-       • Масштаб на все потоки стажёров и на адаптацию новых сотрудников</p>
+    <p>• Интеграция с Huntflow: сигнал и комментарий сразу в карточку кандидата<br>
+       • Уведомление HR и наставнику в мессенджер при красном сигнале<br>
+       • Все потоки стажёров и адаптация новых сотрудников</p>
   </div>
   <img class="logo" src="../../web/brand/logos/logo1.svg" alt="МГТС"><div class="pg">8</div>
 </section>
 
-<!-- 9. Дополнительные материалы -->
-<section class="s dark" style="background:var(--b)">
+<!-- 9. Ссылки -->
+<section class="s dark" style="background:var(--b);padding-top:90px">
   <img class="bg" src="img/blue2.png" alt="" style="opacity:.55">
-  <h2 style="color:#fff">Дополнительные материалы</h2>
-  <div class="grid" style="grid-template-columns:1fr;gap:34px;max-width:1300px">
-    <div><p style="font-size:24px;opacity:.85">Репозиторий с кодом</p><p class="link" style="color:#fff">github.com/fry-alt/kod-goroda</p></div>
-    <div><p style="font-size:24px;opacity:.85">Прототип (дашборд)</p><p class="link" style="color:#fff">radar-stazhirovki.vercel.app</p></div>
-    <div class="todo"><p style="font-size:24px;opacity:.85">Формы для тестового ответа</p><p class="link" style="color:#fff">ССЫЛКА_НА_ФОРМУ_СТАЖЁРА<br>ССЫЛКА_НА_ФОРМУ_НАСТАВНИКА</p></div>
-    <div><p style="font-size:24px;opacity:.85">Документация: архитектура, запуск, API</p><p class="link" style="color:#fff">github.com/fry-alt/kod-goroda/blob/main/README.md</p></div>
+  <h2 style="color:#fff;margin-bottom:40px">Попробуйте сами</h2>
+  <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:36px;max-width:1680px">
+    <div><div class="qr"><img src="qr/proto.png" alt=""></div><p class="t" style="margin-top:16px;font-size:22px;opacity:.85">Прототип для HR</p><p class="u" style="font-family:MTSExtended;font-size:21px">kod.201-34-157-90.sslip.io</p></div>
+    <div><div class="qr"><img src="qr/intern.png" alt=""></div><p style="margin-top:16px;font-size:22px;opacity:.85">Кабинет стажёра</p><p style="font-family:MTSExtended;font-size:21px">…/intern.html?id=СТ-002</p></div>
+    <div><div class="qr"><img src="qr/report.png" alt=""></div><p style="margin-top:16px;font-size:22px;opacity:.85">Отчёты PDF / Excel / PPT</p><p style="font-family:MTSExtended;font-size:21px">…/report.html</p></div>
+    <div><div class="qr"><img src="qr/video.png" alt=""></div><p style="margin-top:16px;font-size:22px;opacity:.85">Видео-демо</p><p style="font-family:MTSExtended;font-size:21px">…/media/demo.mp4</p></div>
+  </div>
+  <div style="margin-top:46px;font-size:23px;line-height:1.6;max-width:1700px">
+    <b>Код:</b> github.com/fry-alt/kod-goroda &nbsp;·&nbsp; <b>Документация:</b> README.md, docs/ai.md (как устроен ИИ)<br>
+    <b>Формы анкет</b> (Google Forms) — ссылки в web/config.js и на дашборде, раздел «Анкеты»<br>
+    <b>Запасная копия:</b> radar-stazhirovki.vercel.app
   </div>
   <img class="logo" src="../../web/brand/logos/logo3.svg" alt="МГТС" style="height:48px">
 </section>
