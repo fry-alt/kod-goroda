@@ -80,6 +80,8 @@ def init_db(con: sqlite3.Connection) -> None:
         con.execute(f"CREATE TABLE IF NOT EXISTS {form['table']} ({', '.join(cols)}, "
                     f"PRIMARY KEY ({_q(INTERN_ID)}, period))")
     con.execute("CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT)")
+    con.execute("CREATE TABLE IF NOT EXISTS signal_reviews (review_id TEXT PRIMARY KEY, intern_id TEXT, "
+                "period INTEGER, code TEXT, status TEXT, note TEXT, at TEXT)")
     con.commit()
 
 
@@ -105,6 +107,34 @@ def _meta_get(con, key, default=None):
 def _meta_set(con, key, value):
     con.execute("INSERT INTO meta(key, value) VALUES(?, ?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
                 (key, json.dumps(value, ensure_ascii=False)))
+
+
+def get_meta(key: str, default=None, con: Optional[sqlite3.Connection] = None):
+    own = con is None
+    con = con or connect()
+    try:
+        init_db(con)
+        return _meta_get(con, key, default)
+    finally:
+        if own:
+            con.close()
+
+
+def reset() -> dict:
+    """Стереть базу, загрузить историю кейса заново и запомнить момент сброса.
+
+    Опрос Google Таблиц пропускает строки с «Отметкой времени» раньше этого момента: иначе тестовые ответы
+    с репетиции через 5 секунд вернулись бы в базу, и на защите стажёр стал бы красным до живой отправки.
+    """
+    DB_PATH.unlink(missing_ok=True)
+    con = connect()
+    try:
+        res = seed(con)
+        _meta_set(con, "sheet_since", dt.datetime.now().isoformat(timespec="seconds"))
+        con.commit()
+        return res
+    finally:
+        con.close()
 
 
 def get_version(con: Optional[sqlite3.Connection] = None) -> dict:
@@ -220,6 +250,61 @@ def seed(con: Optional[sqlite3.Connection] = None, force: bool = False) -> dict:
             con.close()
 
 
+# ---------- решения HR по сигналам ----------
+
+REVIEW_STATUSES = {"confirmed", "in_work", "false_alarm", "none"}
+
+
+def review_id(intern_id: str, period: int, code: str) -> str:
+    """Глобальный id сигнала: стажёр|период|код сигнала от анализа."""
+    return f"{intern_id}|{int(period)}|{code}"
+
+
+def set_review(rid: str, status: str, note: Optional[str] = None,
+               con: Optional[sqlite3.Connection] = None) -> dict:
+    if status not in REVIEW_STATUSES:
+        raise ValueError(f"status должен быть одним из {sorted(REVIEW_STATUSES)}")
+    try:
+        intern_id, period, code = rid.split("|", 2)
+        period = int(period)
+    except ValueError:
+        raise ValueError("id сигнала должен быть вида «СТ-004|4|код» (поле id в /api/interns/{id})")
+    own = con is None
+    con = con or connect()
+    try:
+        init_db(con)
+        now = dt.datetime.now()
+        with _lock:
+            if status == "none":
+                con.execute("DELETE FROM signal_reviews WHERE review_id=?", (rid,))
+            else:
+                con.execute("INSERT OR REPLACE INTO signal_reviews VALUES (?,?,?,?,?,?,?)",
+                            (rid, intern_id, period, code, status, note, now.isoformat(timespec="seconds")))
+            _meta_set(con, "version", _meta_get(con, "version", 0) + 1)
+            _meta_set(con, "last_event", {"intern_id": intern_id, "period": period, "source": "HR",
+                                          "via": "review", "review": status, "at": now.strftime("%H:%M:%S")})
+            con.commit()
+        return {"id": rid, "status": status, "note": note}
+    finally:
+        if own:
+            con.close()
+
+
+def get_reviews(intern_id: Optional[str] = None, con: Optional[sqlite3.Connection] = None) -> dict[str, dict]:
+    own = con is None
+    con = con or connect()
+    try:
+        init_db(con)
+        sql, params = "SELECT * FROM signal_reviews", ()
+        if intern_id:
+            sql, params = sql + " WHERE intern_id=?", (intern_id,)
+        return {r["review_id"]: {"status": r["status"], "note": r["note"], "at": r["at"]}
+                for r in con.execute(sql, params)}
+    finally:
+        if own:
+            con.close()
+
+
 # ---------- чтение ----------
 
 def load_history(period: Optional[int] = None, con: Optional[sqlite3.Connection] = None) -> History:
@@ -260,7 +345,8 @@ if __name__ == "__main__":
     import sys
 
     if "--reset" in sys.argv:  # после репетиции демо: стереть тестовые ответы и загрузить историю заново
-        DB_PATH.unlink(missing_ok=True)
-    print(seed(force="--force" in sys.argv))
+        print(reset())
+    else:
+        print(seed(force="--force" in sys.argv))
     h = load_history()
     print(f"стажёры: {len(h.interns)} строк, наставники: {len(h.mentors)} строк, {get_version()}")

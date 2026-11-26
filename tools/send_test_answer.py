@@ -2,7 +2,7 @@
 
   python tools/send_test_answer.py intern СТ-002 7 --scores 3,4,2,4,4,4,3 --text "Думаю уйти, не успеваю"
   python tools/send_test_answer.py mentor СТ-002 7 --scores 4,4,4,3,4,4 --text "Стал срывать сроки"
-  python tools/send_test_answer.py demo            # готовый сценарий из ПЛАН.md: СТ-002, Месяц 7, ухудшение
+  python tools/send_test_answer.py demo            # готовый сценарий из ПЛАН.md: СТ-002, повторная анкета за Месяц 6, ухудшение
 
 Адрес — API_URL (по умолчанию http://localhost:8000), секрет — WEBHOOK_SECRET.
 """
@@ -20,10 +20,10 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from feedback import store  # noqa: E402
 
 DEMO = {
-    "intern": ("СТ-002", 7, [3, 4, 2, 4, 4, 4, 3],
+    "intern": ("СТ-002", 6, [3, 4, 2, 4, 4, 4, 3],
                ["Слишком много параллельных задач, не успеваю, задерживаюсь каждый день.",
                 "Думаю уйти: нагрузка выше комфортной уже несколько недель."]),
-    "mentor": ("СТ-002", 7, [4, 4, 4, 3, 4, 4],
+    "mentor": ("СТ-002", 6, [4, 4, 4, 3, 4, 4],
                ["Качество хорошее, но часть сроков сорвана из-за большого объёма задач.",
                 "Стоит снизить нагрузку."]),
 }

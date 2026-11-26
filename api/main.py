@@ -28,9 +28,10 @@ from feedback import ingest, pipeline, store
 from feedback.config import ROOT, settings
 from feedback.schemas import FeedbackItem, Insights, ItemAnalysis, Role
 
-from . import poller, service
+from . import chat, poller, service
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s: %(message)s", datefmt="%H:%M:%S")
+logging.getLogger("httpx").setLevel(logging.WARNING)  # опрос таблиц раз в 5 с не должен засорять лог
 log = logging.getLogger("api")
 WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET", "")
 
@@ -68,6 +69,27 @@ def api_intern(intern_id: str, period: Optional[int] = Query(None, ge=1)):
         return service.intern(intern_id, period)
     except KeyError:
         raise HTTPException(404, f"нет стажёра {intern_id}")
+
+
+class ReviewIn(BaseModel):
+    status: str  # confirmed | in_work | false_alarm | none (снять отметку)
+    note: Optional[str] = None
+
+
+@app.post("/api/signals/{signal_id}/review")
+def api_review(signal_id: str, body: ReviewIn):
+    """Решение HR по сигналу. signal_id — поле id сигнала из /api/interns/{id} («СТ-004|4|код»)."""
+    try:
+        res = store.set_review(signal_id, body.status, body.note)
+    except ValueError as e:
+        raise HTTPException(422, str(e))
+    return {**res, **store.get_version()}
+
+
+@app.post("/api/chat")
+def api_chat(body: chat.ChatIn):
+    """Чат «Спросить Радар». answer=null — у бэка нет LLM, фронт отвечает сам по данным."""
+    return chat.answer(body)
 
 
 @app.get("/api/version")

@@ -117,3 +117,76 @@ def test_webhook_yandex_jsonrpc_and_form_encoded(client):
     params["Самостоятельность"] = "3"
     r = c.post("/api/webhook/mentor", data=params)  # x-www-form-urlencoded
     assert r.status_code == 200 and r.json()["changed"], r.text
+
+
+def test_signal_review_roundtrip(client):
+    from urllib.parse import quote
+    c, store = client
+    card = c.get("/api/interns/СТ-004", params={"period": 4}).json()
+    if not card["signals"]:
+        pytest.skip("анализ без сигналов (fallback)")
+    sig = card["signals"][0]
+    assert sig["id"].startswith("СТ-004|4|") and sig["review"] is None
+    v0 = c.get("/api/version").json()["version"]
+    r = c.post(f"/api/signals/{quote(sig['id'], safe='')}/review", json={"status": "confirmed", "note": "встреча 1:1"})
+    assert r.status_code == 200 and r.json()["version"] == v0 + 1
+    again = c.get("/api/interns/СТ-004", params={"period": 4}).json()
+    got = {s["id"]: s for s in again["signals"]}[sig["id"]]
+    assert got["review"]["status"] == "confirmed" and got["review"]["note"] == "встреча 1:1"
+    assert c.post(f"/api/signals/{quote(sig['id'], safe='')}/review", json={"status": "none"}).status_code == 200
+    assert {s["id"]: s for s in c.get("/api/interns/СТ-004", params={"period": 4}).json()["signals"]}[sig["id"]]["review"] is None
+    assert c.post("/api/signals/bad/review", json={"status": "confirmed"}).status_code == 422
+
+
+def test_chat_offline_returns_null_and_context(client, monkeypatch):
+    from api import chat
+    c, _ = client
+    monkeypatch.setattr(chat.pipeline, "get_provider", lambda: None)
+    r = c.post("/api/chat", json={"question": "Почему СТ-004 красный?", "period": 4, "history": []}).json()
+    assert r["answer"] is None and "карточка СТ-004" in r["sources"]
+
+
+def test_chat_with_llm_gets_card_and_docs(client, monkeypatch):
+    from api import chat
+    c, _ = client
+    seen = {}
+
+    class Fake:
+        name = "fake"
+
+        def complete(self, system, user, schema, kind):
+            seen["user"] = user
+            return schema(answer="СТ-004: нагрузка 2 в Месяце 4.", sources=["карточка СТ-004"])
+
+    monkeypatch.setattr(chat.pipeline, "get_provider", lambda: Fake())
+    r = c.post("/api/chat", json={"question": "что с ст-4 и какая шкала у наставника?", "period": 4}).json()
+    assert r["answer"].startswith("СТ-004") and r["engine"] == "fake"
+    assert '<intern id="СТ-004">' in seen["user"] and "Комфортность нагрузки" in seen["user"]
+    assert "<doc" in seen["user"]
+
+
+def test_reset_ignores_rehearsal_rows_in_sheet(client, monkeypatch):
+    """После --reset старые строки Google Таблицы не возвращаются, новые — приходят."""
+    import datetime as dt
+
+    import httpx
+
+    import api.poller as poller
+    c, store = client
+    store.reset()
+    since = dt.datetime.fromisoformat(store.get_meta("sheet_since"))
+    old = (since - dt.timedelta(minutes=5)).strftime("%d.%m.%Y %H:%M:%S")
+    new = (since + dt.timedelta(minutes=5)).strftime("%d.%m.%Y %H:%M:%S")
+    head = ["Отметка времени", "ID стажера", "Контрольный период", *store.FORMS["intern"]["scores"]]
+    rows = [[old, "СТ-002", "Месяц 2", *["1"] * 7],   # репетиция: перезаписала бы историю
+            [new, "СТ-002", "Месяц 7", *["2"] * 7]]   # живой ответ на защите
+    csv = "\n".join(",".join(r) for r in [head, *rows])
+    monkeypatch.setenv("SHEET_CSV_INTERN", "http://sheet.test/intern.csv")
+    v0 = store.get_version()["version"]
+    with httpx.Client(transport=httpx.MockTransport(lambda req: httpx.Response(200, text=csv))) as http:
+        assert poller.poll_once(http) == 1
+    h = store.load_history()
+    st2 = h.interns[h.interns[store.INTERN_ID] == "СТ-002"].set_index("period")
+    assert st2.loc[2, "source"] == "history" and st2.loc[2, "Понятность задач"] != 1
+    assert st2.loc[7, "Понятность задач"] == 2
+    assert store.get_version()["version"] == v0 + 1

@@ -23,7 +23,11 @@ def ingest_answer(form: Optional[str], answers: dict, via: str) -> dict:
     if intern_id:  # подставляем подразделение и наставника из истории, если форма их не спросила
         known = {p["intern_id"]: p for p in store.roster(store.load_history())}.get(intern_id)
         if known:
-            row.setdefault(store.DEPT, known["department"])
+            # ID стажёра — источник правды: подразделение берём из истории, даже если в форме выбрали другое
+            if known["department"] and row.get(store.DEPT) not in (None, known["department"]):
+                log.warning("%s: в форме подразделение «%s», в истории «%s» — оставляем из истории",
+                            intern_id, row[store.DEPT], known["department"])
+            row[store.DEPT] = known["department"] or row.get(store.DEPT)
             if form == "mentor":
                 row.setdefault(store.MENTOR_ID, known["mentor_id"])
     res = store.upsert(form, row, source=via)
@@ -101,8 +105,19 @@ def overview(period: Optional[int] = None) -> dict:
     return out
 
 
+def _attach_reviews(card: dict, period: Optional[int]) -> dict:
+    """Каждому сигналу — глобальный id «стажёр|период|код» и решение HR (signals[].review)."""
+    cur = period or max((p["period"] for p in card.get("periods", [])), default=0)
+    reviews = store.get_reviews(card.get("intern_id"))
+    for s in card.get("signals", []):
+        code = s.get("code") or s.get("id") or s.get("title")
+        s["code"] = code
+        s["id"] = store.review_id(card["intern_id"], cur, code)
+        s["review"] = reviews.get(s["id"])
+    return card
+
+
 def intern(intern_id: str, period: Optional[int] = None) -> dict:
     hist = store.load_history(period)
-    if _build_intern:
-        return _build_intern(hist, intern_id, period)
-    return _fallback_intern(hist, intern_id)
+    card = _build_intern(hist, intern_id, period) if _build_intern else _fallback_intern(hist, intern_id)
+    return _attach_reviews(card, period)
