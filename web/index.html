@@ -711,7 +711,7 @@ function viewIntern(v){
         <a class="btn" href="${reportUrl({tpl:'intern', id:c.intern_id})}">${ico('doc')}Скачать отчёт</a>
         <button class="btn" id="aKudos">${ico('heart')}Дать ОС</button>
         <button class="btn" id="aMeet">${ico('cal')}Назначить 1:1</button>
-        <a class="btn" id="aCall" style="display:none" target="_blank" rel="noopener" href="call.html?room=${encodeURIComponent(c.intern_id)}&name=HR">${ico('phone')}Созвониться</a>
+        <a class="btn" id="aCall" style="display:none" target="_blank" rel="noopener" href="${API}/call.html?room=${encodeURIComponent(c.intern_id)}&name=HR">${ico('phone')}Созвониться</a>
         <button class="btn pri" id="aHF">${ico('send')}${sent ? 'Huntflow ✓' : 'В Huntflow'}</button>
       </div>
     </div>
@@ -877,7 +877,7 @@ function drawChart(c){
 }
 
 // видеозвонок HR ↔ стажёр (web/call.html, бэк /ws/call): кнопка появляется, только если звонок есть на сервере
-function callReady(){ return S.callP ||= (STATIC_HOST ? Promise.resolve(false) : fetch('call.html', {method:'HEAD', cache:'no-store'}).then(r => r.ok).catch(() => false)); }
+function callReady(){ return S.callP ||= (STATIC_HOST ? Promise.resolve(false) : fetch(API + '/api/call/ice', {cache:'no-store'}).then(r => r.ok ? r.json() : null).then(config => Array.isArray(config?.iceServers)).catch(() => false)); }
 
 // ---------- диалоги: Huntflow, ОС, 1:1 ----------
 function dlg(html, bind){ $('dlg').innerHTML = html; $('modal').classList.add('open'); $('modal').setAttribute('aria-hidden', 'false');

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="brand/logos/logo1.png">
+  <title>Видеозвонок | Радар стажировки</title>
+  <link rel="stylesheet" href="brand/brand.css">
+  <link rel="stylesheet" href="call/call.css">
+  <script type="module" src="call/call.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="brand"><img src="brand/logos/logo1.svg" alt="МГТС" width="38" height="38"><strong>Радар стажировки</strong></div>
+      <h1>Видеозвонок</h1>
+      <p id="status" role="status">Подготовка комнаты</p>
+      <p id="media-status" role="status" hidden></p>
+    </header>
+    <div class="layout">
+      <section aria-label="Участники видеозвонка">
+        <div class="stage">
+          <p id="waiting">Здесь появится собеседник</p>
+          <div id="peers"></div>
+          <figure class="self">
+            <video id="preview" autoplay playsinline muted hidden></video>
+            <figcaption>Вы</figcaption>
+          </figure>
+        </div>
+        <div class="controls">
+          <button type="button" id="join">Войти в звонок</button>
+          <button type="button" id="mic" aria-pressed="false" hidden>Микрофон</button>
+          <button type="button" id="cam" aria-pressed="false" hidden>Камера</button>
+          <button type="button" id="leave" hidden>Завершить</button>
+        </div>
+      </section>
+      <section class="chat" aria-labelledby="chat-title">
+        <h2 id="chat-title">Чат звонка</h2>
+        <ol id="messages" role="log" aria-label="Сообщения"></ol>
+        <p id="chat-status" role="status" hidden></p>
+        <form id="chat">
+          <label for="message">Сообщение</label>
+          <input id="message" maxlength="500" required disabled autocomplete="off">
+          <button type="submit" id="send" disabled>Отправить</button>
+        </form>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

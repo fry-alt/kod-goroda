@@ -748,7 +748,7 @@ function vTeam(){
                    .sort((a, b) => String(a.start).localeCompare(String(b.start)));
   return `${ph('Моя команда', dep || '')}
     <section id="callBox" style="display:none">
-      <a class="btn pri wide" style="min-height:56px;font-size:16px" target="_blank" rel="noopener" href="call.html?room=${encodeURIComponent(ID)}&name=${encodeURIComponent('Стажёр ' + ID)}">${ic('chat', 20)} Позвонить HR</a>
+      <a class="btn pri wide" style="min-height:56px;font-size:16px" target="_blank" rel="noopener" href="${API}/call.html?room=${encodeURIComponent(ID)}&name=${encodeURIComponent('Стажёр ' + ID)}">${ic('chat', 20)} Позвонить HR</a>
     </section>
     <section>
       <div class="list rise" ${n()}>
@@ -821,7 +821,7 @@ function mount(){
   const app = $('app');
   app.querySelectorAll('[data-act]').forEach(b => b.onclick = e => act(b.dataset.act, e));
   if(S.tab === 'team'){
-    S.callP ||= (window.RadarStore?.STATIC ? Promise.resolve(false) : fetch('call.html', {method:'HEAD', cache:'no-store'}).then(r => r.ok).catch(() => false));
+    S.callP ||= (window.RadarStore?.STATIC ? Promise.resolve(false) : fetch(API + '/api/call/ice', {cache:'no-store'}).then(r => r.ok ? r.json() : null).then(config => Array.isArray(config?.iceServers)).catch(() => false));
     S.callP.then(ok => { const b = $('callBox'); if(ok && b) b.style.display = ''; });
   }
   if(S.tab === 'home'){
