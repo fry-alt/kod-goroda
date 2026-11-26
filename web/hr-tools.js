@@ -192,24 +192,28 @@
       const all = list.length ? Math.round(list.filter(x => done.has(x.id)).length / list.length * 100) : 0;
       return {i, st, late, all};
     });
+    const started = rows.some(r => r.all > 0);
+    if(!started) rows.forEach(r => r.late = null);   // никто ещё не отмечал шаги — это не «отставание», а «не начали»
     const lateN = rows.filter(r => r.late).length;
     const avg = rows.length ? Math.round(rows.reduce((a, r) => a + r.all, 0) / rows.length) : 0;
     body.innerHTML = `<div class="ht-panel">
       <div class="ht-row" style="justify-content:space-between;align-items:flex-start;margin-bottom:12px">
         <div><h3 class="ht-h">Чек-лист адаптации</h3><p class="ht-sub" style="margin:0">Стажёр отмечает шаги в своём кабинете. Срок этапа — по Месяцу ${c.period}.</p></div>
         <button class="ht-btn ht-accent" data-all ${lateN ? '' : 'disabled'}>Напомнить всем отстающим${lateN ? ' · ' + lateN : ''}</button></div>
-      <div class="ht-kpis"><div class="ht-kpi"><b>${avg}%</b><span>средний прогресс</span></div>
-        <div class="ht-kpi ${lateN ? 'ht-warn' : ''}"><b>${lateN}</b><span>отстают по сроку</span></div>
+      ${started ? '' : `<div class="ht-note" style="margin:0 0 14px"><b>i</b><span><b style="color:inherit">Стажёры ещё не отмечали шаги.</b> Чек-лист появился в кабинете стажёра — отправьте ссылку, и прогресс начнёт заполняться сам.
+        <button class="ht-btn ht-sm" data-link style="margin-left:8px">Скопировать ссылку на кабинет</button></span></div>`}
+      <div class="ht-kpis"><div class="ht-kpi"><b>${started ? avg + '%' : '—'}</b><span>средний прогресс</span></div>
+        <div class="ht-kpi ${lateN ? 'ht-warn' : ''}"><b>${started ? lateN : rows.length}</b><span>${started ? 'отстают по сроку' : 'ещё не начали'}</span></div>
         <div class="ht-kpi"><b>${list.length}</b><span>шагов в чек-листе</span></div></div>
       <div class="ht-scroll"><table class="ht-table"><thead><tr><th>Стажёр</th>${STAGES.map(s => `<th>${s}</th>`).join('')}<th>Всего</th><th></th></tr></thead><tbody>
       ${rows.map(r => `<tr class="${r.late ? 'ht-late-row' : ''}">
         <td><button class="ht-link ht-id" data-open="${c.esc(r.i.intern_id)}">${c.esc(r.i.intern_id)}</button><div style="font-size:13px;color:var(--mgts-muted)">${c.esc(r.i.department)}</div></td>
-        ${r.st.map(x => `<td><div class="ht-pct ${!x.due ? 'ht-future' : x.pct < 100 ? 'ht-late' : ''}" title="${x.n} из ${x.total}"><b>${x.pct}%</b><div class="ht-bar"><i style="width:${x.pct}%"></i></div></div></td>`).join('')}
+        ${r.st.map(x => `<td><div class="ht-pct ${!started || !x.due ? 'ht-future' : x.pct < 100 ? 'ht-late' : ''}" title="${x.n} из ${x.total}"><b>${started ? x.pct + '%' : '—'}</b><div class="ht-bar"><i style="width:${x.pct}%"></i></div></div></td>`).join('')}
         <td><b class="ht-id">${r.all}%</b></td>
         <td style="text-align:right">${r.late
           ? `<button class="ht-btn ht-sm ${reminded[r.i.intern_id] ? 'ht-line' : ''}" data-remind="${c.esc(r.i.intern_id)}" data-stage="${c.esc(r.late.s)}">${reminded[r.i.intern_id] ? 'Напомнить ещё' : 'Напомнить'}</button>
              <div style="font-size:13px;color:var(--st-red);margin-top:4px;white-space:nowrap">не закрыт «${c.esc(r.late.s)}»</div>`
-          : '<span class="ht-tag ht-green">в срок</span>'}</td></tr>`).join('')}
+          : started ? '<span class="ht-tag ht-green">в срок</span>' : '<span class="ht-tag">не начал</span>'}</td></tr>`).join('')}
       </tbody></table></div></div>`;
     const remind = (id, stage) => { const m = RS().ls.get(REMIND_KEY, {}); m[id] = new Date().toISOString(); RS().ls.set(REMIND_KEY, m);
       c.toast(`Напоминание отправлено <b>${c.esc(id)}</b>${stage ? ' — этап «' + c.esc(stage) + '»' : ''}`); };
@@ -218,6 +222,8 @@
       const m = RS().ls.get(REMIND_KEY, {}); ids.forEach(id => m[id] = new Date().toISOString()); RS().ls.set(REMIND_KEY, m);
       c.toast(`Напоминание отправлено: <b>${ids.map(c.esc).join(', ')}</b>`); tabProgress(body, c); };
     body.querySelectorAll('[data-open]').forEach(b => b.onclick = () => c.openIntern(b.dataset.open));
+    body.querySelector('[data-link]')?.addEventListener('click', () => { const u = new URL('intern.html', location.href).href;
+      navigator.clipboard?.writeText(u).catch(() => {}); c.toast('Ссылка на кабинет скопирована: <b>' + c.esc(u) + '</b>'); });
   }
 
   // --- редактор памятки ---
@@ -367,9 +373,9 @@
   function inbox(el, ctx){
     injectCss(); const c = C(ctx);
     const S = {f: 'all', open: null};
-    el.innerHTML = `<div class="ht"><div class="ht-panel"><h3 class="ht-h">Дать обратную связь стажёру</h3><p class="ht-sub">Похвала или зона роста — стажёр увидит у себя сразу.</p><div class="ht-top-fb"></div></div>
-      <div class="ht-panel"><div class="ht-row" style="justify-content:space-between;margin-bottom:12px"><div><h3 class="ht-h">Лента обращений</h3><p class="ht-sub" style="margin:0">Вопросы стажёров и запросы обратной связи в одном месте</p></div></div>
-      <div class="ht-row ht-filters" style="margin-bottom:16px"></div><div class="ht-feed"></div></div></div>`;
+    el.innerHTML = `<div class="ht"><div class="ht-panel"><div class="ht-row" style="justify-content:space-between;margin-bottom:12px"><div><h3 class="ht-h">Лента обращений</h3><p class="ht-sub" style="margin:0">Вопросы стажёров и запросы обратной связи в одном месте</p></div></div>
+      <div class="ht-row ht-filters" style="margin-bottom:16px"></div><div class="ht-feed"></div></div>
+      <div class="ht-panel"><h3 class="ht-h">Дать обратную связь стажёру</h3><p class="ht-sub">Похвала или зона роста — стажёр увидит у себя сразу.</p><div class="ht-top-fb"></div></div></div>`;
     const top = el.querySelector('.ht-top-fb'); top.innerHTML = fbForm(c, interns(c)[0]?.intern_id); bindFb(top, c);
     const fEl = el.querySelector('.ht-filters'), feedEl = el.querySelector('.ht-feed');
     const draw = async () => {
@@ -427,30 +433,32 @@
   const CELLS = [
     [{n: 'Критично', s: 'низкие результат и вовлечённость', cls: 'ht-c-risk', rec: 'Удержание: встреча'}, {n: 'Нужна поддержка', s: 'вовлечённость падает', cls: 'ht-c-risk', rec: 'Удержание: встреча'}, {n: 'Риск ухода', s: 'сильный, но теряет интерес', cls: 'ht-c-risk', rec: 'Удержание: встреча'}],
     [{n: 'Под вопросом', s: 'результат ниже ожиданий', cls: '', rec: 'Развивать: ИПР'}, {n: 'Стабильные', s: 'ровно, без рывка', cls: 'ht-c-mid', rec: 'Развивать: ИПР'}, {n: 'Сильные исполнители', s: 'результат есть, зажечь', cls: 'ht-c-mid', rec: 'Развивать: ИПР'}],
-    [{n: 'Мотивированные', s: 'хотят, но нужен навык', cls: '', rec: 'Развивать: ИПР'}, {n: 'Растущие', s: 'кандидаты в резерв', cls: 'ht-c-mid', rec: 'Развивать: ИПР'}, {n: 'Звёзды — оффер', s: 'высокие результат и вовлечённость', cls: 'ht-c-top', rec: 'Готовить оффер'}],
+    [{n: 'Мотивированные', s: 'хотят, но нужен навык', cls: '', rec: 'Развивать: ИПР'}, {n: 'Растущие', s: 'кандидаты в резерв', cls: 'ht-c-mid', rec: 'Развивать: ИПР'}, {n: 'Звёзды', s: 'кандидаты на оффер', cls: 'ht-c-top', rec: 'Готовить оффер'}],
   ];
   const ST_L = {green: ['Норма', 'ht-green'], yellow: ['Внимание', 'ht-yellow'], red: ['Критично', 'ht-red']};
   function talent(el, ctx){
     injectCss(); const c = C(ctx);
     const L = interns(c).map(i => { const x = band(i.mentor_avg), y = band(i.intern_avg), cell = CELLS[y][x];
       let rec = cell.rec; if(i.status === 'red' && rec === 'Готовить оффер') rec = 'Удержание: встреча, затем оффер'; else if(i.status === 'red') rec = 'Удержание: встреча';
-      return {i, x, y, cell, rec}; });
+      // красный статус важнее клетки: сначала разобраться с проблемой, потом говорить об оффере
+      const label = i.status === 'red' ? `${cell.n}, но сейчас «Критично»` : i.status === 'yellow' && x + y >= 3 ? `${cell.n}, есть сигнал` : cell.n;
+      return {i, x, y, cell, rec, label}; });
     // разводим совпадающие точки
     const seen = {}; L.forEach(r => { const k = (+r.i.mentor_avg).toFixed(1) + '|' + (+r.i.intern_avg).toFixed(1); r.dup = seen[k] = (seen[k] ?? -1) + 1; });
     const offer = L.filter(r => r.rec === 'Готовить оффер').length, keep = L.filter(r => /Удержание/.test(r.rec)).length;
     el.innerHTML = `<div class="ht"><div class="ht-two ht-two-eq">
-      <div class="ht-panel"><h3 class="ht-h">Матрица 9-box</h3><p class="ht-sub">Результат — оценка наставника, вовлечённость — пульс-опрос стажёра. Месяц ${c.period}. Нажмите на стажёра.</p>
+      <div class="ht-panel"><h3 class="ht-h">Матрица 9-box</h3><p class="ht-sub">По горизонтали — как наставник оценивает результат, по вертикали — как стажёр оценивает свою стажировку. Месяц ${c.period}. Цвет точки — статус светофора. Нажмите на стажёра.</p>
         <div class="ht-nine"><div class="ht-ylab">Вовлечённость (стажёр) →</div>
           <div class="ht-box">${[2, 1, 0].map(y => [0, 1, 2].map(x => `<div class="ht-cell ${CELLS[y][x].cls}">${CELLS[y][x].n}<small>${CELLS[y][x].s}</small></div>`).join('')).join('')}
             ${L.map(r => `<button class="ht-pt ${c.esc(r.i.status)}" data-open="${c.esc(r.i.intern_id)}" style="left:${(pos(r.i.mentor_avg, .2, .8) * 100).toFixed(1)}%;bottom:${(pos(r.i.intern_avg, .12, .55) * 100).toFixed(1)}%;margin-left:${r.dup * -18}px;margin-bottom:${r.dup * -18}px"
-              title="${c.esc(r.i.intern_id)}: результат ${r.i.mentor_avg}, вовлечённость ${r.i.intern_avg}">${c.esc(r.i.intern_id.replace(/^СТ-0*/, 'СТ-'))}</button>`).join('')}</div>
+              title="${c.esc(r.i.intern_id)}: оценка наставника ${r.i.mentor_avg}, оценка стажёра ${r.i.intern_avg}${r.i.status === 'red' ? ' — сейчас Критично' : ''}">${c.esc(r.i.intern_id.replace(/^СТ-0*/, 'СТ-'))}</button>`).join('')}</div>
           <div></div><div class="ht-xlab">Результат (наставник) →</div></div>
         <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--mgts-muted);margin:4px 0 0 34px"><span>1</span><span>${B1}</span><span>${B2}</span><span>5</span></div></div>
       <div class="ht-panel"><h3 class="ht-h">Готовность к офферу</h3><p class="ht-sub">Подсказка системы по оценкам и сигналам</p>
         <div class="ht-kpis"><div class="ht-kpi"><b>${offer}</b><span>готовить оффер</span></div><div class="ht-kpi ${keep ? 'ht-warn' : ''}"><b>${keep}</b><span>нужна встреча</span></div></div>
         <div class="ht-scroll"><table class="ht-table" style="min-width:520px"><thead><tr><th>Стажёр</th><th>Клетка</th><th>Статус</th><th>Рекомендация</th></tr></thead><tbody>
         ${L.slice().sort((a, b) => (b.y * 3 + b.x) - (a.y * 3 + a.x)).map(r => `<tr><td><button class="ht-link ht-id" data-open="${c.esc(r.i.intern_id)}">${c.esc(r.i.intern_id)}</button><div style="font-size:13px;color:var(--mgts-muted)">${c.esc(r.i.department)}</div></td>
-          <td>${c.esc(r.cell.n)}<div style="font-size:13px;color:var(--mgts-muted)">${r.i.mentor_avg} / ${r.i.intern_avg}</div></td>
+          <td>${c.esc(r.label)}<div style="font-size:13px;color:var(--mgts-muted)">наставник ${String(r.i.mentor_avg).replace('.', ',')} · стажёр ${String(r.i.intern_avg).replace('.', ',')}</div></td>
           <td><span class="ht-tag ${(ST_L[r.i.status] || ST_L.green)[1]}"><i class="ht-dot ${c.esc(r.i.status)}"></i>${(ST_L[r.i.status] || ['—'])[0]}</span></td>
           <td class="ht-rec" style="color:${/оффер$/.test(r.rec) && !/Удержание/.test(r.rec) ? 'var(--st-green)' : /Удержание/.test(r.rec) ? 'var(--st-red)' : 'var(--mgts-navy)'}">${c.esc(r.rec)}</td></tr>`).join('')}
         </tbody></table></div>

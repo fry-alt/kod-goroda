@@ -9,7 +9,7 @@
 <script src="config.js" onerror=""></script>
 <script src="shared/store.js?v=4"></script>
 <script src="shared/insight.js?v=1"></script>
-<script src="hr-tools.js?v=3" onerror=""></script>
+<script src="hr-tools.js?v=4" onerror=""></script>
 <style>
 :root{--sh:0 1px 2px rgba(19,64,116,.06),0 12px 32px -10px rgba(0,138,224,.16);--sh-h:0 2px 4px rgba(19,64,116,.08),0 18px 40px -10px rgba(0,138,224,.26);
   --ease:cubic-bezier(.2,0,0,1);--side:248px;--r:22px}
@@ -134,6 +134,15 @@ table{border-collapse:collapse;width:100%}
 .qa a{display:flex;align-items:center;gap:10px;min-height:56px;padding:10px 14px;border-radius:16px;background:var(--mgts-bg-soft);color:var(--mgts-navy);text-decoration:none;font-weight:500;transition:background .2s,transform .2s var(--ease)}
 .qa a:hover{background:#E3F2FC;transform:translateY(-1px)}
 .qa a svg{color:var(--mgts-blue)}
+.heat{border-collapse:separate;border-spacing:6px;width:100%;min-width:520px}
+.heat th{font-size:13px;font-weight:500;color:var(--mgts-muted);text-align:center;padding:0 2px}
+.heat th.cur{color:var(--mgts-blue);font-weight:700}
+.heat td:first-child{white-space:nowrap;padding-right:6px}.heat td small{display:block;font-size:12px;color:var(--mgts-muted)}
+.heat td{text-align:center}
+.hc{display:inline-flex;align-items:center;justify-content:center;width:100%;min-height:40px;border-radius:10px;border:0;font:700 15px var(--font-title);color:#fff;cursor:pointer;transition:transform .15s}
+button.hc:hover{transform:scale(1.06)}
+.hc.st-red{background:var(--st-red)}.hc.st-yellow{background:var(--st-yellow);color:#4a3600}.hc.st-green{background:var(--st-green)}.hc.st-grey{background:var(--mgts-bg-soft);color:var(--mgts-muted);cursor:default}
+.heat td.cur .hc{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--mgts-blue)}
 .theme{border-radius:14px;background:#FFF4F0;padding:12px 14px;margin-bottom:10px}
 .theme q{display:block;color:var(--mgts-muted);font-size:14px;margin-top:4px}
 
@@ -525,6 +534,9 @@ async function viewHome(v){
     <a class="kpi" href="#/surveys"><div class="v">${sv.n}<span class="mut" style="font-size:22px">/${sv.total}</span></div><div class="l">Анкеты за Месяц ${cur()}</div>
       <div class="prog"><i style="width:${sv.total ? sv.n / sv.total * 100 : 0}%"></i></div></a>
   </section>
+  <section class="panel" id="heatBox"><h2>Светофор по месяцам <a href="#/interns">Все стажёры →</a></h2>
+    <p class="mut" style="margin:-6px 0 12px;font-size:14px">Каждая клетка — стажёр в конкретном месяце, число — его средняя оценка. Видно, когда начались проблемы и ушли ли они. Нажмите на клетку, чтобы открыть карточку на тот месяц.</p>
+    <div id="heat"><div class="mut">Загрузка…</div></div></section>
   <div class="grid2">
     <div>
       <section class="panel"><h2>Требуют внимания <a href="#/interns">Все стажёры →</a></h2>
@@ -547,6 +559,7 @@ async function viewHome(v){
   v.querySelectorAll('[data-n]').forEach(countUp);
   $('heroAsk').onclick = () => chatOpen(true);
   programThemes().then(renderThemes).catch(() => {});
+  statusHistory().then(renderHeat).catch(() => { const b = $('heatBox'); if(b) b.style.display = 'none'; });
   v.querySelectorAll('[data-remind]').forEach(b => b.onclick = () => remind(b.dataset.remind, b));
   // мини-лента обращений
   const items = await inboxItems();
@@ -581,6 +594,28 @@ async function programThemes(){
   const list = Object.values(T).map(x => ({...x, interns:Object.keys(x.by).sort()})).filter(x => x.interns.length >= 2)
     .sort((a, b) => b.interns.length - a.interns.length).slice(0, 4);
   S.themesKey = key; S.themes = list; return list;
+}
+// светофор по месяцам: overview на каждый месяц (бэк отдаёт срез «на Месяц N»)
+async function statusHistory(){
+  const ps = (S.allP || []).filter(p => p <= cur() && (!S.mock || MOCKS.includes(p)));
+  const key = (S.mock ? 'm' : 'a') + ':' + (S.ov.version ?? '') + ':' + ps.join(',');
+  if(S.histKey === key) return S.hist;
+  const ovs = await Promise.all(ps.map(p => (S.mock ? getJSON(`mock/p${p}/overview.json`) : getJSON(API + '/api/overview?period=' + p)).then(o => [p, o]).catch(() => null)));
+  const H = {ps: [], rows: {}};
+  for(const x of ovs.filter(Boolean)){ const [p, o] = x; H.ps.push(p);
+    for(const i of o.interns || []){ const r = H.rows[i.intern_id] ||= {id:i.intern_id, dept:i.department, by:{}}; r.by[p] = i; } }
+  S.histKey = key; S.hist = H; return H;
+}
+function renderHeat(H){
+  const box = $('heat'); if(!box) return;
+  const ids = Object.keys(H.rows).sort();
+  if(!H.ps.length || !ids.length){ $('heatBox').style.display = 'none'; return; }
+  box.innerHTML = `<div class="scroll"><table class="heat"><tr><th></th>${H.ps.map(p => `<th class="${p === cur() ? 'cur' : ''}">Месяц ${p}</th>`).join('')}</tr>
+    ${ids.map(id => { const r = H.rows[id]; return `<tr><td><b>${esc(id)}</b><small>${esc(r.dept || '')}</small></td>${H.ps.map(p => { const i = r.by[p];
+      return i ? `<td class="${p === cur() ? 'cur' : ''}"><button class="hc st-${i.status || 'grey'}" data-p="${p}" data-id="${esc(id)}" title="${esc(id)} · Месяц ${p}: ${ST[i.status] || ''}${i.status !== 'green' && i.reason ? ' — ' + esc(i.reason) : ''}">${fmt(i.intern_avg)}</button></td>` : '<td><span class="hc st-grey">—</span></td>'; }).join('')}</tr>`; }).join('')}</table></div>
+    <div class="legend"><span><i class="hc st-red" style="width:14px;height:14px;min-height:0;padding:0"></i> Критично</span><span><i class="hc st-yellow" style="width:14px;height:14px;min-height:0;padding:0"></i> Внимание</span><span><i class="hc st-green" style="width:14px;height:14px;min-height:0;padding:0"></i> В норме</span>${S.mock ? '<span>В демо-режиме — месяцы 2, 3, 4, 6</span>' : ''}</div>`;
+  box.querySelectorAll('button.hc').forEach(b => b.onclick = async () => { const p = +b.dataset.p, ps = S.allP || [];
+    S.period = (p === Math.max(...ps) && !S.mock) ? null : p; S.card = null; S.focus = null; await refresh(); go('#/intern/' + b.dataset.id); });
 }
 function renderThemes(list){
   const box = $('themesBox'); if(!box) return;
@@ -802,19 +837,39 @@ function drawChart(c){
     const bi = base('intern_avg'), bm = base('mentor_avg');
     a = P.map(p => p.intern_avg != null && bi != null ? +(p.intern_avg - bi).toFixed(2) : null);
     b = P.map(p => p.mentor_avg != null && bm != null ? +(p.mentor_avg - bm).toFixed(2) : null);
-    yMin = -2.5; yMax = 2.5; note = 'Отклонение от личной нормы: у каждого своя шкала оценок.';
+    yMin = -2.5; yMax = 2.5; note = 'Ноль — обычный уровень этого человека (среднее первых месяцев). Ниже нуля — хуже, чем обычно.';
   } else if(S.mode.startsWith('pair') && c.pairs?.[+S.mode.slice(4)]){
     const pr = c.pairs[+S.mode.slice(4)]; a = pr.by_period.map(x => x[0]); b = pr.by_period.map(x => x[1]); la = pr.intern; lb = pr.mentor; note = `${pr.intern} ↔ ${pr.mentor}`;
-  } else { a = P.map(p => p.intern_avg); b = P.map(p => p.mentor_avg); }
+  } else { a = P.map(p => p.intern_avg); b = P.map(p => p.mentor_avg); note = 'Сплошная линия — стажёр, пунктир — наставник. Фон: ниже 3 — плохо, 3–4 — внимание, от 4 — норма.'; }
+  // выделена причина — показываем сами показатели-основания, а не среднюю: так видно падение 5 → 2
+  if(S.focus && S.mode === 'avg'){
+    const all = S.focus.ev || S.focus.evidence || [];
+    const fi = all.find(e => e.source === 'стажёр' && !e.quote && e.field && P.some(p => p.intern?.[e.field] != null));
+    const fm = all.find(e => e.source === 'наставник' && !e.quote && e.field && P.some(p => p.mentor?.[e.field] != null));
+    if(fi || fm){
+      if(fi){ a = P.map(p => p.intern?.[fi.field] ?? null); la = fi.field + ' — стажёр'; }
+      if(fm){ b = P.map(p => p.mentor?.[fm.field] ?? null); lb = fm.field + ' — наставник'; }
+      note = 'Показаны оценки, на которых основан вывод' + (fi && fm ? '' : fi ? ' (стажёр); пунктир — средняя наставника' : ' (наставник); сплошная — средняя стажёра') + '. Оранжевым выделены месяцы-основания.';
+    }
+  }
   const fp = new Set((S.focus?.evidence || []).map(e => e.period));
   const rad = P.map(p => fp.has(p.period) ? 9 : 4), col = P.map(p => fp.has(p.period) ? css('--mgts-orange') : null);
   if($('chnote')) $('chnote').textContent = note;
   if(S.chart) S.chart.destroy();
   if(!window.Chart || !$('ch')) return;
+  // фон: зоны шкалы (ниже 3 — плохо, 3–4 — внимание, от 4 — норма) и месяцы-основания выделенного сигнала
+  const zones = S.mode === 'norm' ? [] : [[1, 3, 'rgba(235,87,87,.07)'], [3, 4, 'rgba(242,183,5,.09)'], [4, 5, 'rgba(39,174,96,.07)']];
+  const bg = {id:'radarBg', beforeDatasetsDraw(ch){ const {ctx, chartArea:a, scales:{x, y}} = ch; ctx.save();
+    for(const [lo, hi, col] of zones){ const y1 = y.getPixelForValue(hi), y2 = y.getPixelForValue(lo); ctx.fillStyle = col; ctx.fillRect(a.left, y1, a.right - a.left, y2 - y1); }
+    const w = (a.right - a.left) / Math.max(1, labels.length - 1) * .6;
+    P.forEach((p, k) => { if(fp.has(p.period)){ const cx = x.getPixelForValue(k); ctx.fillStyle = 'rgba(255,118,84,.14)'; ctx.fillRect(cx - w / 2, a.top, w, a.bottom - a.top); } });
+    if(S.mode === 'norm'){ const y0 = y.getPixelForValue(0); ctx.strokeStyle = css('--mgts-muted'); ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(a.left, y0); ctx.lineTo(a.right, y0); ctx.stroke(); }
+    ctx.restore(); }};
+  const grad = (() => { const g = $('ch').getContext('2d').createLinearGradient(0, 0, 0, $('ch').clientHeight || 260); g.addColorStop(0, 'rgba(0,138,224,.14)'); g.addColorStop(1, 'rgba(0,138,224,0)'); return g; })();
   S.chart = new Chart($('ch'), {type:'line', data:{labels, datasets:[
-    {label:la, data:a, borderColor:css('--mgts-blue'), backgroundColor:col.map(x => x || css('--mgts-blue')), pointRadius:rad, borderWidth:3, tension:.3, spanGaps:true},
-    {label:lb, data:b, borderColor:css('--mgts-navy'), backgroundColor:col.map(x => x || css('--mgts-navy')), pointRadius:rad, borderWidth:2, borderDash:[6, 4], tension:.3, spanGaps:true},
-  ]}, options:{responsive:true, maintainAspectRatio:false, animation:{duration:300},
+    {label:la, data:a, borderColor:css('--mgts-blue'), pointBackgroundColor:col.map(x => x || css('--mgts-blue')), backgroundColor:grad, fill: S.mode === 'norm' ? false : 'start', pointRadius:rad, pointHoverRadius:10, pointBorderColor:'#fff', pointBorderWidth:2, borderWidth:3, tension:.3, spanGaps:true},
+    {label:lb, data:b, borderColor:css('--mgts-navy'), backgroundColor:css('--mgts-navy'), pointBackgroundColor:col.map(x => x || css('--mgts-navy')), pointRadius:rad, pointHoverRadius:10, pointBorderColor:'#fff', pointBorderWidth:2, borderWidth:2, borderDash:[6, 4], tension:.3, spanGaps:true},
+  ]}, plugins:[bg], options:{interaction:{mode:'index', intersect:false},responsive:true, maintainAspectRatio:false, animation:{duration:300},
     plugins:{legend:{position:'bottom', labels:{font:{family:'MTSText', size:14}, color:css('--mgts-navy'), boxWidth:14}},
              tooltip:{callbacks:{label:x => `${x.dataset.label}: ${fmt(x.formattedValue)}`}}},
     scales:{y:{min:yMin, max:yMax, grid:{color:css('--mgts-line')}, ticks:{color:css('--mgts-muted'), font:{size:13}}},
