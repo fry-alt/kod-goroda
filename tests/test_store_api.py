@@ -66,3 +66,21 @@ def test_overview_and_card_by_period(client):
     assert [p["period"] for p in card["periods"]] == [1, 2, 3, 4]
     assert card["periods"][3]["intern"]["Комфортность нагрузки"] == 2
     assert c.get("/api/interns/СТ-999").status_code == 404
+
+
+def test_csv_poller_reads_google_sheet(client, monkeypatch):
+    import httpx
+    from api import poller
+    c, store = client
+    csv = ("Отметка времени,ID наставника,ID стажера,Подразделение / направление стажировки,Контрольный период,"
+           + ",".join(f'"{s} — вопрос?"' for s in store.MENTOR_SCORES)
+           + ',"Комментарий о работе за период — Опишите","Сложности / ситуации для внимания — Есть ли"\n'
+           + "26.11.2026 11:05:00,Н-002,СТ-002,Коммерческий блок,Месяц 7,4,4,4,3,4,4,Сорваны сроки,Снизить нагрузку\n")
+    monkeypatch.setenv("SHEET_CSV_MENTOR", "https://example.test/m.csv")
+    transport = httpx.MockTransport(lambda req: httpx.Response(200, content=csv.encode("utf-8")))
+    with httpx.Client(transport=transport) as cl:
+        assert poller.poll_once(cl) == 1
+        assert poller.poll_once(cl) == 0  # те же строки — без изменений
+    h = store.load_history()
+    row = h.mentors[(h.mentors["ID стажера"] == "СТ-002") & (h.mentors["period"] == 7)].iloc[0]
+    assert row["Соблюдение сроков и организация работы"] == 3 and row["source"] == "form"

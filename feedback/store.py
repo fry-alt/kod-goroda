@@ -259,7 +259,8 @@ def roster(hist: History) -> list[dict]:
 if __name__ == "__main__":
     import sys
 
-    force = "--force" in sys.argv
-    print(seed(force=force))
+    if "--reset" in sys.argv:  # после репетиции демо: стереть тестовые ответы и загрузить историю заново
+        DB_PATH.unlink(missing_ok=True)
+    print(seed(force="--force" in sys.argv))
     h = load_history()
     print(f"стажёры: {len(h.interns)} строк, наставники: {len(h.mentors)} строк, {get_version()}")
