@@ -70,7 +70,7 @@
     const add = (doc, keys = "", raw = []) => docs.push({boost: 1, ...doc,
       phrases: (doc.phrases || []).map(p => " " + tokens(p, true).join(" ") + " "),
       terms: [...tokens(doc.title), ...tokens(doc.title), ...tokens(keys), ...tokens(keys), ...raw, ...raw, ...tokens(doc.text)]});
-    for (const m of onb.memo || []) add({id: "memo:" + m.id, title: m.title, text: m.text, source: "Памятка", link: m.link, link_label: m.link_label}, kb.memo_keys?.[m.id]);
+    for (const m of onb.memo || []) add({id: "memo:" + m.id, title: m.title, text: m.text, source: "Памятка", link: m.link, link_label: m.link_label, phrases: kb.memo_phrases?.[m.id]}, kb.memo_keys?.[m.id]);
     for (const f of kb.faq || []) add({id: "faq:" + f.id, title: f.title, text: f.text, source: f.source, actions: f.actions, phrases: f.phrases}, f.keys);
     const srcTitle = key => (rules.sources?.[key] || [])[0] || "Правила программы";
     for (const t of rules.topics || []) {
