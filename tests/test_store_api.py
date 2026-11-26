@@ -163,3 +163,30 @@ def test_chat_with_llm_gets_card_and_docs(client, monkeypatch):
     assert r["answer"].startswith("СТ-004") and r["engine"] == "fake"
     assert '<intern id="СТ-004">' in seen["user"] and "Комфортность нагрузки" in seen["user"]
     assert "<doc" in seen["user"]
+
+
+def test_reset_ignores_rehearsal_rows_in_sheet(client, monkeypatch):
+    """После --reset старые строки Google Таблицы не возвращаются, новые — приходят."""
+    import datetime as dt
+
+    import httpx
+
+    import api.poller as poller
+    c, store = client
+    store.reset()
+    since = dt.datetime.fromisoformat(store.get_meta("sheet_since"))
+    old = (since - dt.timedelta(minutes=5)).strftime("%d.%m.%Y %H:%M:%S")
+    new = (since + dt.timedelta(minutes=5)).strftime("%d.%m.%Y %H:%M:%S")
+    head = ["Отметка времени", "ID стажера", "Контрольный период", *store.FORMS["intern"]["scores"]]
+    rows = [[old, "СТ-002", "Месяц 2", *["1"] * 7],   # репетиция: перезаписала бы историю
+            [new, "СТ-002", "Месяц 7", *["2"] * 7]]   # живой ответ на защите
+    csv = "\n".join(",".join(r) for r in [head, *rows])
+    monkeypatch.setenv("SHEET_CSV_INTERN", "http://sheet.test/intern.csv")
+    v0 = store.get_version()["version"]
+    with httpx.Client(transport=httpx.MockTransport(lambda req: httpx.Response(200, text=csv))) as http:
+        assert poller.poll_once(http) == 1
+    h = store.load_history()
+    st2 = h.interns[h.interns[store.INTERN_ID] == "СТ-002"].set_index("period")
+    assert st2.loc[2, "source"] == "history" and st2.loc[2, "Понятность задач"] != 1
+    assert st2.loc[7, "Понятность задач"] == 2
+    assert store.get_version()["version"] == v0 + 1

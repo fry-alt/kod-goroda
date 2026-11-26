@@ -109,6 +109,34 @@ def _meta_set(con, key, value):
                 (key, json.dumps(value, ensure_ascii=False)))
 
 
+def get_meta(key: str, default=None, con: Optional[sqlite3.Connection] = None):
+    own = con is None
+    con = con or connect()
+    try:
+        init_db(con)
+        return _meta_get(con, key, default)
+    finally:
+        if own:
+            con.close()
+
+
+def reset() -> dict:
+    """Стереть базу, загрузить историю кейса заново и запомнить момент сброса.
+
+    Опрос Google Таблиц пропускает строки с «Отметкой времени» раньше этого момента: иначе тестовые ответы
+    с репетиции через 5 секунд вернулись бы в базу, и на защите стажёр стал бы красным до живой отправки.
+    """
+    DB_PATH.unlink(missing_ok=True)
+    con = connect()
+    try:
+        res = seed(con)
+        _meta_set(con, "sheet_since", dt.datetime.now().isoformat(timespec="seconds"))
+        con.commit()
+        return res
+    finally:
+        con.close()
+
+
 def get_version(con: Optional[sqlite3.Connection] = None) -> dict:
     own = con is None
     con = con or connect()
@@ -317,7 +345,8 @@ if __name__ == "__main__":
     import sys
 
     if "--reset" in sys.argv:  # после репетиции демо: стереть тестовые ответы и загрузить историю заново
-        DB_PATH.unlink(missing_ok=True)
-    print(seed(force="--force" in sys.argv))
+        print(reset())
+    else:
+        print(seed(force="--force" in sys.argv))
     h = load_history()
     print(f"стажёры: {len(h.interns)} строк, наставники: {len(h.mentors)} строк, {get_version()}")
